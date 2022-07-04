@@ -1,23 +1,54 @@
-use crate::color::Rgb;
+use crate::event::Event;
+use crate::i18n::{LanguageTag, TimeZone};
 use crate::spatial::Size;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
-pub mod color;
+pub mod event;
+pub mod i18n;
+pub mod input;
 pub mod spatial;
 
-pub const AUDIO_CHANNELS: u8 = 1;
-pub const AUDIO_SAMPLE_RATE: u32 = 48_000;
-
 pub trait System {
-    fn image_render(&mut self, data: &[Rgb], image_size: Size);
-    fn audio_enqueue(&mut self, data: &[i16]);
+    fn video_render(&mut self, frame: VideoFrame);
+    fn audio_enqueue(&mut self, data: AudioData) -> usize;
     fn audio_cancel(&mut self);
-    fn clock_now(&mut self) -> Duration;
     fn console_log(&mut self, message: &str);
-    fn resource_put(&mut self, uri: &str, data: &[u8]) -> ActionId;
-    fn resource_get(&mut self, uri: &str) -> ActionId;
-    fn resource_delete(&mut self, uri: &str) -> ActionId;
+    fn clock_game_time(&mut self) -> Duration;
+    fn clock_unix_time(&mut self) -> Duration;
+    fn clock_set_timeout(&mut self, timeout: Duration, tag: u64);
+    fn resource_put(&mut self, name: &str, data: &[u8]);
+    fn resource_get(&mut self, name: &str);
+    fn resource_delete(&mut self, name: &str);
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemConfig {
+    pub window_size: Size,
+    pub language: LanguageTag,
+    pub time_zone: TimeZone,
+}
+
+#[derive(Debug)]
+pub struct VideoFrame<'a> {
+    pub data: &'a [u8],
+    pub size: Size,
+}
+
+impl<'a> VideoFrame<'a> {
+    pub const PIXEL_FORMAT: &'static str = "RGB24";
+}
+
+#[derive(Debug)]
+pub struct AudioData<'a> {
+    pub data: &'a [u8],
+}
+
+impl<'a> AudioData<'a> {
+    pub const CHANNELS: u8 = 1;
+    pub const SAMPLE_RATE: u32 = 48_000;
+    pub const BIT_DEPTH: u8 = 16;
 }
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
@@ -27,45 +58,12 @@ pub struct GameRequirements {
     pub window_size: Option<Size>,
 
     #[serde(default)]
-    pub fps: Option<NonZeroU32>,
-
-    #[serde(default)]
     pub memory_bytes: Option<NonZeroU32>,
 }
 
 pub trait Game<S: System> {
     fn requirements(&self) -> GameRequirements;
-    fn initialize(&mut self, system: &mut S);
+    fn initialize(&mut self, system: &mut S, config: SystemConfig);
     fn handle_event(&mut self, system: &mut S, event: Event);
     fn is_finished(&self) -> bool;
-}
-
-// TODO:
-pub enum Event {}
-
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    Default,
-    PartialEq,
-    Eq,
-    Hash,
-    PartialOrd,
-    Ord,
-    serde::Serialize,
-    serde::Deserialize,
-)]
-pub struct ActionId(u64);
-
-impl ActionId {
-    pub const fn new(id: u64) -> Self {
-        Self(id)
-    }
-
-    pub const fn get(self) -> u64 {
-        self.0
-    }
-
-    // fetch_and_increment
 }
