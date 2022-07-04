@@ -1,6 +1,7 @@
 use crate::{
     input::{Button, Key, Touch},
     spatial::{Position, Size},
+    Failure,
 };
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -8,7 +9,6 @@ use crate::{
 #[non_exhaustive]
 pub enum Event {
     Terminating,
-    Terminated,
     Timeout(TimeoutEvent),
     Key(KeyEvent),
     Mouse(MouseEvent),
@@ -38,16 +38,20 @@ pub enum WindowEvent {
 pub enum ResourceEvent {
     Put {
         name: String,
-        error: Option<u32>,
+        #[serde(default)]
+        failed: Option<Failure>,
     },
     Get {
         name: String,
+        #[serde(default)]
         data: Option<Vec<u8>>,
-        error: Option<u32>,
+        #[serde(default)]
+        failed: Option<Failure>,
     },
     Delete {
         name: String,
-        error: Option<u32>,
+        #[serde(default)]
+        failed: Option<Failure>,
     },
 }
 

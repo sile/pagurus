@@ -4,10 +4,13 @@ use crate::spatial::Size;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
+mod error;
 pub mod event;
 pub mod i18n;
 pub mod input;
 pub mod spatial;
+
+pub use crate::error::{Failure, OrFail};
 
 pub trait System {
     fn video_render(&mut self, frame: VideoFrame);
@@ -62,8 +65,9 @@ pub struct GameRequirements {
 }
 
 pub trait Game<S: System> {
-    fn requirements(&self) -> GameRequirements;
-    fn initialize(&mut self, system: &mut S, config: SystemConfig);
-    fn handle_event(&mut self, system: &mut S, event: Event);
-    fn is_finished(&self) -> bool;
+    fn requirements(&self) -> Result<GameRequirements>;
+    fn initialize(&mut self, system: &mut S, config: SystemConfig) -> Result<()>;
+    fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
 }
+
+pub type Result<T, E = Failure> = std::result::Result<T, E>;
