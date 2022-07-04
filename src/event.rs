@@ -1,7 +1,7 @@
 use crate::{
+    failure::Failure,
     input::{Button, Key, Touch},
     spatial::{Position, Size},
-    Failure,
 };
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

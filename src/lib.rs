@@ -1,16 +1,15 @@
 use crate::event::Event;
+use crate::failure::Failure;
 use crate::i18n::{LanguageTag, TimeZone};
 use crate::spatial::Size;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
-mod error;
 pub mod event;
+pub mod failure;
 pub mod i18n;
 pub mod input;
 pub mod spatial;
-
-pub use crate::error::{Failure, OrFail};
 
 pub trait System {
     fn video_render(&mut self, frame: VideoFrame);
