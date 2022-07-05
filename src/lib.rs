@@ -85,6 +85,7 @@ impl<'a> AudioData<'a> {
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameRequirements {
+    // TODO: aspect_ratio
     #[serde(default)]
     pub window_size: Option<Size>,
 

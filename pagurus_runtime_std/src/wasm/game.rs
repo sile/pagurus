@@ -1,7 +1,6 @@
 use crate::wasm::bytes::Bytes;
 use crate::wasm::env::Env;
 use crate::wasm::ffi::{Exports, Imports};
-use crate::wasm::WasmError;
 use pagurus::event::{Event, ResourceEvent};
 use pagurus::failure::OrFail;
 use pagurus::{Game, GameRequirements, Result, System, SystemConfig};
@@ -19,15 +18,19 @@ pub struct WasmGame<S> {
 }
 
 impl<S: 'static + System> WasmGame<S> {
-    pub fn new(wasm_module_bytes: &[u8]) -> Result<Self, WasmError> {
+    pub fn new(wasm_module_bytes: &[u8]) -> Result<Self> {
         let store = Store::default();
-        let module = Module::new(&store, wasm_module_bytes)?;
+        let module = Module::new(&store, wasm_module_bytes).or_fail()?;
         let env = Env::new();
         let import_object = Imports::new().to_import_object(&store, &env);
-        let wasm_instance = Instance::new(&module, &import_object)?;
-        let memory = wasm_instance.exports.get_memory("memory")?.clone();
-        let exports = Exports::new(&wasm_instance.exports)?;
-        let game = exports.game_new()?;
+        let wasm_instance = Instance::new(&module, &import_object).or_fail()?;
+        let memory = wasm_instance
+            .exports
+            .get_memory("memory")
+            .or_fail()?
+            .clone();
+        let exports = Exports::new(&wasm_instance.exports).or_fail()?;
+        let game = exports.game_new().or_fail()?;
         Ok(Self {
             game,
             memory,

@@ -1,6 +1,7 @@
 use crate::wasm::convert;
 use crate::wasm::ffi::Exports;
-use crate::wasm::WasmError;
+use pagurus::failure::OrFail;
+use pagurus::Result;
 use wasmer::{Memory, Value};
 
 #[derive(Debug)]
@@ -17,17 +18,17 @@ impl<'a> Bytes<'a> {
         exports: &'a Exports,
         wasm_bytes: BytesPtr,
         len: Option<u32>,
-    ) -> Result<Self, WasmError> {
-        let offset = exports.memory_bytes_offset(&wasm_bytes)?;
+    ) -> Result<Self> {
+        let offset = exports.memory_bytes_offset(&wasm_bytes).or_fail()?;
         let len = if let Some(len) = len {
             len
         } else {
-            exports.memory_bytes_len(&wasm_bytes)?
+            exports.memory_bytes_len(&wasm_bytes).or_fail()?
         };
         let rust_slice = unsafe {
             let ptr = memory
                 .data_ptr()
-                .offset(convert::value_to_usize(&offset)? as isize);
+                .offset(convert::value_to_usize(&offset).or_fail()? as isize);
             std::slice::from_raw_parts_mut(ptr, len as usize)
         };
         Ok(Self {
@@ -38,13 +39,9 @@ impl<'a> Bytes<'a> {
         })
     }
 
-    pub fn from_slice(
-        memory: &'a Memory,
-        exports: &'a Exports,
-        data: &[u8],
-    ) -> Result<Self, WasmError> {
-        let bytes_ptr = exports.memory_allocate_bytes(data.len() as u32)?;
-        let bytes = Self::new(memory, exports, bytes_ptr, Some(data.len() as u32))?;
+    pub fn from_slice(memory: &'a Memory, exports: &'a Exports, data: &[u8]) -> Result<Self> {
+        let bytes_ptr = exports.memory_allocate_bytes(data.len() as u32).or_fail()?;
+        let bytes = Self::new(memory, exports, bytes_ptr, Some(data.len() as u32)).or_fail()?;
         bytes.rust_slice.copy_from_slice(&data);
         Ok(bytes)
     }

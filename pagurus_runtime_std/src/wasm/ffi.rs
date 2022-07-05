@@ -1,8 +1,8 @@
 use crate::wasm::bytes::{Bytes, BytesPtr};
 use crate::wasm::convert;
 use crate::wasm::env::Env;
-use crate::wasm::WasmError;
-use pagurus::{AudioData, System, VideoFrame};
+use pagurus::failure::OrFail;
+use pagurus::{AudioData, Result, System, VideoFrame};
 use std::marker::PhantomData;
 use std::time::Duration;
 use wasmer::{Array, Function, ImportObject, Store, Value, WasmPtr};
@@ -20,40 +20,41 @@ pub struct Exports {
 }
 
 impl Exports {
-    pub fn new(exports: &wasmer::Exports) -> Result<Self, WasmError> {
+    pub fn new(exports: &wasmer::Exports) -> Result<Self> {
         Ok(Self {
-            game_new: exports.get_function("gameNew")?.clone(),
-            game_requirements: exports.get_function("gameRequirements")?.clone(),
-            game_initialize: exports.get_function("gameInitialize")?.clone(),
-            game_handle_event: exports.get_function("gameHandleEvent")?.clone(),
-            memory_allocate_bytes: exports.get_function("memoryAllocateBytes")?.clone(),
-            memory_free_bytes: exports.get_function("memoryFreeBytes")?.clone(),
-            memory_bytes_offset: exports.get_function("memoryBytesOffset")?.clone(),
-            memory_bytes_len: exports.get_function("memoryBytesLen")?.clone(),
+            game_new: exports.get_function("gameNew").or_fail()?.clone(),
+            game_requirements: exports.get_function("gameRequirements").or_fail()?.clone(),
+            game_initialize: exports.get_function("gameInitialize").or_fail()?.clone(),
+            game_handle_event: exports.get_function("gameHandleEvent").or_fail()?.clone(),
+            memory_allocate_bytes: exports
+                .get_function("memoryAllocateBytes")
+                .or_fail()?
+                .clone(),
+            memory_free_bytes: exports.get_function("memoryFreeBytes").or_fail()?.clone(),
+            memory_bytes_offset: exports.get_function("memoryBytesOffset").or_fail()?.clone(),
+            memory_bytes_len: exports.get_function("memoryBytesLen").or_fail()?.clone(),
         })
     }
 
-    // TODO: pagurus::Result
-    pub fn game_new(&self) -> Result<Value, WasmError> {
-        let values = self.game_new.call(&[])?;
-        convert::check_single_value(&values)?;
+    pub fn game_new(&self) -> Result<Value> {
+        let values = self.game_new.call(&[]).or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
         Ok(values[0].clone())
     }
 
-    pub fn game_requirements(&self, game: &Value) -> Result<BytesPtr, WasmError> {
-        let values = self.game_requirements.call(&[game.clone()])?;
-        convert::check_single_value(&values)?;
+    pub fn game_requirements(&self, game: &Value) -> Result<BytesPtr> {
+        let values = self.game_requirements.call(&[game.clone()]).or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
         Ok(BytesPtr(values[0].clone()))
     }
 
-    pub fn game_initialize(
-        &self,
-        game: &Value,
-        config: Bytes,
-    ) -> Result<Option<BytesPtr>, WasmError> {
-        let values = self.game_initialize.call(&[game.clone(), config.take()])?;
-        convert::check_single_value(&values)?;
-        let error = convert::value_to_usize(&values[0])?;
+    pub fn game_initialize(&self, game: &Value, config: Bytes) -> Result<Option<BytesPtr>> {
+        let values = self
+            .game_initialize
+            .call(&[game.clone(), config.take()])
+            .or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
+        let error = convert::value_to_usize(&values[0]).or_fail()?;
         if error == 0 {
             Ok(None)
         } else {
@@ -66,19 +67,18 @@ impl Exports {
         game: &Value,
         event: Bytes,
         data: Option<Bytes>,
-    ) -> Result<Option<BytesPtr>, WasmError> {
+    ) -> Result<Option<BytesPtr>> {
         let null = if event.is_32bit_address() {
             Value::I32(0)
         } else {
             Value::I64(0)
         };
-        let values = self.game_handle_event.call(&[
-            game.clone(),
-            event.take(),
-            data.map_or(null, |d| d.take()),
-        ])?;
-        convert::check_single_value(&values)?;
-        let error = convert::value_to_usize(&values[0])?;
+        let values = self
+            .game_handle_event
+            .call(&[game.clone(), event.take(), data.map_or(null, |d| d.take())])
+            .or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
+        let error = convert::value_to_usize(&values[0]).or_fail()?;
         if error == 0 {
             Ok(None)
         } else {
@@ -86,27 +86,33 @@ impl Exports {
         }
     }
 
-    pub fn memory_allocate_bytes(&self, n: u32) -> Result<BytesPtr, WasmError> {
-        let values = self.memory_allocate_bytes.call(&[Value::I32(n as i32)])?;
-        convert::check_single_value(&values)?;
+    pub fn memory_allocate_bytes(&self, n: u32) -> Result<BytesPtr> {
+        let values = self
+            .memory_allocate_bytes
+            .call(&[Value::I32(n as i32)])
+            .or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
         Ok(BytesPtr(values[0].clone()))
     }
 
-    pub fn memory_free_bytes(&self, bytes: &BytesPtr) -> Result<(), WasmError> {
-        self.memory_free_bytes.call(&[bytes.0.clone()])?;
+    pub fn memory_free_bytes(&self, bytes: &BytesPtr) -> Result<()> {
+        self.memory_free_bytes.call(&[bytes.0.clone()]).or_fail()?;
         Ok(())
     }
 
-    pub fn memory_bytes_offset(&self, bytes: &BytesPtr) -> Result<Value, WasmError> {
-        let values = self.memory_bytes_offset.call(&[bytes.0.clone()])?;
+    pub fn memory_bytes_offset(&self, bytes: &BytesPtr) -> Result<Value> {
+        let values = self
+            .memory_bytes_offset
+            .call(&[bytes.0.clone()])
+            .or_fail()?;
         convert::check_single_value(&values)?;
         Ok(values[0].clone())
     }
 
-    pub fn memory_bytes_len(&self, bytes: &BytesPtr) -> Result<u32, WasmError> {
-        let values = self.memory_bytes_len.call(&[bytes.0.clone()])?;
-        convert::check_single_value(&values)?;
-        convert::value_to_u32(&values[0])
+    pub fn memory_bytes_len(&self, bytes: &BytesPtr) -> Result<u32> {
+        let values = self.memory_bytes_len.call(&[bytes.0.clone()]).or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
+        convert::value_to_u32(&values[0]).or_fail()
     }
 }
 
