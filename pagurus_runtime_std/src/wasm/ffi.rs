@@ -1,10 +1,11 @@
 use crate::wasm::bytes::{Bytes, BytesPtr};
+use crate::wasm::convert;
 use crate::wasm::env::Env;
 use crate::wasm::WasmError;
 use pagurus::{AudioData, System, VideoFrame};
 use std::marker::PhantomData;
 use std::time::Duration;
-use wasmer::{Array, Function, ImportObject, RuntimeError, Store, Value, WasmPtr};
+use wasmer::{Array, Function, ImportObject, Store, Value, WasmPtr};
 
 #[derive(Debug)]
 pub struct Exports {
@@ -35,13 +36,13 @@ impl Exports {
     // TODO: pagurus::Result
     pub fn game_new(&self) -> Result<Value, WasmError> {
         let values = self.game_new.call(&[])?;
-        check_single_value(&values)?;
+        convert::check_single_value(&values)?;
         Ok(values[0].clone())
     }
 
     pub fn game_requirements(&self, game: &Value) -> Result<BytesPtr, WasmError> {
         let values = self.game_requirements.call(&[game.clone()])?;
-        check_single_value(&values)?;
+        convert::check_single_value(&values)?;
         Ok(BytesPtr(values[0].clone()))
     }
 
@@ -51,8 +52,8 @@ impl Exports {
         config: Bytes,
     ) -> Result<Option<BytesPtr>, WasmError> {
         let values = self.game_initialize.call(&[game.clone(), config.take()])?;
-        check_single_value(&values)?;
-        let error = value_to_usize(&values[0])?;
+        convert::check_single_value(&values)?;
+        let error = convert::value_to_usize(&values[0])?;
         if error == 0 {
             Ok(None)
         } else {
@@ -76,8 +77,8 @@ impl Exports {
             event.take(),
             data.map_or(null, |d| d.take()),
         ])?;
-        check_single_value(&values)?;
-        let error = value_to_usize(&values[0])?;
+        convert::check_single_value(&values)?;
+        let error = convert::value_to_usize(&values[0])?;
         if error == 0 {
             Ok(None)
         } else {
@@ -87,7 +88,7 @@ impl Exports {
 
     pub fn memory_allocate_bytes(&self, n: u32) -> Result<BytesPtr, WasmError> {
         let values = self.memory_allocate_bytes.call(&[Value::I32(n as i32)])?;
-        check_single_value(&values)?;
+        convert::check_single_value(&values)?;
         Ok(BytesPtr(values[0].clone()))
     }
 
@@ -98,14 +99,14 @@ impl Exports {
 
     pub fn memory_bytes_offset(&self, bytes: &BytesPtr) -> Result<Value, WasmError> {
         let values = self.memory_bytes_offset.call(&[bytes.0.clone()])?;
-        check_single_value(&values)?;
+        convert::check_single_value(&values)?;
         Ok(values[0].clone())
     }
 
     pub fn memory_bytes_len(&self, bytes: &BytesPtr) -> Result<u32, WasmError> {
         let values = self.memory_bytes_len.call(&[bytes.0.clone()])?;
-        check_single_value(&values)?;
-        value_to_u32(&values[0])
+        convert::check_single_value(&values)?;
+        convert::value_to_u32(&values[0])
     }
 }
 
@@ -234,38 +235,5 @@ impl<S: 'static + System> Imports<S> {
                 .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
             system.resource_delete(&name);
         })
-    }
-}
-
-fn check_single_value(values: &[Value]) -> Result<(), WasmError> {
-    if values.len() != 1 {
-        let msg = format!(
-            "expected a single return value, but got {} values",
-            values.len()
-        );
-        Err(RuntimeError::new(&msg).into())
-    } else {
-        Ok(())
-    }
-}
-
-fn value_to_u32(value: &Value) -> Result<u32, WasmError> {
-    if let Value::I32(v) = value {
-        Ok(*v as u32)
-    } else {
-        let msg = format!("expected a `u32`-like value, but got {value:?}");
-        Err(RuntimeError::new(&msg).into())
-    }
-}
-
-// TODO: factor out
-fn value_to_usize(value: &Value) -> Result<usize, WasmError> {
-    match value {
-        Value::I32(v) => Ok(*v as usize),
-        Value::I64(v) => Ok(*v as usize),
-        _ => {
-            let msg = format!("expected a `usize`-like value, but got {value:?}");
-            Err(RuntimeError::new(&msg).into())
-        }
     }
 }

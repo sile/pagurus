@@ -1,6 +1,7 @@
 use wasmer::{CompileError, ExportError, InstantiationError, MemoryError, RuntimeError};
 
 mod bytes;
+mod convert;
 mod env;
 mod ffi;
 mod game;

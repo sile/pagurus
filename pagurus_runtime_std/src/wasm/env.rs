@@ -1,3 +1,5 @@
+use pagurus::failure::OrFail;
+use pagurus::Result;
 use std::sync::{Arc, Mutex};
 use wasmer::{LazyInit, Memory, WasmerEnv};
 
@@ -17,19 +19,21 @@ impl<S> Env<S> {
         }
     }
 
-    pub fn set_system(&mut self, system: &mut S) {
-        let mut env_system = self
-            .system
-            .lock()
-            .unwrap_or_else(|e| panic!("failed to acquire lock: {e}"));
+    pub fn set_system(&mut self, system: &mut S) -> Result<()> {
+        let mut env_system = self.system.lock().or_fail()?;
         *env_system = system as *mut _;
+        Ok(())
     }
 
     pub fn with_system<F, T>(&self, f: F) -> T
     where
         F: FnOnce(&mut S) -> T,
     {
-        let mut system = self.system.lock().expect("failed to acquire lock");
+        let mut system = self
+            .system
+            .lock()
+            .unwrap_or_else(|e| panic!("failed to acquire lock: {e}"));
+        assert_ne!(*system, std::ptr::null_mut());
         f(unsafe { &mut **system })
     }
 
@@ -37,8 +41,14 @@ impl<S> Env<S> {
     where
         F: FnOnce(&mut S, &Memory) -> T,
     {
-        let mut system = self.system.lock().expect("failed to acquire lock");
-        let memory = self.memory_ref().expect("memory is not initialized");
+        let mut system = self
+            .system
+            .lock()
+            .unwrap_or_else(|e| panic!("failed to acquire lock: {e}"));
+        assert_ne!(*system, std::ptr::null_mut());
+        let memory = self
+            .memory_ref()
+            .unwrap_or_else(|| panic!("memory is not initialized yet"));
         f(unsafe { &mut **system }, memory)
     }
 }

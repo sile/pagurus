@@ -62,7 +62,7 @@ impl<S: System> Game<S> for WasmGame<S> {
     }
 
     fn initialize(&mut self, system: &mut S, config: SystemConfig) -> Result<()> {
-        self.env.set_system(system);
+        self.env.set_system(system).or_fail()?;
 
         let requirements = self.requirements().or_fail()?;
         if let Some(bytes) = requirements.memory_bytes {
@@ -83,7 +83,7 @@ impl<S: System> Game<S> for WasmGame<S> {
     }
 
     fn handle_event(&mut self, system: &mut S, mut event: Event) -> Result<bool> {
-        self.env.set_system(system);
+        self.env.set_system(system).or_fail()?;
 
         let data = if let Event::Resource(ResourceEvent::Get { data, .. }) = &mut event {
             data.take()

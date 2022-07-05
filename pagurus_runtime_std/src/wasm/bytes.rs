@@ -1,6 +1,7 @@
+use crate::wasm::convert;
 use crate::wasm::ffi::Exports;
 use crate::wasm::WasmError;
-use wasmer::{Memory, RuntimeError, Value};
+use wasmer::{Memory, Value};
 
 #[derive(Debug)]
 pub struct Bytes<'a> {
@@ -24,7 +25,9 @@ impl<'a> Bytes<'a> {
             exports.memory_bytes_len(&wasm_bytes)?
         };
         let rust_slice = unsafe {
-            let ptr = memory.data_ptr().offset(value_to_usize(&offset)? as isize);
+            let ptr = memory
+                .data_ptr()
+                .offset(convert::value_to_usize(&offset)? as isize);
             std::slice::from_raw_parts_mut(ptr, len as usize)
         };
         Ok(Self {
@@ -72,14 +75,3 @@ impl<'a> Drop for Bytes<'a> {
 
 #[derive(Debug)]
 pub struct BytesPtr(pub Value);
-
-fn value_to_usize(value: &Value) -> Result<usize, WasmError> {
-    match value {
-        Value::I32(v) => Ok(*v as usize),
-        Value::I64(v) => Ok(*v as usize),
-        _ => {
-            let msg = format!("expected a `usize`-like value, but got {value:?}");
-            Err(RuntimeError::new(&msg).into())
-        }
-    }
-}
