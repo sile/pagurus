@@ -80,15 +80,22 @@ impl<'a> AudioData<'a> {
     pub fn data(&self) -> &[u8] {
         &self.data
     }
+
+    pub fn samples(&self) -> impl 'a + Iterator<Item = i16> {
+        self.data
+            .chunks_exact(2)
+            .map(|v| (i16::from(v[0]) << 8) | i16::from(v[1]))
+    }
 }
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameRequirements {
-    // TODO: aspect_ratio
+    // TODO: aspect_ratio or logical_window_size
     #[serde(default)]
     pub window_size: Option<Size>,
 
+    // TODO: delete(?)
     #[serde(default)]
     pub memory_bytes: Option<NonZeroU32>,
 }

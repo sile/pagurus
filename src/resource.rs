@@ -1,11 +1,12 @@
 use std::borrow::Cow;
 
+// TODO: validation (e.g., must be a relative path, doesn't contain two many "..", etc)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(try_from = "String")]
 pub enum ResourceName {
     State(Cow<'static, str>),
     Asset(Cow<'static, str>),
-    File(Cow<'static, str>),
+    File(Cow<'static, str>), // TODO: Data or Blob
 }
 
 impl ResourceName {
