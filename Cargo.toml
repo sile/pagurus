@@ -15,4 +15,5 @@ members = [
     "pagurus_runtime_std",
     "pagurus_sdl_runtime",
     "pagurus_android_runtime",
+    "examples/snake",
 ]

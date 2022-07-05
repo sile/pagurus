@@ -13,6 +13,12 @@ impl Failure {
         Self::with_location(reason, location)
     }
 
+    #[track_caller]
+    pub fn todo() -> Self {
+        let location = Location::caller();
+        Self::with_location("not implemented".to_owned(), location)
+    }
+
     pub fn with_location(reason: String, location: &Location) -> Self {
         Self {
             reason,
