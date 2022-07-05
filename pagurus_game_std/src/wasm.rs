@@ -1,4 +1,5 @@
 use pagurus::event::{Event, ResourceEvent};
+use pagurus::resource::ResourceName;
 use pagurus::{AudioData, Game, System, SystemConfig, VideoFrame};
 use std::time::Duration;
 
@@ -199,7 +200,8 @@ impl System for WasmSystem {
         unsafe { systemClockSetTimeout(timeout.as_secs_f64(), tag as i64) }
     }
 
-    fn resource_put(&mut self, name: &str, data: &[u8]) {
+    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) {
+        let name = name.to_string();
         extern "C" {
             fn systemResourcePut(name: *const u8, name_len: i32, data: *const u8, data_len: i32);
         }
@@ -213,14 +215,16 @@ impl System for WasmSystem {
         }
     }
 
-    fn resource_get(&mut self, name: &str) {
+    fn resource_get(&mut self, name: &ResourceName) {
+        let name = name.to_string();
         extern "C" {
             fn systemResourceGet(name: *const u8, name_len: i32);
         }
         unsafe { systemResourceGet(name.as_ptr(), name.len() as i32) }
     }
 
-    fn resource_delete(&mut self, name: &str) {
+    fn resource_delete(&mut self, name: &ResourceName) {
+        let name = name.to_string();
         extern "C" {
             fn systemResourceDelete(name: *const u8, name: i32);
         }

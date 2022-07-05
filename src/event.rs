@@ -1,6 +1,7 @@
 use crate::{
     failure::Failure,
     input::{Button, Key, Touch},
+    resource::ResourceName,
     spatial::{Position, Size},
 };
 
@@ -37,19 +38,19 @@ pub enum WindowEvent {
 #[non_exhaustive]
 pub enum ResourceEvent {
     Put {
-        name: String,
+        name: ResourceName,
         #[serde(default)]
         failed: Option<Failure>,
     },
     Get {
-        name: String,
+        name: ResourceName,
         #[serde(default)]
         data: Option<Vec<u8>>,
         #[serde(default)]
         failed: Option<Failure>,
     },
     Delete {
-        name: String,
+        name: ResourceName,
         #[serde(default)]
         failed: Option<Failure>,
     },
