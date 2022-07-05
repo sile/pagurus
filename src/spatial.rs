@@ -5,6 +5,10 @@ pub struct Size {
 }
 
 impl Size {
+    pub const fn from_wh(width: u32, height: u32) -> Self {
+        Self { width, height }
+    }
+
     pub fn len(self) -> usize {
         (self.width * self.height) as usize
     }

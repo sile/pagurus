@@ -68,6 +68,7 @@ impl TryFrom<String> for ResourceName {
     }
 }
 
+// TODO(?): Use `Failure`?
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum ResourceNameError {

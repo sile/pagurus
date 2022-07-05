@@ -36,23 +36,50 @@ pub struct SystemConfig {
 
 #[derive(Debug)]
 pub struct VideoFrame<'a> {
-    pub data: &'a [u8],
-    pub size: Size,
+    data: &'a [u8],
+    size: Size,
 }
 
 impl<'a> VideoFrame<'a> {
     pub const PIXEL_FORMAT: &'static str = "RGB24";
+
+    pub fn new(data: &'a [u8], width: u32) -> Option<Self> {
+        if data.len() % 3 != 0 {
+            None
+        } else if (data.len() / 3) as u32 % width != 0 {
+            None
+        } else {
+            let size = Size::from_wh(width, (data.len() / 3) as u32 / width);
+            Some(Self { data, size })
+        }
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn size(&self) -> Size {
+        self.size
+    }
 }
 
 #[derive(Debug)]
 pub struct AudioData<'a> {
-    pub data: &'a [u8],
+    data: &'a [u8],
 }
 
 impl<'a> AudioData<'a> {
     pub const CHANNELS: u8 = 1;
     pub const SAMPLE_RATE: u32 = 48_000;
     pub const BIT_DEPTH: u8 = 16;
+
+    pub fn new(data: &'a [u8]) -> Option<Self> {
+        (data.len() % 2 == 0).then(|| Self { data })
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
 }
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
