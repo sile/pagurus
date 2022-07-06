@@ -1,6 +1,6 @@
 use std::{error::Error, panic::Location};
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Failure {
     pub reason: String,
     pub backtrace: Vec<BacktraceItem>,
@@ -27,9 +27,15 @@ impl Failure {
     }
 }
 
+impl std::fmt::Debug for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Display::fmt(self, f)
+    }
+}
+
 impl std::fmt::Display for Failure {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        writeln!(f, "Failure: {}", self.reason)?;
+        writeln!(f, "{}", self.reason)?;
         for item in &self.backtrace {
             writeln!(f, "  at {}:{}", item.file, item.line)?;
         }
