@@ -1,6 +1,6 @@
-use crate::wasm::bytes::{Bytes, BytesPtr};
-use crate::wasm::convert;
-use crate::wasm::env::Env;
+use crate::bytes::{Bytes, BytesPtr};
+use crate::convert;
+use crate::env::Env;
 use pagurus::failure::OrFail;
 use pagurus::{AudioData, Result, System, VideoFrame};
 use std::marker::PhantomData;

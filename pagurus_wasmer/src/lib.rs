@@ -4,4 +4,4 @@ mod env;
 mod ffi;
 mod game;
 
-pub use crate::wasm::game::WasmGame;
+pub use crate::game::WasmGame;

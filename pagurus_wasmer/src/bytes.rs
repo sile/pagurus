@@ -1,5 +1,5 @@
-use crate::wasm::convert;
-use crate::wasm::ffi::Exports;
+use crate::convert;
+use crate::ffi::Exports;
 use pagurus::failure::OrFail;
 use pagurus::Result;
 use wasmer::{Memory, Value};

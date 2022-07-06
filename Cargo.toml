@@ -12,8 +12,8 @@ thiserror = "1"
 [workspace]
 members = [
     "pagurus_game_std",
-    "pagurus_runtime_std",
+    "pagurus_wasmer",
     "pagurus_sdl_system",
     "pagurus_android_runtime",
-    "examples/snake",
+    "examples/snake", # TODO: examples/games/snake or examples/snake_game
 ]

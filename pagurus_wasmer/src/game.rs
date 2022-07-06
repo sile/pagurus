@@ -1,6 +1,6 @@
-use crate::wasm::bytes::Bytes;
-use crate::wasm::env::Env;
-use crate::wasm::ffi::{Exports, Imports};
+use crate::bytes::Bytes;
+use crate::env::Env;
+use crate::ffi::{Exports, Imports};
 use pagurus::event::{Event, ResourceEvent};
 use pagurus::failure::OrFail;
 use pagurus::{Game, GameRequirements, Result, System, SystemConfig};
