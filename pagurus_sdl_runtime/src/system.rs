@@ -1,4 +1,4 @@
-use pagurus::event::Event;
+use pagurus::event::{Event, ResourceEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
@@ -7,9 +7,9 @@ use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::EventPump;
+use sdl2::{EventPump, EventSubsystem};
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
@@ -38,10 +38,10 @@ impl Default for SdlSystemOptions {
 
 pub struct SdlSystem {
     sdl_canvas: Canvas<Window>,
+    sdl_event: EventSubsystem,
     sdl_event_pump: EventPump,
-    audio_queue: AudioQueue<i16>,
+    sdl_audio_queue: AudioQueue<i16>,
     start: Instant,
-    event_queue: VecDeque<Event>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, u64)>,
     options: SdlSystemOptions,
 }
@@ -74,23 +74,51 @@ impl SdlSystem {
             channels: Some(AudioData::CHANNELS),
             samples: None,
         };
-        let audio_queue = sdl_audio
+        let sdl_audio_queue = sdl_audio
             .open_queue(None, &audio_spec)
             .map_err(Failure::new)?;
-        audio_queue.resume();
+        sdl_audio_queue.resume();
 
         // Event
+        let sdl_event = sdl_context.event().map_err(Failure::new)?;
+        sdl_event
+            .register_custom_event::<Event>()
+            .map_err(Failure::new)?;
         let sdl_event_pump = sdl_context.event_pump().map_err(Failure::new)?;
 
         Ok(Self {
             sdl_canvas,
+            sdl_event,
             sdl_event_pump,
-            audio_queue,
+            sdl_audio_queue,
             start: Instant::now(),
-            event_queue: VecDeque::new(),
             timeout_queue: BinaryHeap::new(),
             options,
         })
+    }
+
+    pub fn wait_event(&mut self) -> Event {
+        loop {
+            let timeout = if let Some((Reverse(expiry_time), tag)) = self.timeout_queue.peek() {
+                if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
+                    timeout
+                } else {
+                    let tag = *tag;
+                    self.timeout_queue.pop();
+                    return Event::Timeout(TimeoutEvent { tag });
+                }
+            } else {
+                Duration::from_secs(1) // Arbitrary large timeout value
+            };
+
+            let event = self
+                .sdl_event_pump
+                .wait_event_timeout(timeout.as_millis() as u32)
+                .and_then(crate::event::to_pagurus_event);
+            if let Some(event) = event {
+                return event;
+            }
+        }
     }
 
     fn resolve_resource_path(&self, name: &ResourceName) -> PathBuf {
@@ -127,14 +155,14 @@ impl System for SdlSystem {
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
         let samples = data.samples().collect::<Vec<_>>();
-        self.audio_queue
+        self.sdl_audio_queue
             .queue_audio(&samples)
             .unwrap_or_else(|e| panic!("failed to queue audio data: {e}"));
         samples.len()
     }
 
     fn audio_cancel(&mut self) {
-        self.audio_queue.clear();
+        self.sdl_audio_queue.clear();
     }
 
     fn console_log(&mut self, message: &str) {
@@ -157,39 +185,50 @@ impl System for SdlSystem {
     }
 
     fn resource_put(&mut self, name: &ResourceName, data: &[u8]) {
-        self.resolve_resource_path(name);
-        //         let action = self.next_action_id;
-        //         self.next_action_id = ActionId::new(self.next_action_id.get() + 1);
-
-        //         let event = if uri.starts_with("grn:json:") {
-        //             let path = Path::new(RESOURCE_DIR).join(&uri["grn:json:".len()..]);
-        //             std::fs::create_dir_all(path.parent().expect("TODO")).unwrap_or_else(|e| {
-        //                 // TODO: succeeded=false
-        //                 panic!("failed to write to {path:?} file: {e}")
-        //             });
-        //             std::fs::write(&path, data).unwrap_or_else(|e| {
-        //                 // TODO: succeeded=false
-        //                 panic!("failed to write to {path:?} file: {e}")
-        //             });
-        //             Event::Resource(ResourceEvent::Put {
-        //                 action,
-        //                 succeeded: true,
-        //             })
-        //         } else {
-        //             Event::Resource(ResourceEvent::Put {
-        //                 action,
-        //                 succeeded: false,
-        //             })
-        //         };
-        //         self.event_queue.push_back(event);
+        let path = self.resolve_resource_path(name);
+        let event_tx = self.sdl_event.event_sender();
+        let name = name.clone();
+        let data = data.to_owned();
+        std::thread::spawn(move || {
+            let failed = (|| {
+                if let Some(dir) = path.parent() {
+                    std::fs::create_dir_all(dir).or_fail()?;
+                }
+                std::fs::write(path, &data).or_fail()?;
+                Ok(())
+            })()
+            .err();
+            let event = Event::Resource(ResourceEvent::Put { name, failed });
+            let _ = event_tx.push_custom_event(event);
+        });
     }
 
     fn resource_get(&mut self, name: &ResourceName) {
-        todo!()
+        let path = self.resolve_resource_path(name);
+        let event_tx = self.sdl_event.event_sender();
+        let name = name.clone();
+        std::thread::spawn(move || {
+            let (data, failed) = match std::fs::read(path) {
+                Ok(data) => (Some(data), None),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
+                Err(e) => (None, Some(Failure::new(e.to_string()))),
+            };
+            let event = Event::Resource(ResourceEvent::Get { name, data, failed });
+            let _ = event_tx.push_custom_event(event);
+        });
     }
 
     fn resource_delete(&mut self, name: &ResourceName) {
-        todo!()
+        let path = self.resolve_resource_path(name);
+        let event_tx = self.sdl_event.event_sender();
+        let name = name.clone();
+        std::thread::spawn(move || {
+            let failed = std::fs::remove_file(path).err().and_then(|e| {
+                (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
+            });
+            let event = Event::Resource(ResourceEvent::Delete { name, failed });
+            let _ = event_tx.push_custom_event(event);
+        });
     }
 }
 
@@ -198,97 +237,3 @@ impl std::fmt::Debug for SdlSystem {
         write!(f, "SdlSystem {{ .. }}")
     }
 }
-
-// use byteorder::{BigEndian, ByteOrder};
-// use gazami::{ActionId, Event, GameRequirements, ResourceEvent, System};
-// use sdl2::{
-//     audio::{AudioQueue, AudioSpecDesired},
-//     pixels::PixelFormatEnum,
-//     render::Canvas,
-//     video::Window,
-//     EventPump,
-// };
-// use std::{
-//     collections::VecDeque,
-//     num::NonZeroU32,
-//     path::Path,
-//     time::{Duration, Instant},
-// };
-
-// // TODO: option
-// const RESOURCE_DIR: &str = "data/";
-
-//     pub fn wait_event(&mut self) -> Event {
-//         loop {
-//             let timeout = self.last_tick.map_or(0, |last| {
-//                 let elapsed = last.elapsed().as_millis() as u32;
-//                 let max_wait_ms = 1000 / self.max_fps().get();
-//                 max_wait_ms.saturating_sub(elapsed)
-//             });
-//             if timeout == 0 {
-//                 break;
-//             }
-//             if let Some(event) = self.event_queue.pop_front() {
-//                 return event;
-//             }
-
-//             if let Some(event) = self.sdl_event_pump.wait_event_timeout(timeout) {
-//                 // TODO: consider fixed_aspect_ratio
-//                 if let Some(event) = crate::event::sdl_event_to_gazami_event(&event) {
-//                     return event;
-//                 }
-//             } else {
-//                 break;
-//             }
-//         }
-
-//         self.last_tick = Some(Instant::now());
-//         Event::Tick
-//     }
-// }
-
-// impl System for SdlSystem {
-
-//     fn resource_put(&mut self, uri: &str, data: &[u8]) -> ActionId {
-//     }
-
-//     fn resource_get(&mut self, uri: &str) -> ActionId {
-//         let action = self.next_action_id;
-//         self.next_action_id = ActionId::new(self.next_action_id.get() + 1);
-
-//         // TODO: Use I/O thread
-//         let event = if uri.starts_with("grn:json:") {
-//             let path = Path::new(RESOURCE_DIR).join(&uri["grn:json:".len()..]);
-//             if path.exists() {
-//                 let data = std::fs::read(&path).unwrap_or_else(|e| {
-//                     // TODO: succeeded=false
-//                     panic!("failed to read {path:?} file: {e}")
-//                 });
-//                 Event::Resource(ResourceEvent::Get {
-//                     action,
-//                     data: Some(data),
-//                     succeeded: true,
-//                 })
-//             } else {
-//                 Event::Resource(ResourceEvent::Get {
-//                     action,
-//                     data: None,
-//                     succeeded: true,
-//                 })
-//             }
-//         } else {
-//             Event::Resource(ResourceEvent::Get {
-//                 action,
-//                 data: None,
-//                 succeeded: false,
-//             })
-//         };
-//         self.event_queue.push_back(event);
-
-//         action
-//     }
-
-//     fn resource_delete(&mut self, _uri: &str) -> ActionId {
-//         todo!()
-//     }
-// }

@@ -1,3 +1,10 @@
+use pagurus::event::Event;
+use sdl2::event::Event as SdlEvent;
+
+pub fn to_pagurus_event(sdl_event: SdlEvent) -> Option<Event> {
+    None
+}
+
 // use gazami::{Button, Event, Key, KeyEvent, MouseEvent, Position, Size, WindowEvent};
 // use sdl2::{
 //     event::{Event as SdlEvent, WindowEvent as SdlWindowEvent},
