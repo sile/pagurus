@@ -1,5 +1,7 @@
 use crate::color::{Rgb, Rgba};
+use pagurus::failure::OrFail;
 use pagurus::spatial::{Region, Size};
+use pagurus::Result;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -25,37 +27,82 @@ impl Canvas {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Sprite {
-    data: Arc<Vec<Rgba>>,
-    region: Region,
+    image_data: Arc<Vec<Rgba>>,
+    image_size: Size,
+    sprite_region: Region,
 }
 
 impl Sprite {
-    pub fn new(data: Vec<Rgba>, size: Size) -> Result<Self, SpriteError> {
-        if data.len() != size.len() {
-            return Err(SpriteError::SizeMismatch {
-                pixels: data.len(),
-                size,
-            });
-        }
+    pub fn from_rgb24_bytes(bytes: &[u8], size: Size) -> Result<Self> {
+        (bytes.len() % 3 == 0).or_fail()?;
+        (bytes.len() / 3 == size.len()).or_fail()?;
+
         Ok(Self {
-            data: Arc::new(data),
-            region: Region::from(size),
+            image_data: Arc::new(
+                bytes
+                    .chunks(3)
+                    .map(|x| Rgba::new(x[0], x[1], x[2], 255))
+                    .collect(),
+            ),
+            image_size: size,
+            sprite_region: size.into(),
         })
     }
 
-    pub fn data(&self) -> &[Rgba] {
-        &self.data
+    pub fn from_rgba32_bytes(bytes: &[u8], size: Size) -> Result<Self> {
+        (bytes.len() % 4 == 0).or_fail()?;
+        (bytes.len() / 4 == size.len()).or_fail()?;
+
+        Ok(Self {
+            image_data: Arc::new(
+                bytes
+                    .chunks(4)
+                    .map(|x| Rgba::new(x[0], x[1], x[2], x[3]))
+                    .collect(),
+            ),
+            image_size: size,
+            sprite_region: size.into(),
+        })
     }
 
-    pub fn region(&self) -> Region {
-        self.region
+    pub fn original(&self) -> Self {
+        Self {
+            image_data: Arc::clone(&self.image_data),
+            image_size: self.image_size,
+            sprite_region: self.image_size.into(),
+        }
+    }
+
+    pub fn size(&self) -> Size {
+        self.sprite_region.size
+    }
+
+    pub fn clip(&self, region: Region) -> Result<Self> {
+        Region::from(self.size())
+            .contains(region)
+            .or_fail_with_reason(|_| {
+                format!(
+                    "failed to clip a sprite: clip_region={:?}, sprite_size={:?}",
+                    region,
+                    self.size()
+                )
+            })?;
+        Ok(Self {
+            image_data: Arc::clone(&self.image_data),
+            image_size: self.image_size,
+            sprite_region: Region::new(self.sprite_region.position + region.position, region.size),
+        })
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum SpriteError {
-    #[error("expected {size:?}, but got {pixels} pixels image data")]
-    SizeMismatch { pixels: usize, size: Size },
+impl std::fmt::Debug for Sprite {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Sprite {{ image_size: {:?}, sprite_region: {:?}, .. }}",
+            self.image_size, self.sprite_region
+        )
+    }
 }

@@ -36,6 +36,7 @@ pub struct SystemConfig {
 
 #[derive(Debug)]
 pub struct VideoFrame<'a> {
+    // TODO: bytes
     data: &'a [u8],
     size: Size,
 }
@@ -65,6 +66,7 @@ impl<'a> VideoFrame<'a> {
 
 #[derive(Debug)]
 pub struct AudioData<'a> {
+    // TODO: bytes
     data: &'a [u8],
 }
 

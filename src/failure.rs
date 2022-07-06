@@ -62,6 +62,16 @@ pub trait OrFail {
     type Item;
 
     fn or_fail(self) -> Result<Self::Item, Failure>;
+    fn or_fail_with_reason<F>(self, f: F) -> Result<Self::Item, Failure>
+    where
+        F: FnOnce(String) -> String,
+        Self: Sized,
+    {
+        self.or_fail().map_err(|mut failure| {
+            failure.reason = f(failure.reason);
+            failure
+        })
+    }
 }
 
 impl OrFail for bool {

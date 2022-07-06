@@ -9,6 +9,7 @@ edition = "2021"
 getrandom = { version = "0.2", features = ["custom"] }
 log = { version = "0.4", features = ["std"] }
 pagurus = { version = "0.1", path = "../" }
+png = "0.17"
 rand_chacha = "0.3"
 rand_core = "0.6"
 serde = { version = "1", features = ["derive"] }

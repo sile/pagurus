@@ -84,6 +84,7 @@ impl SdlSystem {
         let sdl_video = sdl_context.video().map_err(Failure::new)?;
         let mut sdl_canvas = canvas(sdl_video).or_fail()?;
         if let Some(size) = requirements.window_size {
+            // TODO: check behaviour
             sdl_canvas
                 .set_logical_size(size.width, size.height)
                 .or_fail()?;
@@ -216,6 +217,7 @@ impl System for SdlSystem {
         let event_tx = self.sdl_event.event_sender();
         let name = name.clone();
         let data = data.to_owned();
+        // TODO: use an I/O thread to serialize request handling
         std::thread::spawn(move || {
             let failed = (|| {
                 if let Some(dir) = path.parent() {
