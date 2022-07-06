@@ -1,16 +1,115 @@
-use pagurus::event::Event;
-use sdl2::event::Event as SdlEvent;
+use pagurus::event::{Event, WindowEvent};
+use pagurus::spatial::Size;
+use sdl2::event::{Event as SdlEvent, WindowEvent as SdlWindowEvent};
 
 pub fn to_pagurus_event(sdl_event: SdlEvent) -> Option<Event> {
-    None
+    match sdl_event {
+        SdlEvent::Quit { .. } => Some(Event::Terminating),
+        SdlEvent::User { .. } => sdl_event.as_user_event_type::<Event>(),
+        SdlEvent::Window { win_event, .. } => to_pagurus_window_event(win_event).map(Event::Window),
+        // SdlEvent::KeyDown {
+        //     timestamp,
+        //     window_id,
+        //     keycode,
+        //     scancode,
+        //     keymod,
+        //     repeat,
+        // } => todo!(),
+        // SdlEvent::KeyUp {
+        //     timestamp,
+        //     window_id,
+        //     keycode,
+        //     scancode,
+        //     keymod,
+        //     repeat,
+        // } => todo!(),
+        // SdlEvent::MouseMotion {
+        //     timestamp,
+        //     window_id,
+        //     which,
+        //     mousestate,
+        //     x,
+        //     y,
+        //     xrel,
+        //     yrel,
+        // } => todo!(),
+        // SdlEvent::MouseButtonDown {
+        //     timestamp,
+        //     window_id,
+        //     which,
+        //     mouse_btn,
+        //     clicks,
+        //     x,
+        //     y,
+        // } => todo!(),
+        // SdlEvent::MouseButtonUp {
+        //     timestamp,
+        //     window_id,
+        //     which,
+        //     mouse_btn,
+        //     clicks,
+        //     x,
+        //     y,
+        // } => todo!(),
+        // SdlEvent::FingerDown {
+        //     timestamp,
+        //     touch_id,
+        //     finger_id,
+        //     x,
+        //     y,
+        //     dx,
+        //     dy,
+        //     pressure,
+        // } => todo!(),
+        // SdlEvent::FingerUp {
+        //     timestamp,
+        //     touch_id,
+        //     finger_id,
+        //     x,
+        //     y,
+        //     dx,
+        //     dy,
+        //     pressure,
+        // } => todo!(),
+        // SdlEvent::FingerMotion {
+        //     timestamp,
+        //     touch_id,
+        //     finger_id,
+        //     x,
+        //     y,
+        //     dx,
+        //     dy,
+        //     pressure,
+        // } => todo!(),
+        // SdlEvent::MultiGesture {
+        //     timestamp,
+        //     touch_id,
+        //     d_theta,
+        //     d_dist,
+        //     x,
+        //     y,
+        //     num_fingers,
+        // } => todo!(),
+        // SdlEvent::RenderTargetsReset { timestamp } => todo!(),
+        // SdlEvent::RenderDeviceReset { timestamp } => todo!(),
+        _ => {
+            dbg!(sdl_event);
+            None
+        }
+    }
 }
 
-// use gazami::{Button, Event, Key, KeyEvent, MouseEvent, Position, Size, WindowEvent};
-// use sdl2::{
-//     event::{Event as SdlEvent, WindowEvent as SdlWindowEvent},
-//     keyboard::Keycode,
-//     mouse::MouseButton,
-// };
+fn to_pagurus_window_event(sdl_event: SdlWindowEvent) -> Option<WindowEvent> {
+    dbg!(&sdl_event);
+    match sdl_event {
+        SdlWindowEvent::SizeChanged(width, height) => Some(WindowEvent::Resized {
+            size: Size::from_wh(width as u32, height as u32),
+        }),
+        SdlWindowEvent::FocusGained => Some(WindowEvent::FocusGained),
+        SdlWindowEvent::FocusLost => Some(WindowEvent::FocusLost),
+        _ => None,
+    }
+}
 
 // pub fn sdl_event_to_gazami_event(from: &SdlEvent) -> Option<Event> {
 //     match from {
@@ -43,15 +142,6 @@ pub fn to_pagurus_event(sdl_event: SdlEvent) -> Option<Event> {
 //             position: Position::from_xy(*x as u32, *y as u32),
 //         })),
 //         SdlEvent::Window { win_event, .. } => match *win_event {
-//             SdlWindowEvent::Resized(width, height) => Some(Event::Window(WindowEvent::Resize {
-//                 size: Size::from_width_heigth(width as u32, height as u32),
-//             })),
-//             SdlWindowEvent::SizeChanged(width, height) => {
-//                 Some(Event::Window(WindowEvent::Resize {
-//                     size: Size::from_width_heigth(width as u32, height as u32),
-//                 }))
-//             }
-//             _ => None,
 //         },
 //         _ => None,
 //     }
