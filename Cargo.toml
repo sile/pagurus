@@ -16,4 +16,5 @@ members = [
     "pagurus_sdl_system",
     "pagurus_android_runtime",
     "examples/snake", # TODO: examples/games/snake or examples/snake_game
+    "examples/sdl_runtime",
 ]

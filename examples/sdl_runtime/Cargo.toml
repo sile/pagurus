@@ -1,14 +1,13 @@
 [package]
-name = "snake"
+name = "sdl_runtime"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
+clap = { version = "3", features = ["derive"] }
 pagurus = { path = "../../", version = "0.1" }
-pagurus_game_std = { path = "../../pagurus_game_std/", version = "0.1" }
+pagurus_sdl_system = { path = "../../pagurus_sdl_system/", version = "0.1" }
+pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.1" }

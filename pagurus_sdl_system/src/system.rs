@@ -13,6 +13,7 @@ use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
+// TODO(?): Use a builder instead?
 #[derive(Debug, Clone)]
 pub struct SdlSystemOptions {
     pub states_dir: PathBuf,
@@ -116,6 +117,11 @@ impl SdlSystem {
             timeout_queue: BinaryHeap::new(),
             options,
         })
+    }
+
+    pub fn logical_window_size(&self) -> Size {
+        let (width, height) = self.sdl_canvas.logical_size();
+        Size { width, height }
     }
 
     pub fn wait_event(&mut self) -> Event {
