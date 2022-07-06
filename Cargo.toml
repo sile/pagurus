@@ -13,7 +13,7 @@ thiserror = "1"
 members = [
     "pagurus_game_std",
     "pagurus_runtime_std",
-    "pagurus_sdl_runtime",
+    "pagurus_sdl_system",
     "pagurus_android_runtime",
     "examples/snake",
 ]

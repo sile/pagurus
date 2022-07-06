@@ -1,5 +1,5 @@
 [package]
-name = "pagurus_sdl_runtime"
+name = "pagurus_sdl_system"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 pagurus = { path = "../", version = "0.1" }
-pagurus_runtime_std = { path = "../pagurus_runtime_std/", version = "0.1" }
 sdl2 = "0.35"
