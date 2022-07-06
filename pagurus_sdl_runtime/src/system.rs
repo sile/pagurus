@@ -7,7 +7,7 @@ use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::{EventPump, EventSubsystem};
+use sdl2::{EventPump, EventSubsystem, VideoSubsystem};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::PathBuf;
@@ -50,22 +50,43 @@ impl SdlSystem {
     pub const DEFAULT_TITLE: &'static str = "Pagurus";
     pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
 
-    // TODO: with_custom_window
     pub fn new(requirements: GameRequirements, options: SdlSystemOptions) -> Result<Self> {
+        let required_window_size = requirements.window_size;
+        Self::with_canvas(
+            |sdl_video| {
+                let window_size = required_window_size.unwrap_or(Self::DEFAULT_WINDOW_SIZE);
+                let sdl_window = sdl_video
+                    .window(Self::DEFAULT_TITLE, window_size.width, window_size.height)
+                    .position_centered()
+                    .build()
+                    .or_fail()?;
+                let sdl_canvas = sdl_window.into_canvas().build().or_fail()?;
+                Ok(sdl_canvas)
+            },
+            requirements,
+            options,
+        )
+        .or_fail()
+    }
+
+    pub fn with_canvas<F>(
+        canvas: F,
+        requirements: GameRequirements,
+        options: SdlSystemOptions,
+    ) -> Result<Self>
+    where
+        F: FnOnce(VideoSubsystem) -> Result<Canvas<Window>>,
+    {
         let sdl_context = sdl2::init().map_err(Failure::new)?;
 
-        // TODO: SDL_RenderSetLogicalSize, SDL_RenderSetScale
         // Video
-        let video_subsystem = sdl_context.video().map_err(Failure::new)?;
-        let window_size = requirements
-            .window_size
-            .unwrap_or(Self::DEFAULT_WINDOW_SIZE);
-        let window = video_subsystem
-            .window(Self::DEFAULT_TITLE, window_size.width, window_size.height)
-            .position_centered()
-            .build()
-            .or_fail()?;
-        let sdl_canvas = window.into_canvas().build().or_fail()?;
+        let sdl_video = sdl_context.video().map_err(Failure::new)?;
+        let mut sdl_canvas = canvas(sdl_video).or_fail()?;
+        if let Some(size) = requirements.window_size {
+            sdl_canvas
+                .set_logical_size(size.width, size.height)
+                .or_fail()?;
+        }
 
         // Audio
         let sdl_audio = sdl_context.audio().map_err(Failure::new)?;
