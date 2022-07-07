@@ -1,5 +1,5 @@
 use pagurus::event::{Event, StateEvent};
-use pagurus::{ActionId, AudioData, Game, System, SystemConfig, VideoFrame};
+use pagurus::{ActionId, AudioData, Configuration, Game, System, VideoFrame};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -25,7 +25,7 @@ where
     G: Game<WasmSystem>,
 {
     let game = unsafe { &mut *game };
-    let config: SystemConfig = deserialize(config_bytes_ptr).unwrap_or_else(|e| {
+    let config: Configuration = deserialize(config_bytes_ptr).unwrap_or_else(|e| {
         panic!("failed to deserialize `SystemConfig`: {e}");
     });
     if let Err(e) = game.initialize(&mut WasmSystem, config) {
@@ -154,7 +154,7 @@ impl System for WasmSystem {
         extern "C" {
             fn systemVideoRender(data: *const u8, data_len: i32, width: i32);
         }
-        let data = frame.data();
+        let data = frame.bytes();
         let width = frame.size().width as i32;
         unsafe { systemVideoRender(data.as_ptr(), data.len() as i32, width) }
     }
@@ -163,7 +163,7 @@ impl System for WasmSystem {
         extern "C" {
             fn systemAudioEnqueue(data: *const u8, data_len: i32) -> i32;
         }
-        unsafe { systemAudioEnqueue(data.data().as_ptr(), data.data().len() as i32) as usize }
+        unsafe { systemAudioEnqueue(data.bytes().as_ptr(), data.bytes().len() as i32) as usize }
     }
 
     fn audio_cancel(&mut self) {

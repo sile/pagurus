@@ -192,7 +192,7 @@ impl System for SdlSystem {
             )
             .unwrap_or_else(|e| panic!("failed to create a texture: {e}"));
         texture
-            .update(None, frame.data(), frame.size().width as usize * 3)
+            .update(None, frame.bytes(), frame.size().width as usize * 3)
             .unwrap_or_else(|e| panic!("failed to update texture: {e}"));
 
         self.sdl_canvas

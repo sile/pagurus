@@ -1,6 +1,6 @@
 use clap::Parser;
 use pagurus::failure::OrFail;
-use pagurus::{Game, Result, SystemConfig};
+use pagurus::{Configuration, Game, Result};
 use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
 use pagurus_wasmer::WasmGame;
 use std::path::PathBuf;
@@ -23,8 +23,9 @@ fn main() -> Result<()> {
         .logical_window_size(requirements.logical_window_size)
         .build()
         .or_fail()?;
-    let config = SystemConfig {
-        window_size: system.window_size(),
+    let config = Configuration {
+        initial_window_size: system.window_size(),
+        ..Default::default()
     };
 
     // Loop

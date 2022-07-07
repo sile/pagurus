@@ -151,9 +151,7 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            let frame = VideoFrame::new(data, width).unwrap_or_else(|| {
-                panic!("invalid video frame: data_len={data_len}, width={width}")
-            });
+            let frame = VideoFrame::new(data, width).unwrap_or_else(|e| panic!("{e}"));
             system.video_render(frame);
         });
     }
@@ -164,7 +162,7 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            let data = AudioData::new(data).unwrap_or_else(|e| panic!("{}", e.reason));
+            let data = AudioData::new(data).unwrap_or_else(|e| panic!("{e}"));
             system.audio_enqueue(data) as i32
         })
     }
