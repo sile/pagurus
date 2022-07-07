@@ -138,9 +138,9 @@ impl<S: 'static + System> Imports<S> {
                 "systemClockUnixTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_unix_time),
                 "systemClockSetTimeout" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_set_timeout),
                 "systemConsoleLog" => Function::new_native_with_env(&store, env.clone(), Self::system_console_log),
-                "systemResourcePut" => Function::new_native_with_env(&store, env.clone(), Self::system_resource_put),
-                "systemResourceGet" => Function::new_native_with_env(&store, env.clone(), Self::system_resource_get),
-                "systemResourceDelete" => Function::new_native_with_env(&store, env.clone(), Self::system_resource_delete),
+                "systemStateSave" => Function::new_native_with_env(&store, env.clone(), Self::system_state_save),
+                "systemStateLoad" => Function::new_native_with_env(&store, env.clone(), Self::system_state_load),
+                "systemStateDelete" => Function::new_native_with_env(&store, env.clone(), Self::system_state_delete),
             }
         }
     }
@@ -200,7 +200,7 @@ impl<S: 'static + System> Imports<S> {
         });
     }
 
-    fn system_resource_put(
+    fn system_state_save(
         env: &Env<S>,
         name: WasmPtr<u8, Array>,
         name_len: u32,
@@ -210,36 +210,30 @@ impl<S: 'static + System> Imports<S> {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
-                .unwrap_or_else(|| panic!("invalid UTF-8 string"))
-                .parse()
-                .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
+                .unwrap_or_else(|| panic!("invalid UTF-8 string"));
             let data = std::slice::from_raw_parts(
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            system.resource_put(&name, data).get() as i64
+            system.state_save(&name, data).get() as i64
         })
     }
 
-    fn system_resource_get(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
+    fn system_state_load(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
-                .unwrap_or_else(|| panic!("invalid UTF-8 string"))
-                .parse()
-                .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
-            system.resource_get(&name).get() as i64
+                .unwrap_or_else(|| panic!("invalid UTF-8 string"));
+            system.state_load(&name).get() as i64
         })
     }
 
-    fn system_resource_delete(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
+    fn system_state_delete(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
-                .unwrap_or_else(|| panic!("invalid UTF-8 string"))
-                .parse()
-                .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
-            system.resource_delete(&name).get() as i64
+                .unwrap_or_else(|| panic!("invalid UTF-8 string"));
+            system.state_delete(&name).get() as i64
         })
     }
 }

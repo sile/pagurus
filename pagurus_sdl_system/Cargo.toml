@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 pagurus = { path = "../", version = "0.1" }
 sdl2 = "0.35"
+urlencoding = "2"

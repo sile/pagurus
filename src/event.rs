@@ -15,7 +15,7 @@ pub enum Event {
     Mouse(MouseEvent),
     Touch(TouchEvent),
     Window(WindowEvent),
-    Resource(ResourceEvent),
+    State(StateEvent),
 }
 
 impl Event {
@@ -47,20 +47,20 @@ pub enum WindowEvent {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
-pub enum ResourceEvent {
-    Put {
+pub enum StateEvent {
+    Saved {
         id: ActionId,
         #[serde(default)]
         failed: Option<Failure>,
     },
-    Get {
+    Loaded {
         id: ActionId,
         #[serde(default)]
         data: Option<Vec<u8>>,
         #[serde(default)]
         failed: Option<Failure>,
     },
-    Delete {
+    Deleted {
         id: ActionId,
         #[serde(default)]
         failed: Option<Failure>,

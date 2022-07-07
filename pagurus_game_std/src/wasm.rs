@@ -1,5 +1,4 @@
-use pagurus::event::{Event, ResourceEvent};
-use pagurus::resource::ResourceName;
+use pagurus::event::{Event, StateEvent};
 use pagurus::{ActionId, AudioData, Game, System, SystemConfig, VideoFrame};
 use std::time::Duration;
 
@@ -51,7 +50,7 @@ where
         panic!("failed to deserialize `Event`: {e}");
     });
     if data_ptr != std::ptr::null_mut() {
-        if let Event::Resource(ResourceEvent::Get { data, .. }) = &mut event {
+        if let Event::State(StateEvent::Loaded { data, .. }) = &mut event {
             *data = Some(*unsafe { Box::from_raw(data_ptr) });
         }
     }
@@ -205,10 +204,9 @@ impl System for WasmSystem {
         }
     }
 
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId {
-        let name = name.to_string();
+    fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
         extern "C" {
-            fn systemResourcePut(
+            fn systemStateSave(
                 name: *const u8,
                 name_len: i32,
                 data: *const u8,
@@ -216,7 +214,7 @@ impl System for WasmSystem {
             ) -> i64;
         }
         unsafe {
-            let id = systemResourcePut(
+            let id = systemStateSave(
                 name.as_ptr(),
                 name.len() as i32,
                 data.as_ptr(),
@@ -226,24 +224,22 @@ impl System for WasmSystem {
         }
     }
 
-    fn resource_get(&mut self, name: &ResourceName) -> ActionId {
-        let name = name.to_string();
+    fn state_load(&mut self, name: &str) -> ActionId {
         extern "C" {
-            fn systemResourceGet(name: *const u8, name_len: i32) -> i64;
+            fn systemStateLoad(name: *const u8, name_len: i32) -> i64;
         }
         unsafe {
-            let id = systemResourceGet(name.as_ptr(), name.len() as i32);
+            let id = systemStateLoad(name.as_ptr(), name.len() as i32);
             ActionId::new(id as u64)
         }
     }
 
-    fn resource_delete(&mut self, name: &ResourceName) -> ActionId {
-        let name = name.to_string();
+    fn state_delete(&mut self, name: &str) -> ActionId {
         extern "C" {
-            fn systemResourceDelete(name: *const u8, name: i32) -> i64;
+            fn systemStateDelete(name: *const u8, name: i32) -> i64;
         }
         unsafe {
-            let id = systemResourceDelete(name.as_ptr(), name.len() as i32);
+            let id = systemStateDelete(name.as_ptr(), name.len() as i32);
             ActionId::new(id as u64)
         }
     }

@@ -1,7 +1,7 @@
 use crate::bytes::Bytes;
 use crate::env::Env;
 use crate::ffi::{Exports, Imports};
-use pagurus::event::{Event, ResourceEvent};
+use pagurus::event::{Event, StateEvent};
 use pagurus::failure::OrFail;
 use pagurus::{Game, GameRequirements, Result, System, SystemConfig};
 use serde::{Deserialize, Serialize};
@@ -78,7 +78,7 @@ impl<S: System> Game<S> for WasmGame<S> {
     fn handle_event(&mut self, system: &mut S, mut event: Event) -> Result<bool> {
         self.env.set_system(system).or_fail()?;
 
-        let data = if let Event::Resource(ResourceEvent::Get { data, .. }) = &mut event {
+        let data = if let Event::State(StateEvent::Loaded { data, .. }) = &mut event {
             data.take()
                 .map(|data| Bytes::from_slice(&self.memory, &self.exports, &data).or_fail())
                 .transpose()?

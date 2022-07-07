@@ -1,7 +1,6 @@
 use crate::event::Event;
 use crate::failure::{Failure, OrFail};
 use crate::i18n::{LanguageTag, TimeZone};
-use crate::resource::ResourceName;
 use crate::spatial::Size;
 use std::time::Duration;
 
@@ -9,7 +8,6 @@ pub mod event;
 pub mod failure;
 pub mod i18n;
 pub mod input;
-pub mod resource;
 pub mod spatial;
 
 pub trait System {
@@ -20,9 +18,9 @@ pub trait System {
     fn clock_game_time(&mut self) -> Duration;
     fn clock_unix_time(&mut self) -> Duration;
     fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId;
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId;
-    fn resource_get(&mut self, name: &ResourceName) -> ActionId;
-    fn resource_delete(&mut self, name: &ResourceName) -> ActionId;
+    fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
+    fn state_load(&mut self, name: &str) -> ActionId;
+    fn state_delete(&mut self, name: &str) -> ActionId;
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

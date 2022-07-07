@@ -1,6 +1,5 @@
-use pagurus::event::{Event, ResourceEvent, TimeoutEvent};
+use pagurus::event::{Event, StateEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
-use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
 use pagurus::{ActionId, AudioData, GameRequirements, Result, System, VideoFrame};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
@@ -156,12 +155,10 @@ impl SdlSystem {
         }
     }
 
-    fn resolve_resource_path(&self, name: &ResourceName) -> PathBuf {
-        match name {
-            ResourceName::State(path) => self.options.states_dir.join(path.as_ref()),
-            ResourceName::Asset(path) => self.options.assets_dir.join(path.as_ref()),
-            ResourceName::File(path) => self.options.files_dir.join(path.as_ref()),
-        }
+    fn state_file_path(&self, name: &str) -> PathBuf {
+        self.options
+            .states_dir
+            .join(urlencoding::encode(name).as_ref())
     }
 }
 
@@ -221,29 +218,29 @@ impl System for SdlSystem {
         id
     }
 
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId {
+    fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
         let id = self.next_action_id.get_and_increment();
-        let path = self.resolve_resource_path(name);
+        let path = self.state_file_path(name);
         let data = data.to_owned();
         self.io_request_tx
-            .send(IoRequest::Put { id, path, data })
+            .send(IoRequest::Write { id, path, data })
             .unwrap_or_else(|_| panic!("I/O thread has terminated"));
         id
     }
 
-    fn resource_get(&mut self, name: &ResourceName) -> ActionId {
+    fn state_load(&mut self, name: &str) -> ActionId {
         let id = self.next_action_id.get_and_increment();
-        let path = self.resolve_resource_path(name);
+        let path = self.state_file_path(name);
         self.io_request_tx
-            .send(IoRequest::Get { id, path })
+            .send(IoRequest::Read { id, path })
             .unwrap_or_else(|_| panic!("I/O thread has terminated"));
         std::thread::spawn(move || {});
         id
     }
 
-    fn resource_delete(&mut self, name: &ResourceName) -> ActionId {
+    fn state_delete(&mut self, name: &str) -> ActionId {
         let id = self.next_action_id.get_and_increment();
-        let path = self.resolve_resource_path(name);
+        let path = self.state_file_path(name);
         self.io_request_tx
             .send(IoRequest::Delete { id, path })
             .unwrap_or_else(|_| panic!("I/O thread has terminated"));
@@ -277,11 +274,11 @@ impl IoThread {
 
     fn run_once(&mut self) -> bool {
         match self.request_rx.recv() {
-            Ok(IoRequest::Put { id, path, data }) => {
-                self.handle_put(id, path, data);
+            Ok(IoRequest::Write { id, path, data }) => {
+                self.handle_write(id, path, data);
             }
-            Ok(IoRequest::Get { id, path }) => {
-                self.handle_get(id, path);
+            Ok(IoRequest::Read { id, path }) => {
+                self.handle_read(id, path);
             }
             Ok(IoRequest::Delete { id, path }) => {
                 self.handle_delete(id, path);
@@ -291,7 +288,7 @@ impl IoThread {
         true
     }
 
-    fn handle_put(&mut self, id: ActionId, path: PathBuf, data: Vec<u8>) {
+    fn handle_write(&mut self, id: ActionId, path: PathBuf, data: Vec<u8>) {
         let failed = (|| {
             if let Some(dir) = path.parent() {
                 std::fs::create_dir_all(dir).or_fail()?;
@@ -300,19 +297,19 @@ impl IoThread {
             Ok(())
         })()
         .err();
-        let event = Event::Resource(ResourceEvent::Put { id, failed });
+        let event = Event::State(StateEvent::Saved { id, failed });
         self.event_tx
             .push_custom_event(event)
             .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
     }
 
-    fn handle_get(&mut self, id: ActionId, path: PathBuf) {
+    fn handle_read(&mut self, id: ActionId, path: PathBuf) {
         let (data, failed) = match std::fs::read(path) {
             Ok(data) => (Some(data), None),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
             Err(e) => (None, Some(Failure::new(e.to_string()))),
         };
-        let event = Event::Resource(ResourceEvent::Get { id, data, failed });
+        let event = Event::State(StateEvent::Loaded { id, data, failed });
         self.event_tx
             .push_custom_event(event)
             .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
@@ -322,7 +319,7 @@ impl IoThread {
         let failed = std::fs::remove_file(path).err().and_then(|e| {
             (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
         });
-        let event = Event::Resource(ResourceEvent::Delete { id, failed });
+        let event = Event::State(StateEvent::Deleted { id, failed });
         self.event_tx
             .push_custom_event(event)
             .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
@@ -331,12 +328,12 @@ impl IoThread {
 
 #[derive(Debug)]
 enum IoRequest {
-    Put {
+    Write {
         id: ActionId,
         path: PathBuf,
         data: Vec<u8>,
     },
-    Get {
+    Read {
         id: ActionId,
         path: PathBuf,
     },
