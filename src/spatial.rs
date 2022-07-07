@@ -23,6 +23,10 @@ impl Size {
         (0..self.height as i32)
             .flat_map(move |y| (0..self.width as i32).map(move |x| Position { x, y }))
     }
+
+    pub fn contains(self, pos: Position) -> bool {
+        (0..self.width as i32).contains(&pos.x) && (0..self.height as i32).contains(&pos.y)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]

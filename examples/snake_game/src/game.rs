@@ -1,5 +1,6 @@
 use crate::assets::Assets;
 use pagurus::failure::OrFail;
+use pagurus::spatial::Size;
 use pagurus::{event::Event, Game, GameRequirements, Result, System, SystemConfig};
 use pagurus_game_std::audio::AudioPlayer;
 use pagurus_game_std::logger::Logger;
@@ -26,8 +27,10 @@ impl Default for SnakeGame {
 
 impl<S: System> Game<S> for SnakeGame {
     fn requirements(&self) -> Result<GameRequirements> {
-        // TODO
-        Ok(Default::default())
+        Ok(GameRequirements {
+            logical_window_size: Some(Size::from_wh(800, 800)),
+            ..Default::default()
+        })
     }
 
     fn initialize(&mut self, system: &mut S, config: SystemConfig) -> Result<()> {
@@ -61,6 +64,7 @@ impl<S: System> Game<S> for SnakeGame {
                 } else {
                     return Ok(true);
                 };
+            log::debug!("{event:?}");
             Ok(!matches!(event, Event::Terminating))
         })();
         self.logger.flush(system);

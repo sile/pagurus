@@ -17,10 +17,10 @@ fn main() -> Result<()> {
     // Game
     let wasm_bytes = std::fs::read(&args.game_wasm_path).or_fail()?;
     let mut game = WasmGame::<SdlSystem>::new(&wasm_bytes).or_fail()?;
+    let requirements = game.requirements().or_fail()?;
 
     // System
-    let mut system =
-        SdlSystem::new(game.requirements().or_fail()?, SdlSystemOptions::default()).or_fail()?;
+    let mut system = SdlSystem::new(requirements, SdlSystemOptions::default()).or_fail()?;
     let config = SystemConfig {
         window_size: system.logical_window_size(),
         language: LanguageTag::new("en".to_owned()),

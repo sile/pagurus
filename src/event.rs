@@ -18,6 +18,16 @@ pub enum Event {
     Resource(ResourceEvent),
 }
 
+impl Event {
+    pub fn position(&self) -> Option<Position> {
+        match self {
+            Event::Mouse(event) => event.position(),
+            Event::Touch(event) => event.position(),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeoutEvent {
@@ -75,12 +85,29 @@ pub enum MouseEvent {
     Cancel,
 }
 
+impl MouseEvent {
+    pub fn position(&self) -> Option<Position> {
+        match self {
+            MouseEvent::Up { position, .. }
+            | MouseEvent::Down { position, .. }
+            | MouseEvent::Move { position } => Some(*position),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum TouchEvent {
-    Up { touches: Vec<Touch> },
+    Up { touches: Vec<Touch> }, // TODO: s/Vec<_>/Touch/
     Down { touches: Vec<Touch> },
     Move { touches: Vec<Touch> },
     Cancel,
+}
+
+impl TouchEvent {
+    pub fn position(&self) -> Option<Position> {
+        None
+    }
 }

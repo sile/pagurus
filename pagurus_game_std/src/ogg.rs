@@ -5,6 +5,8 @@ use std::io::Cursor;
 
 type OggStreamReader = lewton::inside_ogg::OggStreamReader<Cursor<Cow<'static, [u8]>>>;
 
+const FRAME_SIZE: usize = AudioData::SAMPLE_RATE as usize / 10 * 2; // 100ms
+
 pub struct AudioDataStream {
     inner: OggStreamReader,
     buf: Vec<u8>,
@@ -35,10 +37,7 @@ impl AudioDataStream {
     }
 
     pub fn peek(&mut self) -> Result<Option<AudioData>> {
-        const DATA_10MS: usize = AudioData::SAMPLE_RATE as usize / 100 * 2;
-        if self.buf.len() < DATA_10MS {
-            self.fill_buf().or_fail()?;
-        }
+        self.fill_buf().or_fail()?;
         if self.buf.is_empty() {
             return Ok(None);
         }
@@ -54,15 +53,14 @@ impl AudioDataStream {
     }
 
     fn fill_buf(&mut self) -> Result<()> {
-        if !self.eos {
+        if self.buf.len() < FRAME_SIZE && !self.eos {
             while let Some(samples) = self.inner.read_dec_packet_itl().or_fail()? {
                 for sample in samples {
                     self.buf.push((sample >> 8) as u8);
                     self.buf.push(sample as u8);
                 }
 
-                const DATA_10MS: usize = AudioData::SAMPLE_RATE as usize / 100 * 2; // TODO
-                if self.buf.len() >= DATA_10MS {
+                if self.buf.len() >= FRAME_SIZE {
                     return Ok(());
                 }
             }

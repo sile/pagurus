@@ -1,4 +1,4 @@
-use pagurus::event::{Event, ResourceEvent, TimeoutEvent};
+use pagurus::event::{Event, ResourceEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
@@ -45,6 +45,7 @@ pub struct SdlSystem {
     start: Instant,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
+    requirements: GameRequirements,
     options: SdlSystemOptions,
 }
 
@@ -53,10 +54,11 @@ impl SdlSystem {
     pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
 
     pub fn new(requirements: GameRequirements, options: SdlSystemOptions) -> Result<Self> {
-        let required_window_size = requirements.window_size;
+        let window_size = requirements
+            .logical_window_size
+            .unwrap_or(Self::DEFAULT_WINDOW_SIZE);
         Self::with_canvas(
             |sdl_video| {
-                let window_size = required_window_size.unwrap_or(Self::DEFAULT_WINDOW_SIZE);
                 let sdl_window = sdl_video
                     .window(Self::DEFAULT_TITLE, window_size.width, window_size.height)
                     .position_centered()
@@ -84,8 +86,7 @@ impl SdlSystem {
         // Video
         let sdl_video = sdl_context.video().map_err(Failure::new)?;
         let mut sdl_canvas = canvas(sdl_video).or_fail()?;
-        if let Some(size) = requirements.window_size {
-            // TODO: check behaviour
+        if let Some(size) = requirements.logical_window_size {
             sdl_canvas
                 .set_logical_size(size.width, size.height)
                 .or_fail()?;
@@ -118,6 +119,7 @@ impl SdlSystem {
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
+            requirements,
             options,
         })
     }
@@ -144,11 +146,26 @@ impl SdlSystem {
             let event = self
                 .sdl_event_pump
                 .wait_event_timeout(timeout.as_millis() as u32)
-                .and_then(crate::event::to_pagurus_event);
+                .and_then(crate::event::to_pagurus_event)
+                .and_then(|event| self.filter_event(event));
             if let Some(event) = event {
                 return event;
             }
         }
+    }
+
+    fn filter_event(&self, event: Event) -> Option<Event> {
+        if let Some(window_size) = self.requirements.logical_window_size {
+            if matches!(event, Event::Window(WindowEvent::Resized { .. })) {
+                return None;
+            }
+            if let Some(pos) = event.position() {
+                if !window_size.contains(pos) {
+                    return None;
+                }
+            }
+        }
+        Some(event)
     }
 
     fn resolve_resource_path(&self, name: &ResourceName) -> PathBuf {

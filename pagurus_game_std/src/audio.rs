@@ -56,7 +56,8 @@ impl AudioPlayer {
                 let id = if is_first {
                     system.clock_set_timeout(Duration::from_secs(0))
                 } else {
-                    system.clock_set_timeout(samples_duration(enqueued))
+                    let duration = samples_duration(enqueued);
+                    system.clock_set_timeout(duration)
                 };
                 self.ongoing = Some(id);
             } else {

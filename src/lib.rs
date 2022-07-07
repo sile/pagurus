@@ -3,7 +3,6 @@ use crate::failure::{Failure, OrFail};
 use crate::i18n::{LanguageTag, TimeZone};
 use crate::resource::ResourceName;
 use crate::spatial::Size;
-use std::num::NonZeroU32;
 use std::time::Duration;
 
 pub mod event;
@@ -94,13 +93,8 @@ impl<'a> AudioData<'a> {
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameRequirements {
-    // TODO: aspect_ratio or logical_window_size
     #[serde(default)]
-    pub window_size: Option<Size>,
-
-    // TODO: delete(?)
-    #[serde(default)]
-    pub memory_bytes: Option<NonZeroU32>,
+    pub logical_window_size: Option<Size>,
 }
 
 pub trait Game<S: System> {

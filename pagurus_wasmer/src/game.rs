@@ -5,7 +5,7 @@ use pagurus::event::{Event, ResourceEvent};
 use pagurus::failure::OrFail;
 use pagurus::{Game, GameRequirements, Result, System, SystemConfig};
 use serde::{Deserialize, Serialize};
-use wasmer::{Instance, Memory, Module, Pages, Store, Value, WASM_PAGE_SIZE};
+use wasmer::{Instance, Memory, Module, Store, Value};
 
 use super::bytes::BytesPtr;
 
@@ -61,21 +61,11 @@ impl<S: System> WasmGame<S> {
 impl<S: System> Game<S> for WasmGame<S> {
     fn requirements(&self) -> Result<GameRequirements> {
         let bytes_ptr = self.exports.game_requirements(&self.game).or_fail()?;
-        self.deserialize(bytes_ptr).or_fail()
+        self.deserialize(bytes_ptr).or_fail()?
     }
 
     fn initialize(&mut self, system: &mut S, config: SystemConfig) -> Result<()> {
         self.env.set_system(system).or_fail()?;
-
-        let requirements = self.requirements().or_fail()?;
-        if let Some(bytes) = requirements.memory_bytes {
-            let pages = (bytes.get() / WASM_PAGE_SIZE as u32) + 1;
-            if Pages::from(pages) > self.memory.size() {
-                self.memory
-                    .grow(Pages::from(pages) - self.memory.size())
-                    .or_fail()?;
-            }
-        }
 
         let config = self.serialize(&config).or_fail()?;
         if let Some(error_bytes_ptr) = self.exports.game_initialize(&self.game, config).or_fail()? {
