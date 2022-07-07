@@ -1,7 +1,7 @@
 use pagurus::event::{Event, StateEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::spatial::Size;
-use pagurus::{ActionId, AudioData, GameRequirements, Result, System, VideoFrame};
+use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::event::EventSender;
 use sdl2::pixels::PixelFormatEnum;
@@ -10,83 +10,75 @@ use sdl2::video::Window;
 use sdl2::{EventPump, VideoSubsystem};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
-// TODO(?): Use a builder instead?
-#[derive(Debug, Clone)]
-pub struct SdlSystemOptions {
-    pub states_dir: PathBuf,
-    pub assets_dir: PathBuf,
-    pub files_dir: PathBuf,
+pub struct SdlSystemBuilder {
+    data_dir: PathBuf,
+    title: String,
+    window_size: Option<Size>,
+    logical_window_size: Option<Size>,
+    custom_window: Option<Box<dyn 'static + Fn(VideoSubsystem) -> Result<Window>>>,
+    custom_canvas: Option<Box<dyn 'static + Fn(Window) -> Result<Canvas<Window>>>>,
 }
 
-impl SdlSystemOptions {
-    pub const DEFAULT_STATES_DIR: &'static str = "states/";
-    pub const DEFAULT_ASSETS_DIR: &'static str = "assets/";
-    pub const DEFAULT_FILES_DIR: &'static str = "files/";
-}
-
-impl Default for SdlSystemOptions {
-    fn default() -> Self {
+impl SdlSystemBuilder {
+    pub fn new() -> Self {
         Self {
-            states_dir: PathBuf::from(Self::DEFAULT_STATES_DIR),
-            assets_dir: PathBuf::from(Self::DEFAULT_ASSETS_DIR),
-            files_dir: PathBuf::from(Self::DEFAULT_FILES_DIR),
+            data_dir: PathBuf::from(SdlSystem::DEFAULT_DATA_DIR),
+            title: SdlSystem::DEFAULT_TITLE.to_owned(),
+            window_size: None,
+            logical_window_size: None,
+            custom_window: None,
+            custom_canvas: None,
         }
     }
-}
 
-pub struct SdlSystem {
-    sdl_canvas: Canvas<Window>,
-    sdl_event_pump: EventPump,
-    sdl_audio_queue: AudioQueue<i16>,
-    io_request_tx: mpsc::Sender<IoRequest>,
-    start: Instant,
-    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
-    next_action_id: ActionId,
-    options: SdlSystemOptions,
-}
-
-impl SdlSystem {
-    pub const DEFAULT_TITLE: &'static str = "Pagurus";
-    pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
-
-    pub fn new(requirements: GameRequirements, options: SdlSystemOptions) -> Result<Self> {
-        let window_size = requirements
-            .logical_window_size
-            .unwrap_or(Self::DEFAULT_WINDOW_SIZE);
-        Self::with_canvas(
-            |sdl_video| {
-                let sdl_window = sdl_video
-                    .window(Self::DEFAULT_TITLE, window_size.width, window_size.height)
-                    .position_centered()
-                    .build()
-                    .or_fail()?;
-                let sdl_canvas = sdl_window.into_canvas().build().or_fail()?;
-                Ok(sdl_canvas)
-            },
-            requirements,
-            options,
-        )
-        .or_fail()
+    pub fn data_dir<P: AsRef<Path>>(mut self, path: P) -> Self {
+        self.data_dir = path.as_ref().to_path_buf();
+        self
     }
 
-    pub fn with_canvas<F>(
-        canvas: F,
-        requirements: GameRequirements,
-        options: SdlSystemOptions,
-    ) -> Result<Self>
-    where
-        F: FnOnce(VideoSubsystem) -> Result<Canvas<Window>>,
-    {
+    pub fn title(mut self, title: &str) -> Self {
+        self.title = title.to_owned();
+        self
+    }
+
+    pub fn window_size(mut self, size: Option<Size>) -> Self {
+        self.window_size = size;
+        self
+    }
+
+    pub fn logical_window_size(mut self, size: Option<Size>) -> Self {
+        self.logical_window_size = size;
+        self
+    }
+
+    pub fn build(self) -> Result<SdlSystem> {
         let sdl_context = sdl2::init().map_err(Failure::new)?;
 
         // Video
         let sdl_video = sdl_context.video().map_err(Failure::new)?;
-        let mut sdl_canvas = canvas(sdl_video).or_fail()?;
-        if let Some(size) = requirements.logical_window_size {
+        let sdl_window = if let Some(f) = self.custom_window {
+            f(sdl_video).or_fail()?
+        } else {
+            let window_size = self
+                .window_size
+                .or(self.logical_window_size)
+                .unwrap_or(SdlSystem::DEFAULT_WINDOW_SIZE);
+            sdl_video
+                .window(&self.title, window_size.width, window_size.height)
+                .position_centered()
+                .build()
+                .or_fail()?
+        };
+        let mut sdl_canvas = if let Some(f) = self.custom_canvas {
+            f(sdl_window).or_fail()?
+        } else {
+            sdl_window.into_canvas().build().or_fail()?
+        };
+        if let Some(size) = self.logical_window_size {
             sdl_canvas
                 .set_logical_size(size.width, size.height)
                 .or_fail()?;
@@ -114,7 +106,7 @@ impl SdlSystem {
         // I/O Thread
         let io_request_tx = IoThread::spawn(sdl_event.event_sender());
 
-        Ok(Self {
+        Ok(SdlSystem {
             sdl_canvas,
             sdl_event_pump,
             sdl_audio_queue,
@@ -122,12 +114,39 @@ impl SdlSystem {
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
-            options,
+            data_dir: self.data_dir,
         })
     }
+}
 
-    pub fn logical_window_size(&self) -> Size {
-        let (width, height) = self.sdl_canvas.logical_size();
+impl Default for SdlSystemBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct SdlSystem {
+    sdl_canvas: Canvas<Window>,
+    sdl_event_pump: EventPump,
+    sdl_audio_queue: AudioQueue<i16>,
+    io_request_tx: mpsc::Sender<IoRequest>,
+    start: Instant,
+    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    next_action_id: ActionId,
+    data_dir: PathBuf,
+}
+
+impl SdlSystem {
+    pub const DEFAULT_TITLE: &'static str = "Pagurus";
+    pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
+    pub const DEFAULT_DATA_DIR: &'static str = "data/";
+
+    pub fn new() -> Result<Self> {
+        SdlSystemBuilder::default().build().or_fail()
+    }
+
+    pub fn window_size(&self) -> Size {
+        let (width, height) = self.sdl_canvas.window().size();
         Size { width, height }
     }
 
@@ -156,9 +175,7 @@ impl SdlSystem {
     }
 
     fn state_file_path(&self, name: &str) -> PathBuf {
-        self.options
-            .states_dir
-            .join(urlencoding::encode(name).as_ref())
+        self.data_dir.join(urlencoding::encode(name).as_ref())
     }
 }
 

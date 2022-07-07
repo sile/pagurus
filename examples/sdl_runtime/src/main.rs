@@ -2,7 +2,7 @@ use clap::Parser;
 use pagurus::failure::OrFail;
 use pagurus::i18n::{LanguageTag, TimeZone};
 use pagurus::{Game, Result, SystemConfig};
-use pagurus_sdl_system::system::{SdlSystem, SdlSystemOptions};
+use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
 use pagurus_wasmer::WasmGame;
 use std::path::PathBuf;
 
@@ -20,9 +20,12 @@ fn main() -> Result<()> {
     let requirements = game.requirements().or_fail()?;
 
     // System
-    let mut system = SdlSystem::new(requirements, SdlSystemOptions::default()).or_fail()?;
+    let mut system = SdlSystemBuilder::new()
+        .logical_window_size(requirements.logical_window_size)
+        .build()
+        .or_fail()?;
     let config = SystemConfig {
-        window_size: system.logical_window_size(),
+        window_size: system.window_size(),
         language: LanguageTag::new("en".to_owned()),
         time_zone: TimeZone::UTC,
     };

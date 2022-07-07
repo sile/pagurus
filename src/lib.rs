@@ -23,6 +23,7 @@ pub trait System {
     fn state_delete(&mut self, name: &str) -> ActionId;
 }
 
+// TODO: rename
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemConfig {

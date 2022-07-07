@@ -1,3 +1,5 @@
-pub mod event;
-pub mod input;
-pub mod system;
+mod event;
+mod input;
+mod system;
+
+pub use crate::system::{SdlSystem, SdlSystemBuilder};
