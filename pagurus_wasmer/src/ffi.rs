@@ -164,9 +164,7 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            let data = AudioData::new(data).unwrap_or_else(|| {
-                panic!("invalid audio data: data_len={data_len}");
-            });
+            let data = AudioData::new(data).unwrap_or_else(|e| panic!("{}", e.reason));
             system.audio_enqueue(data) as i32
         })
     }

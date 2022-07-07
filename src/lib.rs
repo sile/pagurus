@@ -1,5 +1,5 @@
 use crate::event::Event;
-use crate::failure::Failure;
+use crate::failure::{Failure, OrFail};
 use crate::i18n::{LanguageTag, TimeZone};
 use crate::resource::ResourceName;
 use crate::spatial::Size;
@@ -75,8 +75,9 @@ impl<'a> AudioData<'a> {
     pub const SAMPLE_RATE: u32 = 48_000;
     pub const BIT_DEPTH: u8 = 16;
 
-    pub fn new(data: &'a [u8]) -> Option<Self> {
-        (data.len() % 2 == 0).then(|| Self { data })
+    pub fn new(data: &'a [u8]) -> Result<Self> {
+        (data.len() % 2 == 0).or_fail()?;
+        Ok(Self { data })
     }
 
     pub fn data(&self) -> &[u8] {

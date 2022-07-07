@@ -2,6 +2,7 @@ use pagurus::failure::OrFail;
 use pagurus::spatial::{Position, Region, Size};
 use pagurus::Result;
 use pagurus_game_std::image::Sprite;
+use pagurus_game_std::ogg::AudioDataStream;
 use pagurus_game_std::png;
 
 const PNG_ITEMS: &[u8] = include_bytes!("../assets/items.png");
@@ -11,15 +12,19 @@ const PNG_BACKGROUND: &[u8] = include_bytes!("../assets/background.png");
 const PNG_CHARS_SMALL: &[u8] = include_bytes!("../assets/chars-small.png");
 const PNG_CHARS_LARGE: &[u8] = include_bytes!("../assets/chars-large.png");
 
+const OGG_CLICK: &[u8] = include_bytes!("../assets/click.ogg");
+
 #[derive(Debug)]
 pub struct Assets {
     pub sprites: Sprites,
+    pub audios: Audios,
 }
 
 impl Assets {
     pub fn load() -> Result<Self> {
         Ok(Self {
             sprites: Sprites::load().or_fail()?,
+            audios: Audios,
         })
     }
 }
@@ -179,5 +184,14 @@ impl Strings {
                 .clip(Region::new(Position::ORIGIN, Size::from_wh(112, 16)))
                 .or_fail()?,
         })
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Audios;
+
+impl Audios {
+    pub fn load_click_audio(self) -> Result<AudioDataStream> {
+        AudioDataStream::new(OGG_CLICK).or_fail()
     }
 }

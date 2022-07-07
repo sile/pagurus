@@ -93,14 +93,14 @@ pub fn to_pagurus_event(sdl_event: SdlEvent) -> Option<Event> {
         // SdlEvent::RenderTargetsReset { timestamp } => todo!(),
         // SdlEvent::RenderDeviceReset { timestamp } => todo!(),
         _ => {
-            dbg!(sdl_event);
+            // dbg!(sdl_event);
             None
         }
     }
 }
 
 fn to_pagurus_window_event(sdl_event: SdlWindowEvent) -> Option<WindowEvent> {
-    dbg!(&sdl_event);
+    // dbg!(&sdl_event);
     match sdl_event {
         SdlWindowEvent::SizeChanged(width, height) => Some(WindowEvent::Resized {
             size: Size::from_wh(width as u32, height as u32),
