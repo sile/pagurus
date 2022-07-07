@@ -1,6 +1,5 @@
 use clap::Parser;
 use pagurus::failure::OrFail;
-use pagurus::i18n::{LanguageTag, TimeZone};
 use pagurus::{Game, Result, SystemConfig};
 use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
 use pagurus_wasmer::WasmGame;
@@ -26,8 +25,6 @@ fn main() -> Result<()> {
         .or_fail()?;
     let config = SystemConfig {
         window_size: system.window_size(),
-        language: LanguageTag::new("en".to_owned()),
-        time_zone: TimeZone::UTC,
     };
 
     // Loop

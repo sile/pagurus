@@ -1,12 +1,10 @@
 use crate::event::Event;
 use crate::failure::{Failure, OrFail};
-use crate::i18n::{LanguageTag, TimeZone};
 use crate::spatial::Size;
 use std::time::Duration;
 
 pub mod event;
 pub mod failure;
-pub mod i18n;
 pub mod input;
 pub mod spatial;
 
@@ -28,8 +26,6 @@ pub trait System {
 #[serde(rename_all = "camelCase")]
 pub struct SystemConfig {
     pub window_size: Size,
-    pub language: LanguageTag,
-    pub time_zone: TimeZone,
 }
 
 #[derive(Debug)]
