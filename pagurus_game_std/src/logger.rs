@@ -32,6 +32,12 @@ impl Logger {
     }
 }
 
+impl Default for Logger {
+    fn default() -> Self {
+        Self::null()
+    }
+}
+
 #[derive(Debug)]
 struct LogSender {
     level: Level,

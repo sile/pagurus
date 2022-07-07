@@ -9,20 +9,11 @@ pagurus_game_std::export_wasm_functions!(SnakeGame);
 
 const LOG_LEVEL: log::Level = log::Level::Debug;
 
+#[derive(Debug, Default)]
 pub struct SnakeGame {
     logger: Logger,
     assets: Option<Assets>,
     audio_player: AudioPlayer,
-}
-
-impl Default for SnakeGame {
-    fn default() -> Self {
-        Self {
-            logger: Logger::null(),
-            assets: None,
-            audio_player: AudioPlayer::new(),
-        }
-    }
 }
 
 impl<S: System> Game<S> for SnakeGame {
@@ -33,7 +24,7 @@ impl<S: System> Game<S> for SnakeGame {
         })
     }
 
-    fn initialize(&mut self, system: &mut S, config: Configuration) -> Result<()> {
+    fn initialize(&mut self, system: &mut S, _config: Configuration) -> Result<()> {
         self.logger = Logger::init(LOG_LEVEL).or_fail()?;
 
         let start = system.clock_game_time();
@@ -57,17 +48,24 @@ impl<S: System> Game<S> for SnakeGame {
     }
 
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool> {
-        let result = (|| {
-            let event =
-                if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
-                    event
-                } else {
-                    return Ok(true);
-                };
-            log::debug!("{event:?}");
-            Ok(!matches!(event, Event::Terminating))
-        })();
+        let result = self.handle_event_without_log_flush(system, event);
         self.logger.flush(system);
         result
+    }
+}
+
+impl SnakeGame {
+    fn handle_event_without_log_flush<S: System>(
+        &mut self,
+        system: &mut S,
+        event: Event,
+    ) -> Result<bool> {
+        let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
+            event
+        } else {
+            return Ok(true);
+        };
+
+        Ok(!matches!(event, Event::Terminating))
     }
 }

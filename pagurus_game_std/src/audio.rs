@@ -6,7 +6,7 @@ use pagurus::{
 };
 use std::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AudioPlayer {
     stream: Option<AudioDataStream>,
     ongoing: Option<ActionId>,
@@ -14,10 +14,7 @@ pub struct AudioPlayer {
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        Self {
-            stream: None,
-            ongoing: None,
-        }
+        Self::default()
     }
 
     pub fn play<S: System>(&mut self, system: &mut S, stream: AudioDataStream) -> Result<()> {
