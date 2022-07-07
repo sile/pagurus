@@ -43,7 +43,7 @@ impl<S: System> Game<S> for SnakeGame {
             (system.clock_game_time() - start).as_secs_f64()
         );
 
-        // TODO:
+        // FIXME:
         let audio = self
             .assets
             .as_ref()

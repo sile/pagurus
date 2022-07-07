@@ -83,12 +83,12 @@ pub struct Buttons {
 impl Buttons {
     fn load() -> Result<Self> {
         let sprite = png::decode_sprite(PNG_BUTTONS).or_fail()?;
-        let origin = Position::ORIGIN;
+        let origin = Region::new(Position::ORIGIN, Button::SIZE);
         Ok(Self {
-            play: Button::load(&sprite, origin).or_fail()?,
-            exit: Button::load(&sprite, origin.shift_y(1)).or_fail()?,
-            retry: Button::load(&sprite, origin.shift_y(2)).or_fail()?,
-            title: Button::load(&sprite, origin.shift_y(3)).or_fail()?,
+            play: Button::load(&sprite, origin.position).or_fail()?,
+            exit: Button::load(&sprite, origin.shift_y(1).position).or_fail()?,
+            retry: Button::load(&sprite, origin.shift_y(2).position).or_fail()?,
+            title: Button::load(&sprite, origin.shift_y(3).position).or_fail()?,
         })
     }
 }

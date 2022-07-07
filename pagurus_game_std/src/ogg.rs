@@ -48,7 +48,7 @@ impl AudioDataStream {
 
     pub fn consume(&mut self, samples: usize) -> Result<()> {
         (samples <= self.buf.len() / 2).or_fail()?;
-        self.buf.drain(0..samples * 2); // TODO: use ring buffer
+        self.buf.drain(0..samples * 2); // FIXME: use ring buffer
         Ok(())
     }
 

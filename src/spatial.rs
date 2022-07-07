@@ -41,17 +41,6 @@ impl Position {
     pub const fn from_xy(x: i32, y: i32) -> Self {
         Self { x, y }
     }
-
-    // TODO: rename (move?)
-    pub fn shift_x(mut self, delta: i32) -> Self {
-        self.x += delta;
-        self
-    }
-
-    pub fn shift_y(mut self, delta: i32) -> Self {
-        self.y += delta;
-        self
-    }
 }
 
 impl Add for Position {
