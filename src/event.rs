@@ -1,6 +1,6 @@
 use crate::{
     failure::Failure,
-    input::{Button, Key, Touch},
+    input::{Button, Key, TouchId},
     spatial::{Position, Size},
     ActionId,
 };
@@ -21,8 +21,8 @@ pub enum Event {
 impl Event {
     pub fn position(&self) -> Option<Position> {
         match self {
-            Event::Mouse(event) => event.position(),
-            Event::Touch(event) => event.position(),
+            Event::Mouse(event) => Some(event.position()),
+            Event::Touch(event) => Some(event.position()),
             _ => None,
         }
     }
@@ -82,16 +82,14 @@ pub enum MouseEvent {
     Up { position: Position, button: Button },
     Down { position: Position, button: Button },
     Move { position: Position },
-    Cancel,
 }
 
 impl MouseEvent {
-    pub fn position(&self) -> Option<Position> {
+    pub fn position(&self) -> Position {
         match self {
-            MouseEvent::Up { position, .. }
-            | MouseEvent::Down { position, .. }
-            | MouseEvent::Move { position } => Some(*position),
-            _ => None,
+            Self::Up { position, .. } | Self::Down { position, .. } | Self::Move { position } => {
+                *position
+            }
         }
     }
 }
@@ -100,14 +98,17 @@ impl MouseEvent {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum TouchEvent {
-    Up { touches: Vec<Touch> }, // TODO: s/Vec<_>/Touch/
-    Down { touches: Vec<Touch> },
-    Move { touches: Vec<Touch> },
-    Cancel,
+    Up { id: TouchId, position: Position },
+    Down { id: TouchId, position: Position },
+    Move { id: TouchId, position: Position },
 }
 
 impl TouchEvent {
-    pub fn position(&self) -> Option<Position> {
-        None
+    pub fn position(&self) -> Position {
+        match self {
+            Self::Up { position, .. }
+            | Self::Down { position, .. }
+            | Self::Move { position, .. } => *position,
+        }
     }
 }
