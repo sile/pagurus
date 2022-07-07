@@ -8,6 +8,8 @@ pub mod failure;
 pub mod input;
 pub mod spatial;
 
+pub type Result<T, E = Failure> = std::result::Result<T, E>;
+
 pub trait System {
     fn video_render(&mut self, frame: VideoFrame);
     fn audio_enqueue(&mut self, data: AudioData) -> usize;
@@ -19,6 +21,35 @@ pub trait System {
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
     fn state_load(&mut self, name: &str) -> ActionId;
     fn state_delete(&mut self, name: &str) -> ActionId;
+}
+
+pub trait Game<S: System> {
+    fn requirements(&self) -> Result<Requirements>;
+    fn initialize(&mut self, system: &mut S, config: Configuration) -> Result<()>;
+    fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Configuration {
+    pub initial_window_size: Size,
+    pub game_argument: String,
+}
+
+impl Default for Configuration {
+    fn default() -> Self {
+        Self {
+            initial_window_size: Size::from_wh(0, 0),
+            game_argument: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Requirements {
+    #[serde(default)]
+    pub logical_window_size: Option<Size>,
 }
 
 #[derive(Debug)]
@@ -72,37 +103,6 @@ impl<'a> AudioData<'a> {
             .map(|v| (i16::from(v[0]) << 8) | i16::from(v[1]))
     }
 }
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Configuration {
-    pub initial_window_size: Size,
-    pub game_argument: String,
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self {
-            initial_window_size: Size::from_wh(0, 0),
-            game_argument: String::new(),
-        }
-    }
-}
-
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Requirements {
-    #[serde(default)]
-    pub logical_window_size: Option<Size>,
-}
-
-pub trait Game<S: System> {
-    fn requirements(&self) -> Result<Requirements>;
-    fn initialize(&mut self, system: &mut S, config: Configuration) -> Result<()>;
-    fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
-}
-
-pub type Result<T, E = Failure> = std::result::Result<T, E>;
 
 #[derive(
     Debug,
