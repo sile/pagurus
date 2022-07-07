@@ -4,13 +4,15 @@ use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
 use pagurus::{ActionId, AudioData, GameRequirements, Result, System, VideoFrame};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
+use sdl2::event::EventSender;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::{EventPump, EventSubsystem, VideoSubsystem};
+use sdl2::{EventPump, VideoSubsystem};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::PathBuf;
+use std::sync::mpsc;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
 // TODO(?): Use a builder instead?
@@ -39,9 +41,9 @@ impl Default for SdlSystemOptions {
 
 pub struct SdlSystem {
     sdl_canvas: Canvas<Window>,
-    sdl_event: EventSubsystem,
     sdl_event_pump: EventPump,
     sdl_audio_queue: AudioQueue<i16>,
+    io_request_tx: mpsc::Sender<IoRequest>,
     start: Instant,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
@@ -111,11 +113,14 @@ impl SdlSystem {
             .map_err(Failure::new)?;
         let sdl_event_pump = sdl_context.event_pump().map_err(Failure::new)?;
 
+        // I/O Thread
+        let io_request_tx = IoThread::spawn(sdl_event.event_sender());
+
         Ok(Self {
             sdl_canvas,
-            sdl_event,
             sdl_event_pump,
             sdl_audio_queue,
+            io_request_tx,
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
@@ -236,51 +241,29 @@ impl System for SdlSystem {
     fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId {
         let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
-        let event_tx = self.sdl_event.event_sender();
         let data = data.to_owned();
-        // TODO: use an I/O thread to serialize request handling
-        std::thread::spawn(move || {
-            let failed = (|| {
-                if let Some(dir) = path.parent() {
-                    std::fs::create_dir_all(dir).or_fail()?;
-                }
-                std::fs::write(path, &data).or_fail()?;
-                Ok(())
-            })()
-            .err();
-            let event = Event::Resource(ResourceEvent::Put { id, failed });
-            let _ = event_tx.push_custom_event(event);
-        });
+        self.io_request_tx
+            .send(IoRequest::Put { id, path, data })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
         id
     }
 
     fn resource_get(&mut self, name: &ResourceName) -> ActionId {
         let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
-        let event_tx = self.sdl_event.event_sender();
-        std::thread::spawn(move || {
-            let (data, failed) = match std::fs::read(path) {
-                Ok(data) => (Some(data), None),
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
-                Err(e) => (None, Some(Failure::new(e.to_string()))),
-            };
-            let event = Event::Resource(ResourceEvent::Get { id, data, failed });
-            let _ = event_tx.push_custom_event(event);
-        });
+        self.io_request_tx
+            .send(IoRequest::Get { id, path })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
+        std::thread::spawn(move || {});
         id
     }
 
     fn resource_delete(&mut self, name: &ResourceName) -> ActionId {
         let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
-        let event_tx = self.sdl_event.event_sender();
-        std::thread::spawn(move || {
-            let failed = std::fs::remove_file(path).err().and_then(|e| {
-                (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
-            });
-            let event = Event::Resource(ResourceEvent::Delete { id, failed });
-            let _ = event_tx.push_custom_event(event);
-        });
+        self.io_request_tx
+            .send(IoRequest::Delete { id, path })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
         id
     }
 }
@@ -289,4 +272,93 @@ impl std::fmt::Debug for SdlSystem {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "SdlSystem {{ .. }}")
     }
+}
+
+struct IoThread {
+    request_rx: mpsc::Receiver<IoRequest>,
+    event_tx: EventSender,
+}
+
+impl IoThread {
+    fn spawn(event_tx: EventSender) -> mpsc::Sender<IoRequest> {
+        let (request_tx, request_rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let mut this = Self {
+                request_rx,
+                event_tx,
+            };
+            while this.run_once() {}
+        });
+        request_tx
+    }
+
+    fn run_once(&mut self) -> bool {
+        match self.request_rx.recv() {
+            Ok(IoRequest::Put { id, path, data }) => {
+                self.handle_put(id, path, data);
+            }
+            Ok(IoRequest::Get { id, path }) => {
+                self.handle_get(id, path);
+            }
+            Ok(IoRequest::Delete { id, path }) => {
+                self.handle_delete(id, path);
+            }
+            Err(_) => return false,
+        }
+        true
+    }
+
+    fn handle_put(&mut self, id: ActionId, path: PathBuf, data: Vec<u8>) {
+        let failed = (|| {
+            if let Some(dir) = path.parent() {
+                std::fs::create_dir_all(dir).or_fail()?;
+            }
+            std::fs::write(path, &data).or_fail()?;
+            Ok(())
+        })()
+        .err();
+        let event = Event::Resource(ResourceEvent::Put { id, failed });
+        self.event_tx
+            .push_custom_event(event)
+            .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
+    }
+
+    fn handle_get(&mut self, id: ActionId, path: PathBuf) {
+        let (data, failed) = match std::fs::read(path) {
+            Ok(data) => (Some(data), None),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
+            Err(e) => (None, Some(Failure::new(e.to_string()))),
+        };
+        let event = Event::Resource(ResourceEvent::Get { id, data, failed });
+        self.event_tx
+            .push_custom_event(event)
+            .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
+    }
+
+    fn handle_delete(&mut self, id: ActionId, path: PathBuf) {
+        let failed = std::fs::remove_file(path).err().and_then(|e| {
+            (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
+        });
+        let event = Event::Resource(ResourceEvent::Delete { id, failed });
+        self.event_tx
+            .push_custom_event(event)
+            .unwrap_or_else(|e| panic!("failed to send custom SDL event: {e}"));
+    }
+}
+
+#[derive(Debug)]
+enum IoRequest {
+    Put {
+        id: ActionId,
+        path: PathBuf,
+        data: Vec<u8>,
+    },
+    Get {
+        id: ActionId,
+        path: PathBuf,
+    },
+    Delete {
+        id: ActionId,
+        path: PathBuf,
+    },
 }
