@@ -69,12 +69,9 @@ impl TryFrom<String> for ResourceName {
     }
 }
 
-// TODO(?): Use `Failure`?
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum ResourceNameError {
     #[error("expected a resource name prefixed with \"(state|asset|file):\", but got {name:?}")]
     MalformedName { name: String },
 }
-
-// TODO(?): ResourceValue{ Blob(_), CrdtMap(_) }

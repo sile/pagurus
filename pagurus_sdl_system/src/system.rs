@@ -1,4 +1,4 @@
-use pagurus::event::{Event, ResourceEvent, TimeoutEvent, WindowEvent};
+use pagurus::event::{Event, ResourceEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
@@ -47,7 +47,6 @@ pub struct SdlSystem {
     start: Instant,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
-    requirements: GameRequirements,
     options: SdlSystemOptions,
 }
 
@@ -124,7 +123,6 @@ impl SdlSystem {
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
-            requirements,
             options,
         })
     }
@@ -151,26 +149,11 @@ impl SdlSystem {
             let event = self
                 .sdl_event_pump
                 .wait_event_timeout(timeout.as_millis() as u32)
-                .and_then(crate::event::to_pagurus_event)
-                .and_then(|event| self.filter_event(event));
+                .and_then(crate::event::to_pagurus_event);
             if let Some(event) = event {
                 return event;
             }
         }
-    }
-
-    fn filter_event(&self, event: Event) -> Option<Event> {
-        if let Some(window_size) = self.requirements.logical_window_size {
-            if matches!(event, Event::Window(WindowEvent::Resized { .. })) {
-                return None;
-            }
-            if let Some(pos) = event.position() {
-                if !window_size.contains(pos) {
-                    return None;
-                }
-            }
-        }
-        Some(event)
     }
 
     fn resolve_resource_path(&self, name: &ResourceName) -> PathBuf {
