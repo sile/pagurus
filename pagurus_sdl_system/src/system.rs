@@ -2,7 +2,7 @@ use pagurus::event::{Event, ResourceEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::resource::ResourceName;
 use pagurus::spatial::Size;
-use pagurus::{AudioData, GameRequirements, Result, System, VideoFrame};
+use pagurus::{ActionId, AudioData, GameRequirements, Result, System, VideoFrame};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
@@ -43,7 +43,8 @@ pub struct SdlSystem {
     sdl_event_pump: EventPump,
     sdl_audio_queue: AudioQueue<i16>,
     start: Instant,
-    timeout_queue: BinaryHeap<(Reverse<Duration>, u64)>,
+    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    next_action_id: ActionId,
     options: SdlSystemOptions,
 }
 
@@ -116,6 +117,7 @@ impl SdlSystem {
             sdl_audio_queue,
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
+            next_action_id: ActionId::default(),
             options,
         })
     }
@@ -127,17 +129,17 @@ impl SdlSystem {
 
     pub fn wait_event(&mut self) -> Event {
         loop {
-            let timeout = if let Some((Reverse(expiry_time), tag)) = self.timeout_queue.peek() {
-                if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
-                    timeout
+            let timeout =
+                if let Some((Reverse(expiry_time), id)) = self.timeout_queue.peek().copied() {
+                    if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
+                        timeout
+                    } else {
+                        self.timeout_queue.pop();
+                        return Event::Timeout(TimeoutEvent { id });
+                    }
                 } else {
-                    let tag = *tag;
-                    self.timeout_queue.pop();
-                    return Event::Timeout(TimeoutEvent { tag });
-                }
-            } else {
-                Duration::from_secs(1) // Arbitrary large timeout value
-            };
+                    Duration::from_secs(1) // Arbitrary large timeout value
+                };
 
             let event = self
                 .sdl_event_pump
@@ -207,15 +209,17 @@ impl System for SdlSystem {
             .unwrap_or_else(|e| panic!("failed to get UNIX timestamp: {e}"))
     }
 
-    fn clock_set_timeout(&mut self, timeout: Duration, tag: u64) {
+    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
+        let id = self.next_action_id.get_and_increment();
         let time = self.start.elapsed() + timeout;
-        self.timeout_queue.push((Reverse(time), tag));
+        self.timeout_queue.push((Reverse(time), id));
+        id
     }
 
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) {
+    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId {
+        let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
         let event_tx = self.sdl_event.event_sender();
-        let name = name.clone();
         let data = data.to_owned();
         // TODO: use an I/O thread to serialize request handling
         std::thread::spawn(move || {
@@ -227,37 +231,40 @@ impl System for SdlSystem {
                 Ok(())
             })()
             .err();
-            let event = Event::Resource(ResourceEvent::Put { name, failed });
+            let event = Event::Resource(ResourceEvent::Put { id, failed });
             let _ = event_tx.push_custom_event(event);
         });
+        id
     }
 
-    fn resource_get(&mut self, name: &ResourceName) {
+    fn resource_get(&mut self, name: &ResourceName) -> ActionId {
+        let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
         let event_tx = self.sdl_event.event_sender();
-        let name = name.clone();
         std::thread::spawn(move || {
             let (data, failed) = match std::fs::read(path) {
                 Ok(data) => (Some(data), None),
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
                 Err(e) => (None, Some(Failure::new(e.to_string()))),
             };
-            let event = Event::Resource(ResourceEvent::Get { name, data, failed });
+            let event = Event::Resource(ResourceEvent::Get { id, data, failed });
             let _ = event_tx.push_custom_event(event);
         });
+        id
     }
 
-    fn resource_delete(&mut self, name: &ResourceName) {
+    fn resource_delete(&mut self, name: &ResourceName) -> ActionId {
+        let id = self.next_action_id.get_and_increment();
         let path = self.resolve_resource_path(name);
         let event_tx = self.sdl_event.event_sender();
-        let name = name.clone();
         std::thread::spawn(move || {
             let failed = std::fs::remove_file(path).err().and_then(|e| {
                 (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
             });
-            let event = Event::Resource(ResourceEvent::Delete { name, failed });
+            let event = Event::Resource(ResourceEvent::Delete { id, failed });
             let _ = event_tx.push_custom_event(event);
         });
+        id
     }
 }
 

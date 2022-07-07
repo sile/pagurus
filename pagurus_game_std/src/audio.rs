@@ -1,21 +1,23 @@
-use std::time::Duration;
-
+use crate::ogg::AudioDataStream;
 use pagurus::{
     event::{Event, TimeoutEvent},
     failure::OrFail,
-    AudioData, Result, System,
+    ActionId, AudioData, Result, System,
 };
-
-use crate::ogg::AudioDataStream;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct AudioPlayer {
     stream: Option<AudioDataStream>,
+    ongoing: Option<ActionId>,
 }
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        Self { stream: None }
+        Self {
+            stream: None,
+            ongoing: None,
+        }
     }
 
     pub fn play<S: System>(&mut self, system: &mut S, stream: AudioDataStream) -> Result<()> {
@@ -32,9 +34,9 @@ impl AudioPlayer {
         system: &mut S,
         event: Event,
     ) -> Result<Option<Event>> {
-        if self.stream.is_some() {
+        if let Some(ongoing_id) = self.ongoing {
             match event {
-                Event::Timeout(TimeoutEvent { tag: 1234 }) => {
+                Event::Timeout(TimeoutEvent { id }) if id == ongoing_id => {
                     self.enqueue_audio_data(system, false).or_fail()?;
                     Ok(None)
                 }
@@ -51,12 +53,12 @@ impl AudioPlayer {
                 let enqueued = system.audio_enqueue(data);
                 stream.consume(enqueued).or_fail()?;
 
-                let tag = 1234; // TODO
-                if is_first {
-                    system.clock_set_timeout(Duration::from_secs(0), tag);
+                let id = if is_first {
+                    system.clock_set_timeout(Duration::from_secs(0))
                 } else {
-                    system.clock_set_timeout(samples_duration(enqueued), tag);
-                }
+                    system.clock_set_timeout(samples_duration(enqueued))
+                };
+                self.ongoing = Some(id);
             } else {
                 self.stream = None;
             }

@@ -20,10 +20,10 @@ pub trait System {
     fn console_log(&mut self, message: &str);
     fn clock_game_time(&mut self) -> Duration;
     fn clock_unix_time(&mut self) -> Duration;
-    fn clock_set_timeout(&mut self, timeout: Duration, tag: u64);
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]);
-    fn resource_get(&mut self, name: &ResourceName);
-    fn resource_delete(&mut self, name: &ResourceName);
+    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId;
+    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId;
+    fn resource_get(&mut self, name: &ResourceName) -> ActionId;
+    fn resource_delete(&mut self, name: &ResourceName) -> ActionId;
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -110,3 +110,38 @@ pub trait Game<S: System> {
 }
 
 pub type Result<T, E = Failure> = std::result::Result<T, E>;
+
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+pub struct ActionId(u64);
+
+impl ActionId {
+    pub const fn new(id: u64) -> Self {
+        Self(id)
+    }
+
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+
+    pub fn increment(&mut self) {
+        self.0 += 1;
+    }
+
+    pub fn get_and_increment(&mut self) -> Self {
+        let id = *self;
+        self.increment();
+        id
+    }
+}

@@ -183,10 +183,12 @@ impl<S: 'static + System> Imports<S> {
         env.with_system(|system| system.clock_unix_time().as_secs_f64())
     }
 
-    fn system_clock_set_timeout(env: &Env<S>, timeout: f64, tag: i64) {
+    fn system_clock_set_timeout(env: &Env<S>, timeout: f64) -> i64 {
         env.with_system(|system| {
-            system.clock_set_timeout(Duration::from_secs_f64(timeout), tag as u64)
-        });
+            system
+                .clock_set_timeout(Duration::from_secs_f64(timeout))
+                .get() as i64
+        })
     }
 
     fn system_console_log(env: &Env<S>, msg: WasmPtr<u8, Array>, msg_len: u32) {
@@ -204,7 +206,7 @@ impl<S: 'static + System> Imports<S> {
         name_len: u32,
         data: WasmPtr<u8, Array>,
         data_len: u32,
-    ) {
+    ) -> i64 {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
@@ -215,29 +217,29 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            system.resource_put(&name, data);
+            system.resource_put(&name, data).get() as i64
         })
     }
 
-    fn system_resource_get(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) {
+    fn system_resource_get(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
                 .unwrap_or_else(|| panic!("invalid UTF-8 string"))
                 .parse()
                 .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
-            system.resource_get(&name);
+            system.resource_get(&name).get() as i64
         })
     }
 
-    fn system_resource_delete(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) {
+    fn system_resource_delete(env: &Env<S>, name: WasmPtr<u8, Array>, name_len: u32) -> i64 {
         env.with_system_and_memory(|system, memory| unsafe {
             let name = name
                 .get_utf8_str(memory, name_len)
                 .unwrap_or_else(|| panic!("invalid UTF-8 string"))
                 .parse()
                 .unwrap_or_else(|e| panic!("failed to parse `ResourceName` string: {e}"));
-            system.resource_delete(&name);
+            system.resource_delete(&name).get() as i64
         })
     }
 }

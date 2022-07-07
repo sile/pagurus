@@ -1,8 +1,8 @@
 use crate::{
     failure::Failure,
     input::{Button, Key, Touch},
-    resource::ResourceName,
     spatial::{Position, Size},
+    ActionId,
 };
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -21,7 +21,7 @@ pub enum Event {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeoutEvent {
-    pub tag: u64,
+    pub id: ActionId,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -39,19 +39,19 @@ pub enum WindowEvent {
 #[non_exhaustive]
 pub enum ResourceEvent {
     Put {
-        name: ResourceName,
+        id: ActionId,
         #[serde(default)]
         failed: Option<Failure>,
     },
     Get {
-        name: ResourceName,
+        id: ActionId,
         #[serde(default)]
         data: Option<Vec<u8>>,
         #[serde(default)]
         failed: Option<Failure>,
     },
     Delete {
-        name: ResourceName,
+        id: ActionId,
         #[serde(default)]
         failed: Option<Failure>,
     },

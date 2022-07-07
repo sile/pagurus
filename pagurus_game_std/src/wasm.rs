@@ -1,6 +1,6 @@
 use pagurus::event::{Event, ResourceEvent};
 use pagurus::resource::ResourceName;
-use pagurus::{AudioData, Game, System, SystemConfig, VideoFrame};
+use pagurus::{ActionId, AudioData, Game, System, SystemConfig, VideoFrame};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -195,41 +195,56 @@ impl System for WasmSystem {
         unsafe { Duration::from_secs_f64(systemClockUnixTime()) }
     }
 
-    fn clock_set_timeout(&mut self, timeout: Duration, tag: u64) {
+    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
         extern "C" {
-            fn systemClockSetTimeout(timeout: f64, tag: i64);
-        }
-        unsafe { systemClockSetTimeout(timeout.as_secs_f64(), tag as i64) }
-    }
-
-    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) {
-        let name = name.to_string();
-        extern "C" {
-            fn systemResourcePut(name: *const u8, name_len: i32, data: *const u8, data_len: i32);
+            fn systemClockSetTimeout(timeout: f64) -> i64;
         }
         unsafe {
-            systemResourcePut(
+            let id = systemClockSetTimeout(timeout.as_secs_f64());
+            ActionId::new(id as u64)
+        }
+    }
+
+    fn resource_put(&mut self, name: &ResourceName, data: &[u8]) -> ActionId {
+        let name = name.to_string();
+        extern "C" {
+            fn systemResourcePut(
+                name: *const u8,
+                name_len: i32,
+                data: *const u8,
+                data_len: i32,
+            ) -> i64;
+        }
+        unsafe {
+            let id = systemResourcePut(
                 name.as_ptr(),
                 name.len() as i32,
                 data.as_ptr(),
                 data.len() as i32,
-            )
+            );
+            ActionId::new(id as u64)
         }
     }
 
-    fn resource_get(&mut self, name: &ResourceName) {
+    fn resource_get(&mut self, name: &ResourceName) -> ActionId {
         let name = name.to_string();
         extern "C" {
-            fn systemResourceGet(name: *const u8, name_len: i32);
+            fn systemResourceGet(name: *const u8, name_len: i32) -> i64;
         }
-        unsafe { systemResourceGet(name.as_ptr(), name.len() as i32) }
+        unsafe {
+            let id = systemResourceGet(name.as_ptr(), name.len() as i32);
+            ActionId::new(id as u64)
+        }
     }
 
-    fn resource_delete(&mut self, name: &ResourceName) {
+    fn resource_delete(&mut self, name: &ResourceName) -> ActionId {
         let name = name.to_string();
         extern "C" {
-            fn systemResourceDelete(name: *const u8, name: i32);
+            fn systemResourceDelete(name: *const u8, name: i32) -> i64;
         }
-        unsafe { systemResourceDelete(name.as_ptr(), name.len() as i32) }
+        unsafe {
+            let id = systemResourceDelete(name.as_ptr(), name.len() as i32);
+            ActionId::new(id as u64)
+        }
     }
 }
