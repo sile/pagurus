@@ -18,9 +18,11 @@ impl AudioPlayer {
     }
 
     pub fn play<S: System>(&mut self, system: &mut S, stream: AudioDataStream) -> Result<()> {
-        self.stream
-            .is_none()
-            .or_fail_with_reason(|_| format!("audio mixing is not supported yet (FIXME)"))?;
+        if self.stream.is_some() {
+            log::warn!("audio mixing is not supported yet (FIXME)");
+            return Ok(());
+        };
+
         self.stream = Some(stream);
         self.enqueue_audio_data(system, true).or_fail()?;
         Ok(())

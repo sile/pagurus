@@ -1,4 +1,5 @@
 use crate::assets::Assets;
+use crate::stages::Stage;
 use crate::state::GameState;
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
@@ -11,6 +12,10 @@ pagurus_game_std::export_wasm_functions!(SnakeGame);
 
 const LOG_LEVEL: log::Level = log::Level::Debug;
 
+const CELL_SIZE: u32 = 32;
+const CELL_COUNT: u32 = 12;
+const WINDOW_SIZE: Size = Size::square(CELL_SIZE * CELL_COUNT);
+
 #[derive(Debug, Default)]
 pub struct SnakeGame {
     logger: Logger,
@@ -18,12 +23,13 @@ pub struct SnakeGame {
     assets: Option<Assets>,
     audio_player: AudioPlayer,
     game_state: GameState,
+    stage: Stage,
 }
 
 impl<S: System> Game<S> for SnakeGame {
     fn requirements(&self) -> Result<Requirements> {
         Ok(Requirements {
-            logical_window_size: Some(Size::from_wh(800, 800)),
+            logical_window_size: Some(WINDOW_SIZE),
             ..Default::default()
         })
     }
@@ -45,6 +51,11 @@ impl<S: System> Game<S> for SnakeGame {
 
         // Game state.
         self.game_state = GameState::new(&mut self.rng);
+
+        // Stage.
+        self.stage
+            .initialize(system, self.assets.as_ref().or_fail()?)
+            .or_fail()?;
 
         // FIXME:
         let audio = self

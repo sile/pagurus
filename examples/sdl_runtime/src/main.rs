@@ -21,6 +21,7 @@ fn main() -> Result<()> {
     // System
     let mut system = SdlSystemBuilder::new()
         .logical_window_size(requirements.logical_window_size)
+        .title("Pagurus SDL Runtime")
         .build()
         .or_fail()?;
     let config = Configuration {

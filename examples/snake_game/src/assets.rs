@@ -34,7 +34,7 @@ pub struct Sprites {
     pub background: Sprite,
     pub items: Items,
     pub buttons: Buttons,
-    pub cursors: Cursors,
+    pub cursor: Cursor,
     pub numbers: Numbers,
     pub strings: Strings,
 }
@@ -46,7 +46,7 @@ impl Sprites {
             background: png::decode_sprite(PNG_BACKGROUND).or_fail()?,
             items: Items::load().or_fail()?,
             buttons: Buttons::load().or_fail()?,
-            cursors: Cursors::load().or_fail()?,
+            cursor: Cursor::load().or_fail()?,
             strings: Strings::load(numbers.small[0].original()).or_fail()?,
             numbers,
         })
@@ -114,7 +114,7 @@ impl Button {
 }
 
 #[derive(Debug)]
-pub struct Cursors {
+pub struct Cursor {
     pub normal: Sprite,
     pub pressing: Sprite,
     pub select_up: Sprite,
@@ -123,7 +123,7 @@ pub struct Cursors {
     pub select_left: Sprite,
 }
 
-impl Cursors {
+impl Cursor {
     fn load() -> Result<Self> {
         let sprite = png::decode_sprite(PNG_CURSORS).or_fail()?;
         let region = Region::new(Position::ORIGIN, Size::square(32));
