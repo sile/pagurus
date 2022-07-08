@@ -33,6 +33,12 @@ impl StdRng {
     }
 }
 
+impl Default for StdRng {
+    fn default() -> Self {
+        Self::from_clock_seed(Duration::from_secs(0))
+    }
+}
+
 impl RngCore for StdRng {
     fn next_u32(&mut self) -> u32 {
         self.inner.next_u32()

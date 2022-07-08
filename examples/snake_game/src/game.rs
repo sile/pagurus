@@ -1,9 +1,11 @@
 use crate::assets::Assets;
+use crate::state::GameState;
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
 use pagurus::{event::Event, Configuration, Game, Requirements, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
 use pagurus_game_std::logger::Logger;
+use pagurus_game_std::random::StdRng;
 
 pagurus_game_std::export_wasm_functions!(SnakeGame);
 
@@ -12,8 +14,10 @@ const LOG_LEVEL: log::Level = log::Level::Debug;
 #[derive(Debug, Default)]
 pub struct SnakeGame {
     logger: Logger,
+    rng: StdRng,
     assets: Option<Assets>,
     audio_player: AudioPlayer,
+    game_state: GameState,
 }
 
 impl<S: System> Game<S> for SnakeGame {
@@ -25,14 +29,22 @@ impl<S: System> Game<S> for SnakeGame {
     }
 
     fn initialize(&mut self, system: &mut S, _config: Configuration) -> Result<()> {
+        // Logger.
         self.logger = Logger::init(LOG_LEVEL).or_fail()?;
 
+        // Rng.
+        self.rng = StdRng::from_clock_seed(system.clock_unix_time());
+
+        // Assets.
         let start = system.clock_game_time();
         self.assets = Some(Assets::load().or_fail()?);
         log::debug!(
             "assets were loaded (took {} seconds)",
             (system.clock_game_time() - start).as_secs_f64()
         );
+
+        // Game state.
+        self.game_state = GameState::new(&mut self.rng);
 
         // FIXME:
         let audio = self
