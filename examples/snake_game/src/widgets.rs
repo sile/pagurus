@@ -1,12 +1,78 @@
 use crate::assets::Button;
-use crate::state::MoveResult;
 use crate::{assets, Env};
-use pagurus::event::{Event, MouseEvent};
+use pagurus::event::{Event, KeyEvent, MouseEvent};
 use pagurus::failure::OrFail;
-use pagurus::input::MouseButton;
+use pagurus::input::{Key, MouseButton};
 use pagurus::spatial::{Contains, Position, Region};
 use pagurus::{Result, System};
 use pagurus_game_std::image::Canvas;
+
+#[derive(Debug)]
+pub struct ButtonGroup<'a, const N: usize> {
+    buttons: [&'a mut ButtonWidget; N],
+}
+
+impl<'a, const N: usize> ButtonGroup<'a, N> {
+    pub fn new(buttons: [&'a mut ButtonWidget; N]) -> Self {
+        Self { buttons }
+    }
+
+    pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: &Event) -> Result<()> {
+        if let Event::Key(event) = event {
+            self.handle_key_event(env, event).or_fail()?;
+        } else {
+            for button in &mut self.buttons {
+                if button.handle_event(env, event).or_fail()? {
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_key_event<S: System>(&mut self, env: &mut Env<S>, event: &KeyEvent) -> Result<()> {
+        let focus = if let Some(i) = self
+            .buttons
+            .iter()
+            .position(|b| matches!(b.state, ButtonState::Focused | ButtonState::Pressed))
+        {
+            i
+        } else {
+            if matches!(event, KeyEvent::Up { .. }) {
+                env.change_state(&mut self.buttons[0].state, ButtonState::Focused);
+            }
+            return Ok(());
+        };
+
+        match event {
+            KeyEvent::Up { key: Key::Up } => {
+                env.change_state(&mut self.buttons[focus].state, ButtonState::Normal);
+                env.change_state(
+                    &mut self.buttons[focus.saturating_sub(1)].state,
+                    ButtonState::Focused,
+                );
+            }
+            KeyEvent::Up { key: Key::Down } => {
+                env.change_state(&mut self.buttons[focus].state, ButtonState::Normal);
+                env.change_state(
+                    &mut self.buttons[std::cmp::min(focus + 1, self.buttons.len() - 1)].state,
+                    ButtonState::Focused,
+                );
+            }
+            KeyEvent::Down { key: Key::Return } => {
+                env.change_state(&mut self.buttons[focus].state, ButtonState::Pressed);
+            }
+            KeyEvent::Up { key: Key::Return } => {
+                if self.buttons[focus].state == ButtonState::Pressed {
+                    env.change_state(&mut self.buttons[focus].state, ButtonState::Clicked);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub struct ButtonWidget {

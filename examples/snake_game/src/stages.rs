@@ -1,5 +1,5 @@
 use crate::assets::Button;
-use crate::widgets::ButtonWidget;
+use crate::widgets::{ButtonGroup, ButtonWidget};
 use crate::WINDOW_SIZE;
 use crate::{state::GameState, Env};
 use pagurus::event::Event;
@@ -79,11 +79,10 @@ impl TitleStage {
         env: &mut Env<S>,
         event: Event,
     ) -> Result<HandleEventResult> {
-        for button in [&mut self.play_button, &mut self.exit_button] {
-            if button.handle_event(env, &event).or_fail()? {
-                break;
-            }
-        }
+        ButtonGroup::new([&mut self.play_button, &mut self.exit_button])
+            .handle_event(env, &event)
+            .or_fail()?;
+
         if self.play_button.is_clicked() {
             Err(Failure::todo())
         } else if self.exit_button.is_clicked() {
