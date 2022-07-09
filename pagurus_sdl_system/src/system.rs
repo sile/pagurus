@@ -180,7 +180,7 @@ impl SdlSystem {
 }
 
 impl System for SdlSystem {
-    fn video_render(&mut self, frame: VideoFrame) {
+    fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
         self.sdl_canvas.clear();
 
         let texture_creator = self.sdl_canvas.texture_creator();

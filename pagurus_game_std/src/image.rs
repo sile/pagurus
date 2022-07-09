@@ -1,7 +1,7 @@
 use crate::color::{Rgb, Rgba};
 use pagurus::failure::OrFail;
-use pagurus::spatial::{Region, Size};
-use pagurus::Result;
+use pagurus::spatial::{Contains, Position, Region, Size};
+use pagurus::{Result, VideoFrame};
 use std::sync::Arc;
 
 #[derive(Debug, Default, Clone)]
@@ -26,7 +26,26 @@ impl Canvas {
         &self.data
     }
 
-    //    pub fn with_video_frame(
+    pub fn render_sprite(&mut self, offset: Position, sprite: &Sprite) {
+        let canvas_region = self.size.to_region();
+        for (pixel_pos, pixel) in sprite.pixels() {
+            let canvas_pos = pixel_pos + offset;
+            if canvas_region.contains(&canvas_pos) {
+                let i = canvas_pos.y as usize * self.size.width as usize + canvas_pos.x as usize;
+                self.data[i] = pixel.to_alpha_blend_rgb(self.data[i]);
+            }
+        }
+    }
+
+    pub fn to_video_frame(&self) -> Result<VideoFrame<Vec<u8>>> {
+        let mut bytes = Vec::with_capacity(self.size.len() * 3);
+        for pixel in &self.data {
+            bytes.push(pixel.r);
+            bytes.push(pixel.g);
+            bytes.push(pixel.b);
+        }
+        VideoFrame::new(bytes, self.size.width).or_fail()
+    }
 }
 
 #[derive(Clone)]
@@ -83,7 +102,7 @@ impl Sprite {
 
     pub fn clip(&self, region: Region) -> Result<Self> {
         Region::from(self.size())
-            .contains(region)
+            .contains(&region)
             .or_fail_with_reason(|_| {
                 format!(
                     "failed to clip a sprite: clip_region={:?}, sprite_size={:?}",
@@ -95,6 +114,15 @@ impl Sprite {
             image_data: Arc::clone(&self.image_data),
             image_size: self.image_size,
             sprite_region: Region::new(self.sprite_region.position + region.position, region.size),
+        })
+    }
+
+    pub fn pixels(&self) -> impl '_ + Iterator<Item = (Position, Rgba)> {
+        let w = self.image_size.width as usize;
+        self.sprite_region.iter().map(move |pos| {
+            let Position { x, y } = pos;
+            let pixel = self.image_data[y as usize * w + x as usize];
+            (pos, pixel)
         })
     }
 }

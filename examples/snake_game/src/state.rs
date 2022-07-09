@@ -1,4 +1,4 @@
-use pagurus::spatial::{Position, Size};
+use pagurus::spatial::{Contains, Position, Size};
 use pagurus_game_std::random::StdRng;
 use rand::Rng;
 use std::collections::VecDeque;
@@ -51,7 +51,7 @@ impl GameState {
 
     fn can_snake_move(&self, direction: Direction) -> bool {
         let new_head = direction.move_position(self.snake.head);
-        if !Self::BOARD_SIZE.contains(new_head) {
+        if !Self::BOARD_SIZE.contains(&new_head) {
             false
         } else if self
             .snake

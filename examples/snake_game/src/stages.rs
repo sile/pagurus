@@ -39,7 +39,8 @@ impl Stage {
     }
 
     pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
-        todo!()
+        //todo!()
+        Ok(())
     }
 }
 
@@ -63,7 +64,8 @@ impl TitleStage {
         env: &mut Env<S>,
         event: Event,
     ) -> Result<HandleEventResult> {
-        todo!()
+        //todo!()
+        Ok(HandleEventResult::Ok)
     }
 }
 

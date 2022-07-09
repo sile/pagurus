@@ -75,14 +75,16 @@ impl<S: System> Game<S> for SnakeGame {
 
 impl SnakeGame {
     fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
-        let mut env = Env::new(
-            system,
-            &mut self.rng,
-            &mut self.audio_player,
-            self.assets.as_ref().or_fail()?,
-        );
+        let assets = self.assets.as_ref().or_fail()?;
+        self.canvas
+            .render_sprite(Default::default(), &assets.sprites.background);
+
+        let mut env = Env::new(system, &mut self.rng, &mut self.audio_player, assets);
         self.stage.render(&mut env, &mut self.canvas).or_fail()?;
-        //       system.video_render();
+
+        let frame = self.canvas.to_video_frame().or_fail()?;
+        system.video_render(frame.as_ref());
+
         Ok(())
     }
 

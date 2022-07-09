@@ -11,7 +11,7 @@ pub mod spatial;
 pub type Result<T, E = Failure> = std::result::Result<T, E>;
 
 pub trait System {
-    fn video_render(&mut self, frame: VideoFrame);
+    fn video_render(&mut self, frame: VideoFrame<&[u8]>);
     fn audio_enqueue(&mut self, data: AudioData) -> usize;
     fn audio_cancel(&mut self);
     fn console_log(&mut self, message: &str);
@@ -53,28 +53,36 @@ pub struct Requirements {
 }
 
 #[derive(Debug)]
-pub struct VideoFrame<'a> {
-    bytes: &'a [u8],
+pub struct VideoFrame<B> {
+    bytes: B,
     frame_size: Size,
 }
 
-impl<'a> VideoFrame<'a> {
+impl<B: AsRef<[u8]>> VideoFrame<B> {
     pub const PIXEL_FORMAT: &'static str = "RGB24";
 
-    pub fn new(bytes: &'a [u8], width: u32) -> Result<Self> {
-        (bytes.len() % 3 == 0).or_fail()?;
-        ((bytes.len() / 3) as u32 % width == 0).or_fail()?;
+    pub fn new(bytes: B, width: u32) -> Result<Self> {
+        let n = bytes.as_ref().len();
+        (n % 3 == 0).or_fail()?;
+        ((n / 3) as u32 % width == 0).or_fail()?;
 
-        let frame_size = Size::from_wh(width, (bytes.len() / 3) as u32 / width);
+        let frame_size = Size::from_wh(width, (n / 3) as u32 / width);
         Ok(Self { bytes, frame_size })
     }
 
     pub fn bytes(&self) -> &[u8] {
-        self.bytes
+        self.bytes.as_ref()
     }
 
     pub fn size(&self) -> Size {
         self.frame_size
+    }
+
+    pub fn as_ref(&self) -> VideoFrame<&[u8]> {
+        VideoFrame {
+            bytes: self.bytes.as_ref(),
+            frame_size: self.frame_size,
+        }
     }
 }
 

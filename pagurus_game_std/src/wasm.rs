@@ -150,7 +150,7 @@ macro_rules! export_wasm_functions {
 pub struct WasmSystem;
 
 impl System for WasmSystem {
-    fn video_render(&mut self, frame: VideoFrame) {
+    fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
         extern "C" {
             fn systemVideoRender(data: *const u8, data_len: i32, width: i32);
         }

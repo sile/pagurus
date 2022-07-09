@@ -26,12 +26,20 @@ impl Size {
             .flat_map(move |y| (0..self.width as i32).map(move |x| Position { x, y }))
     }
 
-    pub fn contains(self, pos: Position) -> bool {
-        (0..self.width as i32).contains(&pos.x) && (0..self.height as i32).contains(&pos.y)
+    pub const fn to_region(self) -> Region {
+        Region::new(Position::ORIGIN, self)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+impl Contains<Position> for Size {
+    fn contains(&self, Position { x, y }: &Position) -> bool {
+        (0..self.width as i32).contains(x) && (0..self.height as i32).contains(y)
+    }
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -78,10 +86,6 @@ impl Region {
         Self { position, size }
     }
 
-    pub fn contains(self, other: Self) -> bool {
-        self.start() <= other.start() && other.end() <= self.end()
-    }
-
     pub const fn start(self) -> Position {
         self.position
     }
@@ -93,6 +97,12 @@ impl Region {
         )
     }
 
+    pub fn iter(self) -> impl Iterator<Item = Position> {
+        let start = self.start();
+        let end = self.end();
+        (start.y..end.y).flat_map(move |y| (start.x..end.x).map(move |x| Position::from_xy(x, y)))
+    }
+
     pub fn shift_x(mut self, n: i32) -> Self {
         self.position.x += self.size.width as i32 * n;
         self
@@ -102,10 +112,36 @@ impl Region {
         self.position.y += self.size.height as i32 * n;
         self
     }
+
+    pub fn intersection(mut self, other: Self) -> Self {
+        self.position.x = std::cmp::max(self.position.x, other.position.x);
+        self.position.y = std::cmp::max(self.position.y, other.position.y);
+        self.size.width = std::cmp::min(self.size.width, other.size.width);
+        self.size.height = std::cmp::min(self.size.height, other.size.height);
+        self
+    }
 }
 
 impl From<Size> for Region {
     fn from(size: Size) -> Self {
         Self::new(Position::ORIGIN, size)
     }
+}
+
+impl Contains<Region> for Region {
+    fn contains(&self, target: &Self) -> bool {
+        self.start() <= target.start() && target.end() <= self.end()
+    }
+}
+
+impl Contains<Position> for Region {
+    fn contains(&self, Position { x, y }: &Position) -> bool {
+        let start = self.start();
+        let end = self.end();
+        (start.x..end.x).contains(x) && (start.y..end.y).contains(y)
+    }
+}
+
+pub trait Contains<T> {
+    fn contains(&self, target: &T) -> bool;
 }
