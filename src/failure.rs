@@ -19,6 +19,12 @@ impl Failure {
         Self::with_location("not implemented".to_owned(), location)
     }
 
+    #[track_caller]
+    pub fn unreachable() -> Self {
+        let location = Location::caller();
+        Self::with_location("unreachable".to_owned(), location)
+    }
+
     pub fn with_location(reason: String, location: &Location) -> Self {
         Self {
             reason,

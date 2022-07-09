@@ -93,7 +93,7 @@ impl Buttons {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Button {
     pub normal: Sprite,
     pub focused: Sprite,

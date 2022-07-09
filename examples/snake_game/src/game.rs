@@ -1,10 +1,11 @@
 use crate::assets::Assets;
 use crate::stages::Stage;
-use crate::state::GameState;
+use crate::Env;
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
 use pagurus::{event::Event, Configuration, Game, Requirements, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
+use pagurus_game_std::image::Canvas;
 use pagurus_game_std::logger::Logger;
 use pagurus_game_std::random::StdRng;
 
@@ -22,7 +23,7 @@ pub struct SnakeGame {
     rng: StdRng,
     assets: Option<Assets>,
     audio_player: AudioPlayer,
-    game_state: GameState,
+    canvas: Canvas,
     stage: Stage,
 }
 
@@ -49,23 +50,18 @@ impl<S: System> Game<S> for SnakeGame {
             (system.clock_game_time() - start).as_secs_f64()
         );
 
-        // Game state.
-        self.game_state = GameState::new(&mut self.rng);
+        // Canvas.
+        self.canvas = Canvas::new(WINDOW_SIZE);
 
         // Stage.
-        self.stage
-            .initialize(system, self.assets.as_ref().or_fail()?)
-            .or_fail()?;
-
-        // FIXME:
-        let audio = self
-            .assets
-            .as_ref()
-            .unwrap()
-            .audios
-            .load_click_audio()
-            .or_fail()?;
-        self.audio_player.play(system, audio).or_fail()?;
+        let mut env = Env::new(
+            system,
+            &mut self.rng,
+            &mut self.audio_player,
+            self.assets.as_ref().or_fail()?,
+        );
+        self.stage.initialize(&mut env).or_fail()?;
+        self.render(system).or_fail()?;
 
         Ok(())
     }
@@ -78,6 +74,18 @@ impl<S: System> Game<S> for SnakeGame {
 }
 
 impl SnakeGame {
+    fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
+        let mut env = Env::new(
+            system,
+            &mut self.rng,
+            &mut self.audio_player,
+            self.assets.as_ref().or_fail()?,
+        );
+        self.stage.render(&mut env, &mut self.canvas).or_fail()?;
+        //       system.video_render();
+        Ok(())
+    }
+
     fn handle_event_without_log_flush<S: System>(
         &mut self,
         system: &mut S,
@@ -89,6 +97,20 @@ impl SnakeGame {
             return Ok(true);
         };
 
-        Ok(!matches!(event, Event::Terminating))
+        if matches!(event, Event::Terminating) {
+            return Ok(false);
+        }
+
+        let mut env = Env::new(
+            system,
+            &mut self.rng,
+            &mut self.audio_player,
+            self.assets.as_ref().or_fail()?,
+        );
+        let do_continue = self.stage.handle_event(&mut env, event).or_fail()?;
+        if env.is_render_needed {
+            self.render(system).or_fail()?;
+        }
+        Ok(do_continue)
     }
 }

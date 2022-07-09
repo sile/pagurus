@@ -5,6 +5,9 @@ use std::collections::VecDeque;
 use std::time::Duration;
 
 #[derive(Debug)]
+pub struct HighScore {}
+
+#[derive(Debug)]
 pub struct GameState {
     pub snake: Snake,
     pub apple: Position,

@@ -1,6 +1,8 @@
 use std::{cmp::Ordering, ops::Add};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Size {
     pub width: u32,
     pub height: u32,

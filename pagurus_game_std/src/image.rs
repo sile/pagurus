@@ -4,7 +4,7 @@ use pagurus::spatial::{Region, Size};
 use pagurus::Result;
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Canvas {
     data: Vec<Rgb>,
     size: Size,
@@ -25,6 +25,8 @@ impl Canvas {
     pub fn data(&self) -> &[Rgb] {
         &self.data
     }
+
+    //    pub fn with_video_frame(
 }
 
 #[derive(Clone)]
