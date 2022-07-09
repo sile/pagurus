@@ -1,6 +1,6 @@
 use crate::{
     failure::Failure,
-    input::{Key, MouseButton, TouchId},
+    input::{Key, MouseButton},
     spatial::{Position, Size},
     ActionId,
 };
@@ -13,7 +13,6 @@ pub enum Event {
     Timeout(TimeoutEvent),
     Key(KeyEvent),
     Mouse(MouseEvent),
-    Touch(TouchEvent),
     Window(WindowEvent),
     State(StateEvent),
 }
@@ -22,7 +21,6 @@ impl Event {
     pub fn position(&self) -> Option<Position> {
         match self {
             Event::Mouse(event) => Some(event.position()),
-            Event::Touch(event) => Some(event.position()),
             _ => None,
         }
     }
@@ -98,25 +96,6 @@ impl MouseEvent {
             Self::Up { position, .. } | Self::Down { position, .. } | Self::Move { position } => {
                 *position
             }
-        }
-    }
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub enum TouchEvent {
-    Move { id: TouchId, position: Position },
-    Down { id: TouchId, position: Position },
-    Up { id: TouchId, position: Position },
-}
-
-impl TouchEvent {
-    pub fn position(&self) -> Position {
-        match self {
-            Self::Up { position, .. }
-            | Self::Down { position, .. }
-            | Self::Move { position, .. } => *position,
         }
     }
 }

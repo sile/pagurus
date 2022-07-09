@@ -1,18 +1,3 @@
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
-)]
-pub struct TouchId(u32);
-
-impl TouchId {
-    pub const fn new(id: u32) -> Self {
-        Self(id)
-    }
-
-    pub const fn get(self) -> u32 {
-        self.0
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
