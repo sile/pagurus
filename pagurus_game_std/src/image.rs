@@ -119,11 +119,18 @@ impl Sprite {
 
     pub fn pixels(&self) -> impl '_ + Iterator<Item = (Position, Rgba)> {
         let w = self.image_size.width as usize;
-        self.sprite_region.iter().map(move |pos| {
-            let Position { x, y } = pos;
-            let pixel = self.image_data[y as usize * w + x as usize];
-            (pos, pixel)
-        })
+        self.sprite_region
+            .iter()
+            .zip(self.size().to_region().iter())
+            .map(move |(Position { x, y }, pos)| {
+                let pixel = self.image_data[y as usize * w + x as usize];
+                (pos, pixel)
+            })
+    }
+
+    pub fn get_pixel(&self, pos: Position) -> Option<Rgba> {
+        let i = pos.y as isize * self.size().width as isize + pos.x as isize;
+        (0 <= i && i < self.image_data.len() as isize).then(|| self.image_data[i as usize])
     }
 }
 

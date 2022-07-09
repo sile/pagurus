@@ -1,8 +1,7 @@
 use crate::assets::Assets;
 use crate::stages::Stage;
-use crate::Env;
+use crate::{Env, WINDOW_SIZE};
 use pagurus::failure::OrFail;
-use pagurus::spatial::Size;
 use pagurus::{event::Event, Configuration, Game, Requirements, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
 use pagurus_game_std::image::Canvas;
@@ -12,10 +11,6 @@ use pagurus_game_std::random::StdRng;
 pagurus_game_std::export_wasm_functions!(SnakeGame);
 
 const LOG_LEVEL: log::Level = log::Level::Debug;
-
-const CELL_SIZE: u32 = 32;
-const CELL_COUNT: u32 = 12;
-const WINDOW_SIZE: Size = Size::square(CELL_SIZE * CELL_COUNT);
 
 #[derive(Debug, Default)]
 pub struct SnakeGame {

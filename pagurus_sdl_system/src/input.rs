@@ -1,11 +1,11 @@
-use pagurus::input::{Button, Key};
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
+use pagurus::input::{Key, MouseButton};
+use sdl2::{keyboard::Keycode, mouse::MouseButton as SdlMouseButton};
 
-pub fn to_pagurus_button(button: MouseButton) -> Option<Button> {
+pub fn to_pagurus_button(button: SdlMouseButton) -> Option<MouseButton> {
     match button {
-        MouseButton::Left => Some(Button::Left),
-        MouseButton::Middle => Some(Button::Middle),
-        MouseButton::Right => Some(Button::Right),
+        SdlMouseButton::Left => Some(MouseButton::Left),
+        SdlMouseButton::Middle => Some(MouseButton::Middle),
+        SdlMouseButton::Right => Some(MouseButton::Right),
         _ => None,
     }
 }

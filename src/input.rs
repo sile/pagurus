@@ -16,7 +16,7 @@ impl TouchId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
-pub enum Button {
+pub enum MouseButton {
     Right,
     Middle,
     Left,

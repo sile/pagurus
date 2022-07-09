@@ -1,27 +1,107 @@
-use crate::assets;
-use pagurus::event::Event;
+use crate::assets::Button;
+use crate::state::MoveResult;
+use crate::{assets, Env};
+use pagurus::event::{Event, MouseEvent};
+use pagurus::failure::OrFail;
+use pagurus::input::MouseButton;
+use pagurus::spatial::{Contains, Position, Region};
 use pagurus::{Result, System};
 use pagurus_game_std::image::Canvas;
 
 #[derive(Debug)]
 pub struct ButtonWidget {
     sprite: assets::Button,
+    position: Position,
+    state: ButtonState,
 }
 
 impl ButtonWidget {
-    pub fn new(sprite: assets::Button) -> Self {
-        Self { sprite }
+    pub fn new(sprite: assets::Button, position: Position) -> Self {
+        Self {
+            sprite,
+            position,
+            state: Default::default(),
+        }
     }
 
-    pub fn handle_event<S: System>(
+    pub fn is_clicked(&self) -> bool {
+        self.state == ButtonState::Clicked
+    }
+
+    pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: &Event) -> Result<bool> {
+        match event {
+            // Event::Key(_) => todo!(),
+            Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail(),
+            //Event::Touch(_) => todo!(),
+            _ => Ok(false),
+        }
+    }
+
+    fn handle_mouse_event<S: System>(
         &mut self,
-        _system: &mut S,
-        _event: Event,
-    ) -> Result<Option<Event>> {
-        todo!()
+        env: &mut Env<S>,
+        event: &MouseEvent,
+    ) -> Result<bool> {
+        let pos = event.position();
+        if !(self.region().contains(&pos)
+            && self
+                .sprite
+                .normal
+                .get_pixel(pos - self.position)
+                .map_or(false, |p| p.a != 0))
+        {
+            env.change_state(&mut self.state, ButtonState::Normal);
+            return Ok(false);
+        }
+
+        match event {
+            MouseEvent::Move { .. } => {
+                if self.state != ButtonState::Pressed {
+                    env.change_state(&mut self.state, ButtonState::Focused);
+                }
+            }
+            MouseEvent::Down {
+                button: MouseButton::Left,
+                ..
+            } => {
+                env.change_state(&mut self.state, ButtonState::Pressed);
+            }
+            MouseEvent::Up {
+                button: MouseButton::Left,
+                ..
+            } => {
+                if self.state == ButtonState::Pressed {
+                    env.change_state(&mut self.state, ButtonState::Clicked);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(true)
     }
 
-    pub fn render(&self, _canvas: &mut Canvas) {}
+    fn region(&self) -> Region {
+        Region::new(self.position, Button::SIZE)
+    }
+
+    pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+        let button = match self.state {
+            ButtonState::Normal => &self.sprite.normal,
+            ButtonState::Focused => &self.sprite.focused,
+            ButtonState::Pressed | ButtonState::Clicked => &self.sprite.pressed,
+        };
+        canvas.render_sprite(self.position, button);
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy, Default)]
+enum ButtonState {
+    #[default]
+    Normal,
+    Focused,
+    Pressed,
+    Clicked,
 }
 
 #[derive(Debug)]

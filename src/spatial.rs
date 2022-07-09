@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, ops::Add};
+use std::{
+    cmp::Ordering,
+    ops::{Add, Sub},
+};
 
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
@@ -58,6 +61,14 @@ impl Add for Position {
 
     fn add(self, rhs: Self) -> Self::Output {
         Self::from_xy(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl Sub for Position {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::from_xy(self.x - rhs.x, self.y - rhs.y)
     }
 }
 

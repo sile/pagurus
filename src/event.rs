@@ -1,6 +1,6 @@
 use crate::{
     failure::Failure,
-    input::{Button, Key, TouchId},
+    input::{Key, MouseButton, TouchId},
     spatial::{Position, Size},
     ActionId,
 };
@@ -71,17 +71,25 @@ pub enum StateEvent {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum KeyEvent {
-    Up { key: Key },
     Down { key: Key },
+    Up { key: Key },
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum MouseEvent {
-    Up { position: Position, button: Button },
-    Down { position: Position, button: Button },
-    Move { position: Position },
+    Move {
+        position: Position,
+    },
+    Down {
+        position: Position,
+        button: MouseButton,
+    },
+    Up {
+        position: Position,
+        button: MouseButton,
+    },
 }
 
 impl MouseEvent {
@@ -98,9 +106,9 @@ impl MouseEvent {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum TouchEvent {
-    Up { id: TouchId, position: Position },
-    Down { id: TouchId, position: Position },
     Move { id: TouchId, position: Position },
+    Down { id: TouchId, position: Position },
+    Up { id: TouchId, position: Position },
 }
 
 impl TouchEvent {
