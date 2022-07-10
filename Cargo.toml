@@ -14,7 +14,7 @@ members = [
     "pagurus_game_std",
     "pagurus_wasmer",
     "pagurus_sdl_system",
-    "pagurus_android_runtime",
+    "pagurus_android_system",
     "examples/snake_game",
     "examples/sdl_runtime",
 ]

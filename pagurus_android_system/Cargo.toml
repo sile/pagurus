@@ -1,5 +1,5 @@
 [package]
-name = "pagurus_android_runtime"
+name = "pagurus_android_system"
 version = "0.1.0"
 edition = "2021"
 
