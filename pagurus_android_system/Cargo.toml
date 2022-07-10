@@ -6,3 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+byteorder = "1"
+libc = "0.2.126"
+log = "0.4.17"
+ndk = { version = "0.6", features = ["aaudio"] }
+ndk-glue = "0.6"
+ndk-sys = "0.3"
+pagurus = { path = "../", version = "0.1" }

@@ -17,4 +17,5 @@ members = [
     "pagurus_android_system",
     "examples/snake_game",
     "examples/sdl_runtime",
+    "examples/android_snake",
 ]
