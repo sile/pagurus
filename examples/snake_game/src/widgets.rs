@@ -192,24 +192,23 @@ impl CursorWidget {
     }
 
     pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: MouseEvent) -> Result<()> {
-        env.is_render_needed = true;
         match event {
             MouseEvent::Move { .. } => {
                 if !matches!(self.state, CursorState::Normal) {
                     let delta = event.position() - self.position;
                     if delta.x.abs() < 16 && delta.y.abs() < 16 {
-                        self.state = CursorState::Pressing;
+                        env.change_state(&mut self.state, CursorState::Pressing);
                     } else if delta.x.abs() > delta.y.abs() {
                         if delta.x < 0 {
-                            self.state = CursorState::Left;
+                            env.change_state(&mut self.state, CursorState::Left);
                         } else {
-                            self.state = CursorState::Right;
+                            env.change_state(&mut self.state, CursorState::Right);
                         }
                     } else {
                         if delta.y < 0 {
-                            self.state = CursorState::Up;
+                            env.change_state(&mut self.state, CursorState::Up);
                         } else {
-                            self.state = CursorState::Down;
+                            env.change_state(&mut self.state, CursorState::Down);
                         }
                     }
                     return Ok(());
@@ -219,7 +218,7 @@ impl CursorWidget {
                 button: MouseButton::Left,
                 ..
             } if matches!(self.state, CursorState::Normal) => {
-                self.state = CursorState::Pressing;
+                env.change_state(&mut self.state, CursorState::Pressing);
                 self.direction = None;
             }
             MouseEvent::Up {
@@ -233,7 +232,7 @@ impl CursorWidget {
                     CursorState::Right => Some(Direction::Right),
                     _ => None,
                 };
-                self.state = CursorState::Normal;
+                env.change_state(&mut self.state, CursorState::Normal);
             }
             _ => {}
         }
@@ -261,7 +260,7 @@ impl CursorWidget {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 enum CursorState {
     #[default]
     Normal,
