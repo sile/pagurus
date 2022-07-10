@@ -8,6 +8,7 @@ use pagurus::failure::{Failure, OrFail};
 use pagurus::input::Key;
 use pagurus::spatial::Position;
 use pagurus::{ActionId, Result, System};
+use pagurus_game_std::color::Rgb;
 use pagurus_game_std::image::Canvas;
 use std::time::Duration;
 
@@ -32,12 +33,13 @@ impl Stage {
             Stage::Uninitialized => Err(Failure::unreachable()),
             Stage::Title(x) => x.handle_event(env, event).or_fail(),
             Stage::Play(x) => x.handle_event(env, event).or_fail(),
-            Stage::GameOver(_) => todo!(),
+            Stage::GameOver(x) => x.handle_event(env, event).or_fail(),
         }?;
         match result {
             HandleEventResult::Ok => Ok(true),
             HandleEventResult::Exit => Ok(false),
             HandleEventResult::NextStage(stage) => {
+                env.is_render_needed = true;
                 *self = stage;
                 Ok(true)
             }
@@ -49,7 +51,7 @@ impl Stage {
             Stage::Uninitialized => Err(Failure::unreachable()),
             Stage::Title(x) => x.render(env, canvas).or_fail(),
             Stage::Play(x) => x.render(env, canvas).or_fail(),
-            Stage::GameOver(_) => todo!(),
+            Stage::GameOver(x) => x.render(env, canvas).or_fail(),
         }
     }
 }
@@ -58,7 +60,6 @@ impl Stage {
 pub struct TitleStage {
     play_button: ButtonWidget,
     exit_button: ButtonWidget,
-    // TODO: key, sound
 }
 
 impl TitleStage {
@@ -87,9 +88,11 @@ impl TitleStage {
             .or_fail()?;
 
         if self.play_button.is_clicked() {
-            Ok(HandleEventResult::NextStage(Stage::Play(PlayStage::new(
-                env,
-            ))))
+            let audio = env.assets.audios.load_click_audio().or_fail()?;
+            env.audio_player.play(env.system, audio).or_fail()?;
+
+            let stage = PlayStage::new(env);
+            Ok(HandleEventResult::NextStage(Stage::Play(stage)))
         } else if self.exit_button.is_clicked() {
             Ok(HandleEventResult::Exit)
         } else {
@@ -135,7 +138,11 @@ impl PlayStage {
             Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail()?,
             Event::Timeout(event) => {
                 if !self.handle_timeout_event(env, event).or_fail()? {
-                    return Err(Failure::todo());
+                    let audio = env.assets.audios.load_crash_audio().or_fail()?;
+                    env.audio_player.play(env.system, audio).or_fail()?;
+
+                    let stage = GameOverStage::new(self.game_state.clone(), env);
+                    return Ok(HandleEventResult::NextStage(Stage::GameOver(stage)));
                 }
             }
             _ => {}
@@ -152,7 +159,8 @@ impl PlayStage {
             match self.game_state.move_snake(env.rng, self.curr_direction) {
                 MoveResult::Moved => {}
                 MoveResult::Ate => {
-                    // TODO: sound
+                    let audio = env.assets.audios.load_eat_audio().or_fail()?;
+                    env.audio_player.play(env.system, audio).or_fail()?;
                 }
                 MoveResult::Crashed => {
                     return Ok(false);
@@ -192,32 +200,93 @@ impl PlayStage {
     }
 
     fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
-        let offset = Position::from_xy(1, 1);
-        let scale = CELL_SIZE;
-
-        canvas.render_sprite(
-            (offset + self.game_state.apple) * scale,
-            &env.assets.sprites.items.apple,
-        );
-        canvas.render_sprite(
-            (offset + self.game_state.snake.head) * scale,
-            &env.assets.sprites.items.snake_head,
-        );
-        for &tail in &self.game_state.snake.tail {
-            canvas.render_sprite(
-                (offset + tail) * scale,
-                &env.assets.sprites.items.snake_tail,
-            );
-        }
-
+        render_game_state(env, canvas, &self.game_state);
         self.cursor.render(canvas);
 
         Ok(())
     }
 }
 
+fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_state: &GameState) {
+    let offset = Position::from_xy(1, 1);
+    let scale = CELL_SIZE;
+
+    canvas.render_sprite(
+        (offset + game_state.apple) * scale,
+        &env.assets.sprites.items.apple,
+    );
+    canvas.render_sprite(
+        (offset + game_state.snake.head) * scale,
+        &env.assets.sprites.items.snake_head,
+    );
+    for &tail in &game_state.snake.tail {
+        canvas.render_sprite(
+            (offset + tail) * scale,
+            &env.assets.sprites.items.snake_tail,
+        );
+    }
+}
+
 #[derive(Debug)]
-pub struct GameOverStage {}
+pub struct GameOverStage {
+    game_state: GameState,
+    retry_button: ButtonWidget,
+    title_button: ButtonWidget,
+}
+
+impl GameOverStage {
+    fn new<S: System>(game_state: GameState, env: &mut Env<S>) -> Self {
+        let x = (WINDOW_SIZE.width / 2 - Button::SIZE.width / 2) as i32;
+        let y = (WINDOW_SIZE.height / 2 + 14) as i32;
+        Self {
+            game_state,
+            retry_button: ButtonWidget::new(
+                env.assets.sprites.buttons.retry.clone(),
+                Position::from_xy(x, y),
+            ),
+            title_button: ButtonWidget::new(
+                env.assets.sprites.buttons.title.clone(),
+                Position::from_xy(x, y + 44),
+            ),
+        }
+    }
+
+    fn handle_event<S: System>(
+        &mut self,
+        env: &mut Env<S>,
+        event: Event,
+    ) -> Result<HandleEventResult> {
+        ButtonGroup::new([&mut self.retry_button, &mut self.title_button])
+            .handle_event(env, &event)
+            .or_fail()?;
+
+        if self.retry_button.is_clicked() {
+            let audio = env.assets.audios.load_click_audio().or_fail()?;
+            env.audio_player.play(env.system, audio).or_fail()?;
+
+            let stage = PlayStage::new(env);
+            Ok(HandleEventResult::NextStage(Stage::Play(stage)))
+        } else if self.title_button.is_clicked() {
+            let audio = env.assets.audios.load_click_audio().or_fail()?;
+            env.audio_player.play(env.system, audio).or_fail()?;
+
+            let stage = TitleStage::new(env);
+            Ok(HandleEventResult::NextStage(Stage::Title(stage)))
+        } else {
+            Ok(HandleEventResult::Ok)
+        }
+    }
+
+    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+        render_game_state(env, canvas, &self.game_state);
+        canvas.fill_rgba(Rgb::BLACK.alpha(60));
+
+        self.retry_button.render(env, canvas).or_fail()?;
+        self.title_button.render(env, canvas).or_fail()?;
+
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 enum HandleEventResult {

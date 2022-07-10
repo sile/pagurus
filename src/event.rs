@@ -37,7 +37,7 @@ pub struct TimeoutEvent {
 #[non_exhaustive]
 pub enum WindowEvent {
     Resized { size: Size },
-    RedrawNeeded,
+    RerenderNeeded,
     FocusGained,
     FocusLost,
 }

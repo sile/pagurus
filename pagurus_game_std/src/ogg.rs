@@ -5,7 +5,7 @@ use std::io::Cursor;
 
 type OggStreamReader = lewton::inside_ogg::OggStreamReader<Cursor<Cow<'static, [u8]>>>;
 
-const FRAME_SIZE: usize = AudioData::SAMPLE_RATE as usize / 10 * 2; // 100ms
+const FRAME_SIZE: usize = AudioData::SAMPLE_RATE as usize / 20 * 2; // 50ms
 
 pub struct AudioDataStream {
     inner: OggStreamReader,

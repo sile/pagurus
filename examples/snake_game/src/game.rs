@@ -1,6 +1,7 @@
 use crate::assets::Assets;
 use crate::stages::Stage;
 use crate::{Env, WINDOW_SIZE};
+use pagurus::event::WindowEvent;
 use pagurus::failure::OrFail;
 use pagurus::{event::Event, Configuration, Game, Requirements, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
@@ -94,8 +95,15 @@ impl SnakeGame {
             return Ok(true);
         };
 
-        if matches!(event, Event::Terminating) {
-            return Ok(false);
+        match event {
+            Event::Terminating => {
+                return Ok(false);
+            }
+            Event::Window(WindowEvent::Resized { .. } | WindowEvent::RerenderNeeded) => {
+                self.render(system).or_fail()?;
+                return Ok(true);
+            }
+            _ => {}
         }
 
         let mut env = Env::new(

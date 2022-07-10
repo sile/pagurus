@@ -13,6 +13,8 @@ const PNG_CHARS_SMALL: &[u8] = include_bytes!("../assets/chars-small.png");
 const PNG_CHARS_LARGE: &[u8] = include_bytes!("../assets/chars-large.png");
 
 const OGG_CLICK: &[u8] = include_bytes!("../assets/click.ogg");
+const OGG_EAT: &[u8] = include_bytes!("../assets/eat.ogg");
+const OGG_CRASH: &[u8] = include_bytes!("../assets/crash.ogg");
 
 #[derive(Debug)]
 pub struct Assets {
@@ -193,5 +195,13 @@ pub struct Audios;
 impl Audios {
     pub fn load_click_audio(self) -> Result<AudioDataStream> {
         AudioDataStream::new(OGG_CLICK).or_fail()
+    }
+
+    pub fn load_eat_audio(self) -> Result<AudioDataStream> {
+        AudioDataStream::new(OGG_EAT).or_fail()
+    }
+
+    pub fn load_crash_audio(self) -> Result<AudioDataStream> {
+        AudioDataStream::new(OGG_CRASH).or_fail()
     }
 }

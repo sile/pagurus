@@ -7,7 +7,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct HighScore {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GameState {
     pub snake: Snake,
     pub apple: Position,
@@ -81,7 +81,7 @@ impl GameState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Snake {
     pub head: Position,
     pub tail: VecDeque<Position>,
@@ -123,8 +123,8 @@ impl Direction {
         match self {
             Direction::Up => Self::Down,
             Direction::Down => Self::Up,
-            Direction::Left => Self::Left,
-            Direction::Right => Self::Right,
+            Direction::Left => Self::Right,
+            Direction::Right => Self::Left,
         }
     }
 }

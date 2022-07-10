@@ -37,6 +37,12 @@ impl Canvas {
         }
     }
 
+    pub fn fill_rgba(&mut self, color: Rgba) {
+        for pixel in &mut self.data {
+            *pixel = color.to_alpha_blend_rgb(*pixel);
+        }
+    }
+
     pub fn to_video_frame(&self) -> Result<VideoFrame<Vec<u8>>> {
         let mut bytes = Vec::with_capacity(self.size.len() * 3);
         for pixel in &self.data {

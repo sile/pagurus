@@ -89,7 +89,7 @@ impl SdlSystemBuilder {
         let audio_spec = AudioSpecDesired {
             freq: Some(AudioData::SAMPLE_RATE as i32),
             channels: Some(AudioData::CHANNELS),
-            samples: None,
+            samples: Some((AudioData::SAMPLE_RATE / 100) as u16),
         };
         let sdl_audio_queue = sdl_audio
             .open_queue(None, &audio_spec)
