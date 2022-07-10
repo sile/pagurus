@@ -210,10 +210,6 @@ impl System for SdlSystem {
         samples.len()
     }
 
-    fn audio_cancel(&mut self) {
-        self.sdl_audio_queue.clear();
-    }
-
     fn console_log(&mut self, message: &str) {
         eprintln!("{message}");
     }

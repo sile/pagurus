@@ -166,13 +166,6 @@ impl System for WasmSystem {
         unsafe { systemAudioEnqueue(data.bytes().as_ptr(), data.bytes().len() as i32) as usize }
     }
 
-    fn audio_cancel(&mut self) {
-        extern "C" {
-            fn systemAudioCancel();
-        }
-        unsafe { systemAudioCancel() }
-    }
-
     fn console_log(&mut self, message: &str) {
         extern "C" {
             fn systemConsoleLog(msg: *const u8, msg_len: i32);

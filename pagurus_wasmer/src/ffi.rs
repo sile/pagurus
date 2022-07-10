@@ -133,7 +133,6 @@ impl<S: 'static + System> Imports<S> {
             "env" => {
                 "systemVideoRender" => Function::new_native_with_env(&store, env.clone(), Self::system_video_render),
                 "systemAudioEnqueue" => Function::new_native_with_env(&store, env.clone(), Self::system_audio_enqueue),
-                "systemAudioCancel" => Function::new_native_with_env(&store, env.clone(), Self::system_audio_cancel),
                 "systemClockGameTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_game_time),
                 "systemClockUnixTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_unix_time),
                 "systemClockSetTimeout" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_set_timeout),
@@ -164,12 +163,6 @@ impl<S: 'static + System> Imports<S> {
             );
             let data = AudioData::new(data).unwrap_or_else(|e| panic!("{e}"));
             system.audio_enqueue(data) as i32
-        })
-    }
-
-    fn system_audio_cancel(env: &Env<S>) {
-        env.with_system(|system| {
-            system.audio_cancel();
         })
     }
 
