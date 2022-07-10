@@ -3,7 +3,7 @@ use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
 use pagurus::event::{Event, MouseEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::spatial::Size;
+use pagurus::spatial::{Position, Size};
 use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -51,7 +51,6 @@ impl AndroidSystemBuilder {
         Ok(AndroidSystem {
             start: Instant::now(),
             event_poller,
-            event_tx,
             event_rx,
             io_request_tx,
             timeout_queue: BinaryHeap::new(),
@@ -77,7 +76,6 @@ pub struct AndroidSystem {
     next_action_id: ActionId,
     data_dir: PathBuf,
     event_poller: EventPoller,
-    event_tx: mpsc::Sender<Event>,
     event_rx: mpsc::Receiver<Event>,
     io_request_tx: mpsc::Sender<IoRequest>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
@@ -139,26 +137,64 @@ impl AndroidSystem {
         self.data_dir.join(urlencoding::encode(name).as_ref())
     }
 
-    fn adjust_mouse_position(&self, event: MouseEvent) -> MouseEvent {
-        let logical_window_size = if let Some(logical_window_size) = self.logical_window_size {
+    fn adjust_mouse_position(&self, mut event: MouseEvent) -> MouseEvent {
+        let logical_size = if let Some(logical_window_size) = self.logical_window_size {
             logical_window_size
         } else {
             return event;
         };
 
-        todo!()
+        let actual_size = self.window_size;
+        let mut position = event.position();
+        let scale_w = logical_size.width as f32 / actual_size.width as f32;
+        let scale_h = logical_size.height as f32 / actual_size.height as f32;
+        if logical_size.aspect_ratio() > actual_size.aspect_ratio() {
+            let height = (actual_size.height as f32 * scale_w).round() as i32;
+            position.x = (position.x as f32 * scale_w).round() as i32;
+            position.y = (position.y as f32 * scale_w).round() as i32;
+            position.y -= (height - logical_size.height as i32) / 2;
+        } else if logical_size.aspect_ratio() < actual_size.aspect_ratio() {
+            let width = (actual_size.width as f32 * scale_h).round() as i32;
+            position.y = (position.y as f32 * scale_h).round() as i32;
+            position.x = (position.x as f32 * scale_h).round() as i32;
+            position.x -= (width - logical_size.width as i32) / 2;
+        }
+
+        event.set_position(position);
+        event
     }
-
-    // fn calc_window_buffer_region(&self, window: &Window) -> Region {
-
-    // }
 }
 
 impl System for AndroidSystem {
     fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
-        // if let Some(window) = &*ndk_glue::native_window() {
-        //     let window = Window::new(window);
-        // }
+        if let Some(window) = &*ndk_glue::native_window() {
+            let window = Window::new(window);
+            let window_size = window.get_window_size();
+
+            let mut buffer_offset = Position::ORIGIN;
+            let mut buffer_size = frame.size();
+
+            if frame.size().aspect_ratio() > window_size.aspect_ratio() {
+                let scale = frame.size().width as f32 / window_size.width as f32;
+                buffer_size.height = (window_size.height as f32 * scale).round() as u32;
+                buffer_offset.y = (buffer_size.height as i32 - frame.size().height as i32) / 2;
+            } else if frame.size().aspect_ratio() < window_size.aspect_ratio() {
+                let scale = frame.size().height as f32 / window_size.height as f32;
+                buffer_size.width = (window_size.width as f32 * scale).round() as u32;
+                buffer_offset.x = (buffer_size.width as i32 - frame.size().width as i32) / 2;
+            }
+            window.set_buffer_size(buffer_size);
+
+            if let Some(mut buffer) = window.acquire_buffer() {
+                let stride = buffer.stride() as usize;
+                let dst = buffer.as_slice_mut();
+                for (pos, pixel) in frame.r5g6g5_pixels() {
+                    let i = (pos.y + buffer_offset.y) as usize * stride
+                        + (pos.x + buffer_offset.x) as usize;
+                    dst[i] = pixel;
+                }
+            }
+        }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

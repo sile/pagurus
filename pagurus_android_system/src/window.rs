@@ -37,7 +37,7 @@ impl<'a> Window<'a> {
         }
     }
 
-    pub fn acquire_buffer(self) -> WindowBuffer<'a> {
+    pub fn acquire_buffer(self) -> Option<WindowBuffer<'a>> {
         unsafe {
             let mut buffer = ndk_sys::ANativeWindow_Buffer {
                 width: 0,
@@ -53,11 +53,19 @@ impl<'a> Window<'a> {
                 (&mut buffer) as *mut _,
                 std::ptr::null_mut(),
             );
-            assert_eq!(ret, 0);
-
-            WindowBuffer {
-                window: self,
-                inner: buffer,
+            if ret == 0 {
+                Some(WindowBuffer {
+                    window: self,
+                    inner: buffer,
+                })
+            } else {
+                println!(
+                    "[WARN] [{}:{}] faild to acquire window lock: error_code={}",
+                    file!(),
+                    line!(),
+                    -ret
+                );
+                None
             }
         }
     }

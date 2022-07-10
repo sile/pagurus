@@ -98,4 +98,12 @@ impl MouseEvent {
             }
         }
     }
+
+    pub fn set_position(&mut self, pos: Position) {
+        match self {
+            Self::Move { position } | Self::Down { position, .. } | Self::Up { position, .. } => {
+                *position = pos;
+            }
+        }
+    }
 }

@@ -1,3 +1,5 @@
+use spatial::Position;
+
 use crate::event::Event;
 use crate::failure::{Failure, OrFail};
 use crate::spatial::Size;
@@ -71,6 +73,20 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
 
     pub fn bytes(&self) -> &[u8] {
         self.bytes.as_ref()
+    }
+
+    pub fn r5g6g5_pixels(&self) -> impl '_ + Iterator<Item = (Position, u16)> {
+        (0..self.size().height).flat_map(move |y| {
+            (0..self.size().width).map(move |x| {
+                let pos = Position::from_xy(x as i32, y as i32);
+                let i = y as usize * (self.size().width as usize) + x as usize;
+                let r = self.bytes()[i * 3] as u16;
+                let g = self.bytes()[i * 3 + 1] as u16;
+                let b = self.bytes()[i * 3 + 2] as u16;
+                let pixel = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | (b >> 3);
+                (pos, pixel)
+            })
+        })
     }
 
     pub fn size(&self) -> Size {

@@ -29,6 +29,10 @@ impl Size {
             .flat_map(move |y| (0..self.width as i32).map(move |x| Position { x, y }))
     }
 
+    pub fn aspect_ratio(self) -> f32 {
+        self.width as f32 / self.height as f32
+    }
+
     pub const fn to_region(self) -> Region {
         Region::new(Position::ORIGIN, self)
     }
