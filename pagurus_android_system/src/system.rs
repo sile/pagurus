@@ -1,6 +1,7 @@
 use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
+use ndk::aaudio::{AAudioFormat, AAudioStream, AAudioStreamState};
 use pagurus::event::{Event, MouseEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::{Position, Size};
@@ -48,8 +49,17 @@ impl AndroidSystemBuilder {
             Size::default()
         };
 
+        let audio = ndk::aaudio::AAudioStreamBuilder::new()
+            .or_fail()?
+            .channel_count(AudioData::CHANNELS as i32)
+            .format(AAudioFormat::PCM_I16)
+            .sample_rate(AudioData::SAMPLE_RATE as i32)
+            .open_stream()
+            .or_fail()?;
+
         Ok(AndroidSystem {
             start: Instant::now(),
+            audio,
             event_poller,
             event_rx,
             io_request_tx,
@@ -73,6 +83,7 @@ impl Default for AndroidSystemBuilder {
 #[derive(Debug)]
 pub struct AndroidSystem {
     start: Instant,
+    audio: AAudioStream,
     next_action_id: ActionId,
     data_dir: PathBuf,
     event_poller: EventPoller,
@@ -198,8 +209,25 @@ impl System for AndroidSystem {
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
-        // TODO
-        data.samples().count()
+        let samples = data.samples().collect::<Vec<_>>();
+        unsafe {
+            let written = self
+                .audio
+                .write(samples.as_ptr() as *const _, samples.len() as i32, 0)
+                .unwrap_or_else(|e| panic!("{e}"));
+
+            let state = self.audio.get_state().unwrap_or_else(|e| panic!("{e}"));
+            if !matches!(
+                state,
+                AAudioStreamState::Started | AAudioStreamState::Starting
+            ) {
+                self.audio
+                    .request_start()
+                    .unwrap_or_else(|e| panic!("{e} (current_state={state:?})"));
+            }
+
+            written as usize
+        }
     }
 
     fn console_log(&mut self, message: &str) {
