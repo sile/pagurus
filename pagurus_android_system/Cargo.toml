@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 byteorder = "1"
-libc = "0.2.126"
 log = "0.4.17"
 ndk = { version = "0.6", features = ["aaudio"] }
 ndk-glue = "0.6"

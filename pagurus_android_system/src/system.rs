@@ -1,7 +1,12 @@
+use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
+use crate::window::Window;
 use pagurus::event::{Event, TimeoutEvent};
 use pagurus::failure::OrFail;
+use pagurus::spatial::Size;
 use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::sync::mpsc;
 use std::{
     path::PathBuf,
@@ -9,17 +14,21 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct AndroidSystem {
-    start: Instant,
-    next_action_id: ActionId,
-    data_dir: PathBuf,
-    event_tx: mpsc::Sender<Event>,
-    event_rx: mpsc::Receiver<Event>,
-    io_request_tx: mpsc::Sender<IoRequest>,
+pub struct AndroidSystemBuilder {
+    logical_window_size: Option<Size>,
 }
 
-impl AndroidSystem {
-    pub fn new() -> Result<Self> {
+impl AndroidSystemBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn logical_window_size(mut self, size: Option<Size>) -> Self {
+        self.logical_window_size = size;
+        self
+    }
+
+    pub fn build(self) -> Result<AndroidSystem> {
         #[allow(deprecated)]
         let data_dir = PathBuf::from(
             ndk_glue::native_activity()
@@ -28,36 +37,101 @@ impl AndroidSystem {
                 .or_fail()?,
         );
 
+        let event_poller = EventPoller::new().or_fail()?;
+
         let (event_tx, event_rx) = mpsc::channel();
-        let io_request_tx = IoThread::spawn(event_tx.clone());
-        Ok(Self {
+        let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
+        Ok(AndroidSystem {
             start: Instant::now(),
+            event_poller,
             event_tx,
             event_rx,
             io_request_tx,
+            timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
             data_dir,
+            logical_window_size: self.logical_window_size,
         })
     }
+}
 
-    pub fn next_event(&mut self) -> Option<Event> {
-        match self.event_rx.try_recv() {
-            Ok(event) => Some(event),
-            Err(e) => match e {
-                mpsc::TryRecvError::Empty => None,
-                mpsc::TryRecvError::Disconnected => unreachable!(),
-            },
+impl Default for AndroidSystemBuilder {
+    fn default() -> Self {
+        Self {
+            logical_window_size: None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct AndroidSystem {
+    start: Instant,
+    next_action_id: ActionId,
+    data_dir: PathBuf,
+    event_poller: EventPoller,
+    event_tx: mpsc::Sender<Event>,
+    event_rx: mpsc::Receiver<Event>,
+    io_request_tx: mpsc::Sender<IoRequest>,
+    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    logical_window_size: Option<Size>,
+}
+
+impl AndroidSystem {
+    pub fn new() -> Result<Self> {
+        AndroidSystemBuilder::default().build().or_fail()
+    }
+
+    pub fn wait_event(&mut self) -> Result<Event> {
+        loop {
+            let timeout =
+                if let Some((Reverse(expiry_time), id)) = self.timeout_queue.peek().copied() {
+                    if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
+                        timeout
+                    } else {
+                        self.timeout_queue.pop();
+                        return Ok(Event::Timeout(TimeoutEvent { id }));
+                    }
+                } else {
+                    Duration::from_secs(1) // Arbitrary large timeout value
+                };
+
+            match self.event_rx.try_recv() {
+                Ok(event) => return Ok(event),
+                Err(e) => match e {
+                    mpsc::TryRecvError::Empty => {}
+                    mpsc::TryRecvError::Disconnected => unreachable!(),
+                },
+            }
+
+            if let Some(event) = self.event_poller.poll_once_timeout(timeout).or_fail()? {
+                // TODO: filter
+                return Ok(event);
+            }
+        }
+    }
+
+    pub fn window_size(&self) -> Size {
+        if let Some(window) = &*ndk_glue::native_window() {
+            Window::new(window).get_window_size()
+        } else {
+            Size::default()
         }
     }
 
     fn state_file_path(&self, name: &str) -> PathBuf {
         self.data_dir.join(urlencoding::encode(name).as_ref())
     }
+
+    // fn calc_window_buffer_region(&self, window: &Window) -> Region {
+
+    // }
 }
 
 impl System for AndroidSystem {
     fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
-        todo!()
+        // if let Some(window) = &*ndk_glue::native_window() {
+        //     let window = Window::new(window);
+        // }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
@@ -78,9 +152,9 @@ impl System for AndroidSystem {
     }
 
     fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        // TODO
         let id = self.next_action_id.get_and_increment();
-        let _ = self.event_tx.send(Event::Timeout(TimeoutEvent { id }));
+        let time = self.start.elapsed() + timeout;
+        self.timeout_queue.push((Reverse(time), id));
         id
     }
 

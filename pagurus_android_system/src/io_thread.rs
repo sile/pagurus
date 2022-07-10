@@ -1,3 +1,4 @@
+use crate::event::EventNotifier;
 use pagurus::event::{Event, StateEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::ActionId;
@@ -8,15 +9,20 @@ use std::sync::mpsc;
 pub struct IoThread {
     request_rx: mpsc::Receiver<IoRequest>,
     event_tx: mpsc::Sender<Event>,
+    notifier: EventNotifier,
 }
 
 impl IoThread {
-    pub fn spawn(event_tx: mpsc::Sender<Event>) -> mpsc::Sender<IoRequest> {
+    pub fn spawn(
+        event_tx: mpsc::Sender<Event>,
+        notifier: EventNotifier,
+    ) -> mpsc::Sender<IoRequest> {
         let (request_tx, request_rx) = mpsc::channel();
         std::thread::spawn(move || {
             let mut this = Self {
                 request_rx,
                 event_tx,
+                notifier,
             };
             while this.run_once() {}
         });
@@ -50,6 +56,7 @@ impl IoThread {
         .err();
         let event = Event::State(StateEvent::Saved { id, failed });
         let _ = self.event_tx.send(event);
+        self.notifier.notify();
     }
 
     fn handle_read(&mut self, id: ActionId, path: PathBuf) {
@@ -60,6 +67,7 @@ impl IoThread {
         };
         let event = Event::State(StateEvent::Loaded { id, data, failed });
         let _ = self.event_tx.send(event);
+        self.notifier.notify();
     }
 
     fn handle_delete(&mut self, id: ActionId, path: PathBuf) {
@@ -67,7 +75,8 @@ impl IoThread {
             (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
         });
         let event = Event::State(StateEvent::Deleted { id, failed });
-        let _ = self.event_tx.send(event); // TODO: trigger android custom event too
+        let _ = self.event_tx.send(event);
+        self.notifier.notify();
     }
 }
 
