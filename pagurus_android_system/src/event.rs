@@ -52,7 +52,7 @@ impl EventPoller {
             ndk::looper::Poll::Timeout => {}
             ndk::looper::Poll::Event { ident, .. } => match ident {
                 ndk_glue::NDK_GLUE_LOOPER_EVENT_PIPE_IDENT => {
-                    while let Some(event) = ndk_glue::poll_events() {
+                    if let Some(event) = ndk_glue::poll_events() {
                         if let Some(event) = from_ndk_glue_event(event) {
                             self.queue.push_back(event);
                         }
@@ -110,7 +110,7 @@ fn from_ndk_glue_event(event: ndk_glue::Event) -> Option<Event> {
 fn from_input_event(event: &InputEvent) -> Option<Event> {
     match event {
         InputEvent::MotionEvent(event) => {
-            let pointer = event.pointer_at_index(0); // TDOO
+            let pointer = event.pointers().find(|p| p.pointer_id() == 0)?;
             let position = Position::from_xy(pointer.x() as i32, pointer.y() as i32);
             let button = MouseButton::Left;
             match event.action() {

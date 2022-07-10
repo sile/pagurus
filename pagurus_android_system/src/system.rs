@@ -104,6 +104,7 @@ impl AndroidSystem {
             }
 
             if let Some(event) = self.event_poller.poll_once_timeout(timeout).or_fail()? {
+                dbg!(&event);
                 // TODO: filter
                 return Ok(event);
             }
