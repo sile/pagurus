@@ -1,7 +1,7 @@
 use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
-use pagurus::event::{Event, TimeoutEvent};
+use pagurus::event::{Event, MouseEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
 use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
@@ -41,6 +41,13 @@ impl AndroidSystemBuilder {
 
         let (event_tx, event_rx) = mpsc::channel();
         let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
+
+        let window_size = if let Some(window) = &*ndk_glue::native_window() {
+            Window::new(window).get_window_size()
+        } else {
+            Size::default()
+        };
+
         Ok(AndroidSystem {
             start: Instant::now(),
             event_poller,
@@ -50,6 +57,7 @@ impl AndroidSystemBuilder {
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
             data_dir,
+            window_size,
             logical_window_size: self.logical_window_size,
         })
     }
@@ -73,6 +81,7 @@ pub struct AndroidSystem {
     event_rx: mpsc::Receiver<Event>,
     io_request_tx: mpsc::Sender<IoRequest>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    window_size: Size,
     logical_window_size: Option<Size>,
 }
 
@@ -104,23 +113,40 @@ impl AndroidSystem {
             }
 
             if let Some(event) = self.event_poller.poll_once_timeout(timeout).or_fail()? {
-                dbg!(&event);
-                // TODO: filter
-                return Ok(event);
+                if let Some(event) = self.handle_event(event) {
+                    return Ok(event);
+                }
             }
         }
     }
 
     pub fn window_size(&self) -> Size {
-        if let Some(window) = &*ndk_glue::native_window() {
-            Window::new(window).get_window_size()
-        } else {
-            Size::default()
+        self.window_size
+    }
+
+    fn handle_event(&mut self, event: Event) -> Option<Event> {
+        match event {
+            Event::Window(WindowEvent::Resized { size }) => {
+                self.window_size = size;
+                Some(event)
+            }
+            Event::Mouse(event) => Some(Event::Mouse(self.adjust_mouse_position(event))),
+            _ => Some(event),
         }
     }
 
     fn state_file_path(&self, name: &str) -> PathBuf {
         self.data_dir.join(urlencoding::encode(name).as_ref())
+    }
+
+    fn adjust_mouse_position(&self, event: MouseEvent) -> MouseEvent {
+        let logical_window_size = if let Some(logical_window_size) = self.logical_window_size {
+            logical_window_size
+        } else {
+            return event;
+        };
+
+        todo!()
     }
 
     // fn calc_window_buffer_region(&self, window: &Window) -> Region {
