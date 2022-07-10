@@ -8,8 +8,8 @@ pub mod stages;
 pub mod state;
 pub mod widgets;
 
-const CELL_SIZE: u32 = 32;
-const CELL_COUNT: u32 = 12;
+pub const CELL_SIZE: u32 = 32;
+pub const CELL_COUNT: u32 = 12;
 pub const WINDOW_SIZE: Size = Size::square(CELL_SIZE * CELL_COUNT);
 
 #[derive(Debug)]
