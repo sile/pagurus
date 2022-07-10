@@ -1,9 +1,9 @@
 use crate::assets::Button;
 use crate::state::{Direction, MoveResult};
-use crate::widgets::{ButtonGroup, ButtonWidget};
+use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
-use pagurus::event::{Event, KeyEvent, TimeoutEvent};
+use pagurus::event::{Event, KeyEvent, MouseEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::input::Key;
 use pagurus::spatial::Position;
@@ -110,6 +110,7 @@ pub struct PlayStage {
     prev_direction: Direction,
     curr_direction: Direction,
     move_timeout: ActionId,
+    cursor: CursorWidget,
 }
 
 impl PlayStage {
@@ -120,6 +121,7 @@ impl PlayStage {
             prev_direction: Direction::Up,
             curr_direction: Direction::Up,
             move_timeout,
+            cursor: CursorWidget::new(env.assets.sprites.cursor.clone()),
         }
     }
 
@@ -130,28 +132,54 @@ impl PlayStage {
     ) -> Result<HandleEventResult> {
         match event {
             Event::Key(event) => self.handle_key_event(env, event).or_fail()?,
-            Event::Mouse(_) => todo!(),
-            Event::Timeout(TimeoutEvent { id }) if id == self.move_timeout => {
-                match self.game_state.move_snake(env.rng, self.curr_direction) {
-                    MoveResult::Moved => {}
-                    MoveResult::Ate => {
-                        // TODO: sound
-                    }
-                    MoveResult::Crashed => {
-                        return Err(Failure::todo());
-                    }
+            Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail()?,
+            Event::Timeout(event) => {
+                if !self.handle_timeout_event(env, event).or_fail()? {
+                    return Err(Failure::todo());
                 }
-
-                self.prev_direction = self.curr_direction;
-                self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(250));
-                env.is_render_needed = true;
             }
             _ => {}
         }
         Ok(HandleEventResult::Ok)
     }
 
-    fn handle_key_event<S: System>(&mut self, _env: &mut Env<S>, event: KeyEvent) -> Result<()> {
+    fn handle_timeout_event<S: System>(
+        &mut self,
+        env: &mut Env<S>,
+        event: TimeoutEvent,
+    ) -> Result<bool> {
+        if event.id == self.move_timeout {
+            match self.game_state.move_snake(env.rng, self.curr_direction) {
+                MoveResult::Moved => {}
+                MoveResult::Ate => {
+                    // TODO: sound
+                }
+                MoveResult::Crashed => {
+                    return Ok(false);
+                }
+            }
+
+            self.prev_direction = self.curr_direction;
+            self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(250));
+            env.is_render_needed = true;
+        }
+        Ok(true)
+    }
+
+    fn handle_mouse_event<S: System>(&mut self, env: &mut Env<S>, event: MouseEvent) -> Result<()> {
+        env.change_state(&mut self.cursor.enabled, true);
+        self.cursor.handle_event(env, event).or_fail()?;
+        if let Some(d) = self.cursor.direction {
+            if d.reverse() != self.prev_direction {
+                self.curr_direction = d;
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_key_event<S: System>(&mut self, env: &mut Env<S>, event: KeyEvent) -> Result<()> {
+        env.change_state(&mut self.cursor.enabled, false);
+
         let prev = self.prev_direction;
         self.curr_direction = match event {
             KeyEvent::Up { key: Key::Up } if prev != Direction::Down => Direction::Up,
@@ -181,6 +209,8 @@ impl PlayStage {
                 &env.assets.sprites.items.snake_tail,
             );
         }
+
+        self.cursor.render(canvas);
 
         Ok(())
     }

@@ -113,7 +113,7 @@ impl Button {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Cursor {
     pub normal: Sprite,
     pub pressing: Sprite,

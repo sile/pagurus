@@ -118,6 +118,15 @@ impl Direction {
         }
         pos
     }
+
+    pub fn reverse(self) -> Self {
+        match self {
+            Direction::Up => Self::Down,
+            Direction::Down => Self::Up,
+            Direction::Left => Self::Left,
+            Direction::Right => Self::Right,
+        }
+    }
 }
 
 #[derive(Debug)]

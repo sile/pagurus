@@ -1,4 +1,5 @@
 use crate::assets::Button;
+use crate::state::Direction;
 use crate::{assets, Env};
 use pagurus::event::{Event, KeyEvent, MouseEvent};
 use pagurus::failure::OrFail;
@@ -150,7 +151,7 @@ impl ButtonWidget {
         Region::new(self.position, Button::SIZE)
     }
 
-    pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    pub fn render<S: System>(&mut self, _env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         let button = match self.state {
             ButtonState::Normal => &self.sprite.normal,
             ButtonState::Focused => &self.sprite.focused,
@@ -173,20 +174,98 @@ enum ButtonState {
 #[derive(Debug)]
 pub struct CursorWidget {
     sprite: assets::Cursor,
+    state: CursorState,
+    position: Position,
+    pub direction: Option<Direction>,
+    pub enabled: bool,
 }
 
 impl CursorWidget {
     pub fn new(sprite: assets::Cursor) -> Self {
-        Self { sprite }
+        Self {
+            sprite,
+            state: CursorState::Normal,
+            position: Position::ORIGIN,
+            direction: None,
+            enabled: false,
+        }
     }
 
-    pub fn handle_event<S: System>(
-        &mut self,
-        _system: &mut S,
-        _event: Event,
-    ) -> Result<Option<Event>> {
-        todo!()
+    pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: MouseEvent) -> Result<()> {
+        env.is_render_needed = true;
+        match event {
+            MouseEvent::Move { .. } => {
+                if !matches!(self.state, CursorState::Normal) {
+                    let delta = event.position() - self.position;
+                    if delta.x.abs() < 16 && delta.y.abs() < 16 {
+                        self.state = CursorState::Pressing;
+                    } else if delta.x.abs() > delta.y.abs() {
+                        if delta.x < 0 {
+                            self.state = CursorState::Left;
+                        } else {
+                            self.state = CursorState::Right;
+                        }
+                    } else {
+                        if delta.y < 0 {
+                            self.state = CursorState::Up;
+                        } else {
+                            self.state = CursorState::Down;
+                        }
+                    }
+                    return Ok(());
+                }
+            }
+            MouseEvent::Down {
+                button: MouseButton::Left,
+                ..
+            } if matches!(self.state, CursorState::Normal) => {
+                self.state = CursorState::Pressing;
+                self.direction = None;
+            }
+            MouseEvent::Up {
+                button: MouseButton::Left,
+                ..
+            } => {
+                self.direction = match self.state {
+                    CursorState::Up => Some(Direction::Up),
+                    CursorState::Down => Some(Direction::Down),
+                    CursorState::Left => Some(Direction::Left),
+                    CursorState::Right => Some(Direction::Right),
+                    _ => None,
+                };
+                self.state = CursorState::Normal;
+            }
+            _ => {}
+        }
+        self.position = event.position();
+
+        Ok(())
     }
 
-    pub fn render(&self, _canvas: &mut Canvas) {}
+    pub fn render(&self, canvas: &mut Canvas) {
+        if !self.enabled {
+            return;
+        }
+
+        let cursor = match self.state {
+            CursorState::Normal => &self.sprite.normal,
+            CursorState::Pressing => &self.sprite.pressing,
+            CursorState::Up => &self.sprite.select_up,
+            CursorState::Down => &self.sprite.select_down,
+            CursorState::Left => &self.sprite.select_left,
+            CursorState::Right => &self.sprite.select_right,
+        };
+        canvas.render_sprite(self.position - 16, cursor);
+    }
+}
+
+#[derive(Debug, Default)]
+enum CursorState {
+    #[default]
+    Normal,
+    Pressing,
+    Up,
+    Down,
+    Left,
+    Right,
 }

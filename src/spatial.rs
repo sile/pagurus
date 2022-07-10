@@ -64,11 +64,27 @@ impl Add for Position {
     }
 }
 
+impl Add<i32> for Position {
+    type Output = Self;
+
+    fn add(self, rhs: i32) -> Self::Output {
+        Self::from_xy(self.x + rhs, self.y + rhs)
+    }
+}
+
 impl Sub for Position {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::from_xy(self.x - rhs.x, self.y - rhs.y)
+    }
+}
+
+impl Sub<i32> for Position {
+    type Output = Self;
+
+    fn sub(self, rhs: i32) -> Self::Output {
+        Self::from_xy(self.x - rhs, self.y - rhs)
     }
 }
 
