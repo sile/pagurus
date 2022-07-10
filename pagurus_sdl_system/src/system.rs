@@ -247,7 +247,6 @@ impl System for SdlSystem {
         self.io_request_tx
             .send(IoRequest::Read { id, path })
             .unwrap_or_else(|_| panic!("I/O thread has terminated"));
-        std::thread::spawn(move || {});
         id
     }
 
