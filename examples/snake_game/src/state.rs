@@ -4,8 +4,8 @@ use rand::Rng;
 use std::collections::VecDeque;
 use std::time::Duration;
 
-#[derive(Debug)]
-pub struct HighScore {}
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct HighScore(pub u8);
 
 #[derive(Debug, Clone)]
 pub struct GameState {
@@ -31,6 +31,10 @@ impl GameState {
         };
         this.spawn_apple(rng);
         this
+    }
+
+    pub fn score(&self) -> u8 {
+        self.snake.tail.len() as u8
     }
 
     pub fn move_snake<R: Rng>(&mut self, rng: &mut R, direction: Direction) -> MoveResult {

@@ -1,4 +1,5 @@
 use crate::assets::Button;
+use crate::game::STATE_HIGH_SCORE;
 use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
@@ -103,6 +104,10 @@ impl TitleStage {
     fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         self.play_button.render(env, canvas).or_fail()?;
         self.exit_button.render(env, canvas).or_fail()?;
+
+        canvas.render_sprite(Position::from_xy(64, 96), &env.assets.sprites.strings.snake);
+        render_high_score(env, canvas);
+
         Ok(())
     }
 }
@@ -168,7 +173,7 @@ impl PlayStage {
             }
 
             self.prev_direction = self.curr_direction;
-            self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(250));
+            self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(200));
             env.is_render_needed = true;
         }
         Ok(true)
@@ -202,9 +207,24 @@ impl PlayStage {
     fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
         self.cursor.render(canvas);
-
         Ok(())
     }
+}
+
+fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
+    let score = env.high_score.0;
+    canvas.render_sprite(
+        Position::from_xy(180, 160),
+        &env.assets.sprites.strings.high_score,
+    );
+    canvas.render_sprite(
+        Position::from_xy(180 + 112, 160),
+        &env.assets.sprites.numbers.small[score as usize / 10],
+    );
+    canvas.render_sprite(
+        Position::from_xy(180 + 112 + 11, 160),
+        &env.assets.sprites.numbers.small[score as usize % 10],
+    );
 }
 
 fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_state: &GameState) {
@@ -225,6 +245,16 @@ fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_stat
             &env.assets.sprites.items.snake_tail,
         );
     }
+
+    let score = game_state.score() as usize;
+    canvas.render_sprite(
+        Position::from_xy(32 * 10, 8),
+        &env.assets.sprites.numbers.large[score / 10],
+    );
+    canvas.render_sprite(
+        Position::from_xy(32 * 10 + 16, 8),
+        &env.assets.sprites.numbers.large[score % 10],
+    );
 }
 
 #[derive(Debug)]
@@ -236,6 +266,17 @@ pub struct GameOverStage {
 
 impl GameOverStage {
     fn new<S: System>(game_state: GameState, env: &mut Env<S>) -> Self {
+        if game_state.score() > env.high_score.0 {
+            log::debug!(
+                "high score was updated: {} => {}",
+                env.high_score.0,
+                game_state.score()
+            );
+            env.high_score.0 = game_state.score();
+            env.system
+                .state_save(STATE_HIGH_SCORE, &[game_state.score()]);
+        }
+
         let x = (WINDOW_SIZE.width / 2 - Button::SIZE.width / 2) as i32;
         let y = (WINDOW_SIZE.height / 2 + 14) as i32;
         Self {
@@ -279,6 +320,11 @@ impl GameOverStage {
 
     fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
+
+        canvas.render_sprite(Position::from_xy(64, 40), &env.assets.sprites.strings.game);
+        canvas.render_sprite(Position::from_xy(64, 100), &env.assets.sprites.strings.over);
+        render_high_score(env, canvas);
+
         canvas.fill_rgba(Rgb::BLACK.alpha(60));
 
         self.retry_button.render(env, canvas).or_fail()?;

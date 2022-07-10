@@ -248,7 +248,9 @@ impl CursorWidget {
         }
 
         let cursor = match self.state {
-            CursorState::Normal => &self.sprite.normal,
+            CursorState::Normal => {
+                return;
+            }
             CursorState::Pressing => &self.sprite.pressing,
             CursorState::Up => &self.sprite.select_up,
             CursorState::Down => &self.sprite.select_down,

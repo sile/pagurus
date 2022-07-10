@@ -1,6 +1,7 @@
 use assets::Assets;
 use pagurus::{spatial::Size, System};
 use pagurus_game_std::{audio::AudioPlayer, random::StdRng};
+use state::HighScore;
 
 pub mod assets;
 pub mod game;
@@ -18,6 +19,7 @@ pub struct Env<'a, S: System> {
     pub rng: &'a mut StdRng,
     pub audio_player: &'a mut AudioPlayer,
     pub assets: &'a Assets,
+    pub high_score: &'a mut HighScore,
     pub is_render_needed: bool,
 }
 
@@ -26,12 +28,14 @@ impl<'a, S: System> Env<'a, S> {
         system: &'a mut S,
         rng: &'a mut StdRng,
         audio_player: &'a mut AudioPlayer,
+        high_score: &'a mut HighScore,
         assets: &'a Assets,
     ) -> Self {
         Self {
             system,
             rng,
             audio_player,
+            high_score,
             assets,
             is_render_needed: false,
         }

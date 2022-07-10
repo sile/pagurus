@@ -1,7 +1,8 @@
 use crate::assets::Assets;
 use crate::stages::Stage;
+use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
-use pagurus::event::WindowEvent;
+use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::{event::Event, Configuration, Game, Requirements, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
@@ -12,6 +13,7 @@ use pagurus_game_std::random::StdRng;
 pagurus_game_std::export_wasm_functions!(SnakeGame);
 
 const LOG_LEVEL: log::Level = log::Level::Debug;
+pub const STATE_HIGH_SCORE: &str = "high_score";
 
 #[derive(Debug, Default)]
 pub struct SnakeGame {
@@ -19,6 +21,7 @@ pub struct SnakeGame {
     rng: StdRng,
     assets: Option<Assets>,
     audio_player: AudioPlayer,
+    high_score: HighScore,
     canvas: Canvas,
     stage: Stage,
 }
@@ -54,10 +57,14 @@ impl<S: System> Game<S> for SnakeGame {
             system,
             &mut self.rng,
             &mut self.audio_player,
+            &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
         self.stage.initialize(&mut env).or_fail()?;
         self.render(system).or_fail()?;
+
+        // High Score.
+        system.state_load(STATE_HIGH_SCORE);
 
         Ok(())
     }
@@ -75,7 +82,13 @@ impl SnakeGame {
         self.canvas
             .render_sprite(Default::default(), &assets.sprites.background);
 
-        let mut env = Env::new(system, &mut self.rng, &mut self.audio_player, assets);
+        let mut env = Env::new(
+            system,
+            &mut self.rng,
+            &mut self.audio_player,
+            &mut self.high_score,
+            assets,
+        );
         self.stage.render(&mut env, &mut self.canvas).or_fail()?;
 
         let frame = self.canvas.to_video_frame().or_fail()?;
@@ -103,6 +116,14 @@ impl SnakeGame {
                 self.render(system).or_fail()?;
                 return Ok(true);
             }
+            Event::State(StateEvent::Loaded {
+                data: Some(data), ..
+            }) => {
+                (data.len() == 1).or_fail()?;
+                self.high_score.0 = data[0];
+                self.render(system).or_fail()?;
+                return Ok(true);
+            }
             _ => {}
         }
 
@@ -110,6 +131,7 @@ impl SnakeGame {
             system,
             &mut self.rng,
             &mut self.audio_player,
+            &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
         let do_continue = self.stage.handle_event(&mut env, event).or_fail()?;
