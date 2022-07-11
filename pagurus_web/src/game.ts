@@ -65,55 +65,60 @@ class Game {
     }
   }
 
-  private getWasmString(bytesPtr: number): string {
+  handleEvent(system: System, event: Event): boolean {
+    this.systemRef.setSystem(system);
+
+    let data;
     try {
-      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(bytesPtr);
-      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(bytesPtr);
-      const bytes = new Uint8Array(this.memory.buffer, offset, len);
-      return new TextDecoder("utf-8").decode(bytes);
+      if (event instanceof Object && "state" in event && "loaded" in event.state) {
+        data = event.state.loaded.data;
+        event.state.loaded.data = undefined;
+      }
+
+      const eventBytesPtr = this.createWasmBytes(new TextEncoder().encode(JSON.stringify(event)));
+      let dataBytesPtr = 0;
+      if (data !== undefined) {
+        dataBytesPtr = this.createWasmBytes(data);
+      }
+
+      const result = (this.wasmInstance.exports.gameHandleEvent as CallableFunction)(
+        this.gameInstance,
+        eventBytesPtr,
+        dataBytesPtr
+      );
+      if (result === 0) {
+        return true;
+      }
+
+      let error = this.getWasmString(result);
+      if (JSON.parse(error) === undefined) {
+        return false;
+      } else {
+        throw new Error(error);
+      }
     } finally {
-      (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(bytesPtr);
+      this.systemRef.clearSystem();
     }
   }
 
-  //   handleEvent(system: System, event: Event): bool {
-  //     this.systemRef.setSystem(system);
-  //     let data;
-  //     try {
-  //       // @ts-ignore
-  //       data = event.resource.get.data;
-  //       // @ts-ignore
-  //       event.resource.get.data = undefined;
-  //     } catch (e) {}
-  //     const encoded = new TextEncoder().encode(JSON.stringify(event));
-  //     const bytes = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(encoded.length);
-  //     const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(bytes);
-  //     new Uint8Array(this.memory.buffer, offset, encoded.length).set(encoded);
-  //     let dataBytes;
-  //     let dataOffset = 0;
-  //     let dataLength = 0;
-  //     if (data !== undefined) {
-  //       dataBytes = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(data.length);
-  //       dataOffset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(dataBytes);
-  //       dataLength = data.length;
-  //       new Uint8Array(this.memory.buffer, dataOffset, dataLength).set(data);
-  //     }
-  //     try {
-  //       (this.wasmInstance.exports.gameHandleEvent as CallableFunction)(
-  //         this.gameInstance,
-  //         offset,
-  //         encoded.length,
-  //         dataOffset,
-  //         dataLength
-  //       );
-  //     } finally {
-  //       (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(bytes);
-  //       if (data !== undefined) {
-  //         (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(dataBytes);
-  //       }
-  //       this.systemRef.clearSystem();
-  //     }
-  //   }
+  private createWasmBytes(bytes: Uint8Array): number {
+    const wasmBytesPtr = (this.wasmInstance.exports.allocateFreeBytes as CallableFunction)(bytes.length);
+    const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr);
+    const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr);
+    new Uint8Array(this.memory.buffer, offset, len).set(bytes);
+    return wasmBytesPtr;
+  }
+
+  private getWasmString(wasmBytesPtr: number): string {
+    try {
+      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr);
+      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr);
+      const bytes = new Uint8Array(this.memory.buffer, offset, len);
+      return new TextDecoder("utf-8").decode(bytes);
+    } finally {
+      (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(wasmBytesPtr);
+    }
+  }
 }
 
 class SystemRef {
