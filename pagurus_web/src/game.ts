@@ -18,31 +18,33 @@ class Game {
     const systemRef = new SystemRef();
     const importObject = {
       env: {
-        // systemImageRender: (pixelsOffset: number, pixelsLen: number, canvasWidth: number) => {
-        //   systemRef.getSystem().imageRender(pixelsOffset, pixelsLen, canvasWidth);
-        // },
-        // systemAudioEnqueue: (dataOffset: number, dataLen: number) => {
-        //   systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
-        // },
-        // systemAudioCancel: () => {
-        //   throw Error("not implemented");
-        // },
-        // systemClockNow: () => {
-        //   // TODO: use system
-        //   return performance.now() / 1000.0;
-        // },
-        // systemConsoleLog: (msgOffset: number, msgLen: number) => {
-        //   systemRef.getSystem().consoleLog(msgOffset, msgLen);
-        // },
-        // systemResourcePut: (nameOffset: number, nameLen: number, dataOffset: number, dataLen: number) => {
-        //   return systemRef.getSystem().resourcePut(nameOffset, nameLen, dataOffset, dataLen);
-        // },
-        // systemResourceGet: (nameOffset: number, nameLen: number) => {
-        //   return systemRef.getSystem().resourceGet(nameOffset, nameLen);
-        // },
-        // systemResourceDelete: () => {
-        //   throw Error("not implemented");
-        // },
+        systemVideoRender(videoFrameOffset: number, videoFrameLen: number, width: number) {
+          systemRef.getSystem().videoRender(videoFrameOffset, videoFrameLen, width);
+        },
+        systemAudioEnqueue(dataOffset: number, dataLen: number): number {
+          return systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
+        },
+        systemConsoleLog(messageOffset: number, messageLen: number) {
+          systemRef.getSystem().consoleLog(messageOffset, messageLen);
+        },
+        systemClockGameTime(): number {
+          return systemRef.getSystem().clockGameTime();
+        },
+        systemClockUnixTime(): number {
+          return systemRef.getSystem().clockUnixTime();
+        },
+        systemClockSetTimeout(timeout: number): number {
+          return systemRef.getSystem().clockSetTimeout(timeout);
+        },
+        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): number {
+          return systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen);
+        },
+        systemStateLoad(nameOffset: number, nameLen: number): number {
+          return systemRef.getSystem().stateLoad(nameOffset, nameLen);
+        },
+        systemStateDelete(nameOffset: number, nameLen: number): number {
+          return systemRef.getSystem().stateDelete(nameOffset, nameLen);
+        },
       },
     };
     const results = await WebAssembly.instantiateStreaming(fetch(gameWasmPath), importObject);
