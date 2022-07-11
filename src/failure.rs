@@ -3,6 +3,7 @@ use std::{error::Error, panic::Location};
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Failure {
     pub reason: String,
+    #[serde(default)]
     pub backtrace: Vec<BacktraceItem>,
 }
 

@@ -23,9 +23,9 @@ type WindowEvent = "rerenderNeeded" | "focusGained" | "focusLost" | { resized: {
 type StateEvent =
   | { loaded: { id: ActionId; data?: Uint8Array; failed?: Failure } }
   | { saved: { id: ActionId; failed?: Failure } }
-  | { delted: { id: ActionId; failed?: Failure } };
+  | { deleted: { id: ActionId; failed?: Failure } };
 
-type ActionId = number;
+type ActionId = bigint;
 
 type MouseButton = "left" | "middle" | "right";
 

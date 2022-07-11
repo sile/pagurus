@@ -1,4 +1,4 @@
-import { Event } from "./event";
+import { Event, ActionId } from "./event";
 import { System } from "./system";
 
 class Game {
@@ -33,16 +33,16 @@ class Game {
         systemClockUnixTime(): number {
           return systemRef.getSystem().clockUnixTime();
         },
-        systemClockSetTimeout(timeout: number): number {
+        systemClockSetTimeout(timeout: number): ActionId {
           return systemRef.getSystem().clockSetTimeout(timeout);
         },
-        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): number {
+        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): ActionId {
           return systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen);
         },
-        systemStateLoad(nameOffset: number, nameLen: number): number {
+        systemStateLoad(nameOffset: number, nameLen: number): ActionId {
           return systemRef.getSystem().stateLoad(nameOffset, nameLen);
         },
-        systemStateDelete(nameOffset: number, nameLen: number): number {
+        systemStateDelete(nameOffset: number, nameLen: number): ActionId {
           return systemRef.getSystem().stateDelete(nameOffset, nameLen);
         },
       },

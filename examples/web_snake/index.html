@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Pagurus: Web Snake</title>
+  </head>
+  <body>
+    <h1>Pagurus: Web Snake</h1>
+
+    <canvas id="canvas" width="800" height="600" style="background-color:black;border: 1px solid;"></canvas>
+
+    <script src="../../pagurus_web/dist/pagurus.js"></script>
+    <script>
+      Pagurus.Game.load("../../target/wasm32-unknown-unknown/release/snake_game.wasm").then(async game => {
+          const canvas = document.getElementById("canvas");
+          const system = new Pagurus.System(game.memory, canvas);
+          game.initialize(system);
+          while (true) {
+              const event = await system.nextEvent();
+              console.log(JSON.stringify(event));
+              if (!game.handleEvent(system, event)) {
+                  break;
+              }
+          }
+      });
+    </script>
+  </body>
+</html>
