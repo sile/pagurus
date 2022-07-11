@@ -53,14 +53,28 @@ class Game {
     return new Game(wasmInstance, systemRef);
   }
 
-  //   initialize(system: System) {
-  //     this.systemRef.setSystem(system);
-  //     try {
-  //       (this.wasmInstance.exports.gameInitialize as CallableFunction)(this.gameInstance);
-  //     } finally {
-  //       this.systemRef.clearSystem();
-  //     }
-  //   }
+  initialize(system: System) {
+    this.systemRef.setSystem(system);
+    try {
+      const error = (this.wasmInstance.exports.gameInitialize as CallableFunction)(this.gameInstance);
+      if (error !== 0) {
+        throw new Error(this.getWasmString(error));
+      }
+    } finally {
+      this.systemRef.clearSystem();
+    }
+  }
+
+  private getWasmString(bytesPtr: number): string {
+    try {
+      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(bytesPtr);
+      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(bytesPtr);
+      const bytes = new Uint8Array(this.memory.buffer, offset, len);
+      return new TextDecoder("utf-8").decode(bytes);
+    } finally {
+      (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(bytesPtr);
+    }
+  }
 
   //   handleEvent(system: System, event: Event): bool {
   //     this.systemRef.setSystem(system);
