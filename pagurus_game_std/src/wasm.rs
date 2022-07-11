@@ -1,5 +1,5 @@
 use pagurus::event::{Event, StateEvent};
-use pagurus::{ActionId, AudioData, Configuration, Game, System, VideoFrame};
+use pagurus::{ActionId, AudioData, Game, System, VideoFrame};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -20,15 +20,12 @@ where
     })
 }
 
-pub fn game_initialize<G>(game: *mut G, config_bytes_ptr: *mut Vec<u8>) -> *mut Vec<u8>
+pub fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
     let game = unsafe { &mut *game };
-    let config: Configuration = deserialize(config_bytes_ptr).unwrap_or_else(|e| {
-        panic!("failed to deserialize `SystemConfig`: {e}");
-    });
-    if let Err(e) = game.initialize(&mut WasmSystem, config) {
+    if let Err(e) = game.initialize(&mut WasmSystem) {
         serialize(&e).unwrap_or_else(|e| {
             panic!("failed to serialize `Failure`: {e}");
         })
@@ -111,8 +108,8 @@ macro_rules! export_wasm_functions {
         }
 
         #[no_mangle]
-        pub fn gameInitialize(game: *mut $game, config: *mut Vec<u8>) -> *mut Vec<u8> {
-            $crate::wasm::game_initialize(game, config)
+        pub fn gameInitialize(game: *mut $game) -> *mut Vec<u8> {
+            $crate::wasm::game_initialize(game)
         }
 
         #[no_mangle]

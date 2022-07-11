@@ -48,11 +48,8 @@ impl Exports {
         Ok(BytesPtr(values[0].clone()))
     }
 
-    pub fn game_initialize(&self, game: &Value, config: Bytes) -> Result<Option<BytesPtr>> {
-        let values = self
-            .game_initialize
-            .call(&[game.clone(), config.take()])
-            .or_fail()?;
+    pub fn game_initialize(&self, game: &Value) -> Result<Option<BytesPtr>> {
+        let values = self.game_initialize.call(&[game.clone()]).or_fail()?;
         convert::check_single_value(&values).or_fail()?;
         let error = convert::value_to_usize(&values[0]).or_fail()?;
         if error == 0 {

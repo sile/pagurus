@@ -1,6 +1,6 @@
 use clap::Parser;
 use pagurus::failure::OrFail;
-use pagurus::{Configuration, Game, Result};
+use pagurus::{Game, Result};
 use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
 use pagurus_wasmer::WasmGame;
 use std::path::PathBuf;
@@ -24,13 +24,9 @@ fn main() -> Result<()> {
         .title("Pagurus SDL Runtime")
         .build()
         .or_fail()?;
-    let config = Configuration {
-        initial_window_size: system.window_size(),
-        ..Default::default()
-    };
 
     // Loop
-    game.initialize(&mut system, config).or_fail()?;
+    game.initialize(&mut system).or_fail()?;
     loop {
         let event = system.wait_event();
         let do_continue = game.handle_event(&mut system, event).or_fail()?;

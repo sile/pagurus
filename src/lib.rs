@@ -26,24 +26,8 @@ pub trait System {
 
 pub trait Game<S: System> {
     fn requirements(&self) -> Result<Requirements>;
-    fn initialize(&mut self, system: &mut S, config: Configuration) -> Result<()>;
+    fn initialize(&mut self, system: &mut S) -> Result<()>;
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Configuration {
-    pub initial_window_size: Size,
-    pub game_argument: String,
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self {
-            initial_window_size: Size::from_wh(0, 0),
-            game_argument: String::new(),
-        }
-    }
 }
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]

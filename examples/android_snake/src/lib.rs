@@ -1,5 +1,5 @@
 use pagurus::failure::OrFail;
-use pagurus::{Configuration, Game};
+use pagurus::Game;
 use pagurus_android_system::{AndroidSystem, AndroidSystemBuilder};
 use pagurus_wasmer::WasmGame;
 
@@ -21,12 +21,7 @@ pub fn main() {
         .or_fail()
         .unwrap_or_else(|e| panic!("{e}"));
 
-    let config = Configuration {
-        initial_window_size: system.window_size(),
-        ..Default::default()
-    };
-
-    game.initialize(&mut system, config)
+    game.initialize(&mut system)
         .or_fail()
         .unwrap_or_else(|e| panic!("{e}"));
     loop {
