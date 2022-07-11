@@ -58,12 +58,9 @@ pub fn to_pagurus_key(code: Keycode) -> Option<Key> {
         Return => Some(Key::Return),
         Backspace => Some(Key::Backspace),
         Delete => Some(Key::Delete),
-        LShift => Some(Key::ShiftLeft),
-        RShift => Some(Key::ShiftRight),
-        LCtrl => Some(Key::CtrlLeft),
-        RCtrl => Some(Key::CtrlRight),
-        LAlt => Some(Key::AltLeft),
-        RAlt => Some(Key::AltRight),
+        LShift | RShift => Some(Key::Shift),
+        LCtrl | RCtrl => Some(Key::Ctrl),
+        LAlt | RAlt => Some(Key::Alt),
         _ => None,
     }
 }
