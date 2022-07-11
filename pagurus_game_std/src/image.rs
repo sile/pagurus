@@ -135,7 +135,9 @@ impl Sprite {
     }
 
     pub fn get_pixel(&self, pos: Position) -> Option<Rgba> {
-        let i = pos.y as isize * self.size().width as isize + pos.x as isize;
+        let y = (pos.y + self.sprite_region.position.y) as isize;
+        let x = (pos.x + self.sprite_region.position.x) as isize;
+        let i = y * self.image_size.width as isize + x;
         (0 <= i && i < self.image_data.len() as isize).then(|| self.image_data[i as usize])
     }
 }

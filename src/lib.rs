@@ -25,16 +25,8 @@ pub trait System {
 }
 
 pub trait Game<S: System> {
-    fn requirements(&self) -> Result<Requirements>;
     fn initialize(&mut self, system: &mut S) -> Result<()>;
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
-}
-
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Requirements {
-    #[serde(default)]
-    pub logical_window_size: Option<Size>,
 }
 
 #[derive(Debug)]

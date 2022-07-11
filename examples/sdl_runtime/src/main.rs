@@ -16,11 +16,9 @@ fn main() -> Result<()> {
     // Game
     let wasm_bytes = std::fs::read(&args.game_wasm_path).or_fail()?;
     let mut game = WasmGame::<SdlSystem>::new(&wasm_bytes).or_fail()?;
-    let requirements = game.requirements().or_fail()?;
 
     // System
     let mut system = SdlSystemBuilder::new()
-        .logical_window_size(requirements.logical_window_size)
         .title("Pagurus SDL Runtime")
         .build()
         .or_fail()?;

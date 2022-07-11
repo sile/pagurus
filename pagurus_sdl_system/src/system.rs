@@ -18,7 +18,6 @@ pub struct SdlSystemBuilder {
     data_dir: PathBuf,
     title: String,
     window_size: Option<Size>,
-    logical_window_size: Option<Size>,
     custom_window: Option<Box<dyn 'static + Fn(VideoSubsystem) -> Result<Window>>>,
     custom_canvas: Option<Box<dyn 'static + Fn(Window) -> Result<Canvas<Window>>>>,
 }
@@ -29,7 +28,6 @@ impl SdlSystemBuilder {
             data_dir: PathBuf::from(SdlSystem::DEFAULT_DATA_DIR),
             title: SdlSystem::DEFAULT_TITLE.to_owned(),
             window_size: None,
-            logical_window_size: None,
             custom_window: None,
             custom_canvas: None,
         }
@@ -50,11 +48,6 @@ impl SdlSystemBuilder {
         self
     }
 
-    pub fn logical_window_size(mut self, size: Option<Size>) -> Self {
-        self.logical_window_size = size;
-        self
-    }
-
     pub fn build(self) -> Result<SdlSystem> {
         let sdl_context = sdl2::init().map_err(Failure::new)?;
 
@@ -63,26 +56,18 @@ impl SdlSystemBuilder {
         let sdl_window = if let Some(f) = self.custom_window {
             f(sdl_video).or_fail()?
         } else {
-            let window_size = self
-                .window_size
-                .or(self.logical_window_size)
-                .unwrap_or(SdlSystem::DEFAULT_WINDOW_SIZE);
+            let window_size = self.window_size.unwrap_or(SdlSystem::DEFAULT_WINDOW_SIZE);
             sdl_video
                 .window(&self.title, window_size.width, window_size.height)
                 .position_centered()
                 .build()
                 .or_fail()?
         };
-        let mut sdl_canvas = if let Some(f) = self.custom_canvas {
+        let sdl_canvas = if let Some(f) = self.custom_canvas {
             f(sdl_window).or_fail()?
         } else {
             sdl_window.into_canvas().build().or_fail()?
         };
-        if let Some(size) = self.logical_window_size {
-            sdl_canvas
-                .set_logical_size(size.width, size.height)
-                .or_fail()?;
-        }
 
         // Audio
         let sdl_audio = sdl_context.audio().map_err(Failure::new)?;
@@ -115,6 +100,7 @@ impl SdlSystemBuilder {
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
             data_dir: self.data_dir,
+            prev_frame_size: Size::default(),
         })
     }
 }
@@ -134,6 +120,7 @@ pub struct SdlSystem {
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
     data_dir: PathBuf,
+    prev_frame_size: Size,
 }
 
 impl SdlSystem {
@@ -181,6 +168,13 @@ impl SdlSystem {
 
 impl System for SdlSystem {
     fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
+        if frame.size() != self.prev_frame_size {
+            self.sdl_canvas
+                .set_logical_size(frame.size().width, frame.size().height)
+                .unwrap_or_else(|e| panic!("{e}"));
+            self.prev_frame_size = frame.size();
+        }
+
         self.sdl_canvas.clear();
 
         let texture_creator = self.sdl_canvas.texture_creator();

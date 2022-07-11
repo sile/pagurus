@@ -9,17 +9,6 @@ where
     Box::into_raw(Box::new(G::default()))
 }
 
-pub fn game_requirements<G>(game: *mut G) -> *mut Vec<u8>
-where
-    G: Game<WasmSystem>,
-{
-    let game = unsafe { &mut *game };
-    let requirements = game.requirements();
-    serialize(&requirements).unwrap_or_else(|e| {
-        panic!("failed to serialize the result of `Game::requirements()`: {e}");
-    })
-}
-
 pub fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
@@ -100,11 +89,6 @@ macro_rules! export_wasm_functions {
         #[no_mangle]
         pub fn gameNew() -> *mut $game {
             $crate::wasm::game_new()
-        }
-
-        #[no_mangle]
-        pub fn gameRequirements(game: *mut $game) -> *const Vec<u8> {
-            $crate::wasm::game_requirements(game)
         }
 
         #[no_mangle]

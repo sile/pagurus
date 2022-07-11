@@ -3,7 +3,7 @@ use crate::env::Env;
 use crate::ffi::{Exports, Imports};
 use pagurus::event::{Event, StateEvent};
 use pagurus::failure::OrFail;
-use pagurus::{Game, Requirements, Result, System};
+use pagurus::{Game, Result, System};
 use serde::{Deserialize, Serialize};
 use wasmer::{Instance, Memory, Module, Store, Value};
 
@@ -59,11 +59,6 @@ impl<S: System> WasmGame<S> {
 }
 
 impl<S: System> Game<S> for WasmGame<S> {
-    fn requirements(&self) -> Result<Requirements> {
-        let bytes_ptr = self.exports.game_requirements(&self.game).or_fail()?;
-        self.deserialize(bytes_ptr).or_fail()?
-    }
-
     fn initialize(&mut self, system: &mut S) -> Result<()> {
         self.env.set_system(system).or_fail()?;
 

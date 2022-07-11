@@ -10,7 +10,6 @@ use wasmer::{Array, Function, ImportObject, Store, Value, WasmPtr};
 #[derive(Debug)]
 pub struct Exports {
     game_new: Function,
-    game_requirements: Function,
     game_initialize: Function,
     game_handle_event: Function,
     memory_allocate_bytes: Function,
@@ -23,7 +22,6 @@ impl Exports {
     pub fn new(exports: &wasmer::Exports) -> Result<Self> {
         Ok(Self {
             game_new: exports.get_function("gameNew").or_fail()?.clone(),
-            game_requirements: exports.get_function("gameRequirements").or_fail()?.clone(),
             game_initialize: exports.get_function("gameInitialize").or_fail()?.clone(),
             game_handle_event: exports.get_function("gameHandleEvent").or_fail()?.clone(),
             memory_allocate_bytes: exports
@@ -40,12 +38,6 @@ impl Exports {
         let values = self.game_new.call(&[]).or_fail()?;
         convert::check_single_value(&values).or_fail()?;
         Ok(values[0].clone())
-    }
-
-    pub fn game_requirements(&self, game: &Value) -> Result<BytesPtr> {
-        let values = self.game_requirements.call(&[game.clone()]).or_fail()?;
-        convert::check_single_value(&values).or_fail()?;
-        Ok(BytesPtr(values[0].clone()))
     }
 
     pub fn game_initialize(&self, game: &Value) -> Result<Option<BytesPtr>> {

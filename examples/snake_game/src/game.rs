@@ -4,7 +4,7 @@ use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
 use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::{event::Event, Game, Requirements, Result, System};
+use pagurus::{event::Event, Game, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
 use pagurus_game_std::image::Canvas;
 use pagurus_game_std::logger::Logger;
@@ -27,13 +27,6 @@ pub struct SnakeGame {
 }
 
 impl<S: System> Game<S> for SnakeGame {
-    fn requirements(&self) -> Result<Requirements> {
-        Ok(Requirements {
-            logical_window_size: Some(WINDOW_SIZE),
-            ..Default::default()
-        })
-    }
-
     fn initialize(&mut self, system: &mut S) -> Result<()> {
         // Logger.
         self.logger = Logger::init(LOG_LEVEL).or_fail()?;

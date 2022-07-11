@@ -10,13 +10,7 @@ pub const GAME_WASM_BYTES: &[u8] =
 pub fn main() {
     let mut game =
         WasmGame::<AndroidSystem>::new(GAME_WASM_BYTES).unwrap_or_else(|e| panic!("{e}"));
-    let requirements = game
-        .requirements()
-        .or_fail()
-        .unwrap_or_else(|e| panic!("{e}"));
-
     let mut system = AndroidSystemBuilder::new()
-        .logical_window_size(requirements.logical_window_size)
         .build()
         .or_fail()
         .unwrap_or_else(|e| panic!("{e}"));

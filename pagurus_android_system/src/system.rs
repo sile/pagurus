@@ -14,19 +14,12 @@ use std::{
     time::{Duration, Instant, UNIX_EPOCH},
 };
 
-#[derive(Debug)]
-pub struct AndroidSystemBuilder {
-    logical_window_size: Option<Size>,
-}
+#[derive(Debug, Default)]
+pub struct AndroidSystemBuilder {}
 
 impl AndroidSystemBuilder {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn logical_window_size(mut self, size: Option<Size>) -> Self {
-        self.logical_window_size = size;
-        self
     }
 
     pub fn build(self) -> Result<AndroidSystem> {
@@ -67,16 +60,8 @@ impl AndroidSystemBuilder {
             next_action_id: ActionId::default(),
             data_dir,
             window_size,
-            logical_window_size: self.logical_window_size,
+            frame_size: Size::default(),
         })
-    }
-}
-
-impl Default for AndroidSystemBuilder {
-    fn default() -> Self {
-        Self {
-            logical_window_size: None,
-        }
     }
 }
 
@@ -91,7 +76,7 @@ pub struct AndroidSystem {
     io_request_tx: mpsc::Sender<IoRequest>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     window_size: Size,
-    logical_window_size: Option<Size>,
+    frame_size: Size,
 }
 
 impl AndroidSystem {
@@ -149,12 +134,7 @@ impl AndroidSystem {
     }
 
     fn adjust_mouse_position(&self, mut event: MouseEvent) -> MouseEvent {
-        let logical_size = if let Some(logical_window_size) = self.logical_window_size {
-            logical_window_size
-        } else {
-            return event;
-        };
-
+        let logical_size = self.frame_size;
         let actual_size = self.window_size;
         let mut position = event.position();
         let scale_w = logical_size.width as f32 / actual_size.width as f32;
@@ -178,6 +158,8 @@ impl AndroidSystem {
 
 impl System for AndroidSystem {
     fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
+        self.frame_size = frame.size();
+
         if let Some(window) = &*ndk_glue::native_window() {
             let window = Window::new(window);
             let window_size = window.get_window_size();
