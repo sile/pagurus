@@ -44,7 +44,7 @@ class System {
     }
   }
 
-  videoRender(videoFrameOffset: number, videoFrameLen: number, width: number) {
+  videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number) {
     const canvasHeight = videoFrameLen / 3 / width;
     const image = this.canvasCtx.createImageData(width, canvasHeight);
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);

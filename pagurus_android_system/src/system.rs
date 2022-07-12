@@ -120,7 +120,7 @@ impl AndroidSystem {
 
     fn handle_event(&mut self, event: Event) -> Option<Event> {
         match event {
-            Event::Window(WindowEvent::Resized { size }) => {
+            Event::Window(WindowEvent::RedrawNeeded { size }) => {
                 self.window_size = size;
                 Some(event)
             }
@@ -157,7 +157,7 @@ impl AndroidSystem {
 }
 
 impl System for AndroidSystem {
-    fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
+    fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         self.frame_size = frame.size();
 
         if let Some(window) = &*ndk_glue::native_window() {

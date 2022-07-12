@@ -105,7 +105,7 @@ impl TitleStage {
         self.play_button.render(env, canvas).or_fail()?;
         self.exit_button.render(env, canvas).or_fail()?;
 
-        canvas.render_sprite(Position::from_xy(64, 96), &env.assets.sprites.strings.snake);
+        canvas.draw_sprite(Position::from_xy(64, 96), &env.assets.sprites.strings.snake);
         render_high_score(env, canvas);
 
         Ok(())
@@ -213,15 +213,15 @@ impl PlayStage {
 
 fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
     let score = env.high_score.0;
-    canvas.render_sprite(
+    canvas.draw_sprite(
         Position::from_xy(180, 160),
         &env.assets.sprites.strings.high_score,
     );
-    canvas.render_sprite(
+    canvas.draw_sprite(
         Position::from_xy(180 + 112, 160),
         &env.assets.sprites.numbers.small[score as usize / 10],
     );
-    canvas.render_sprite(
+    canvas.draw_sprite(
         Position::from_xy(180 + 112 + 11, 160),
         &env.assets.sprites.numbers.small[score as usize % 10],
     );
@@ -231,27 +231,27 @@ fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_stat
     let offset = Position::from_xy(1, 1);
     let scale = CELL_SIZE;
 
-    canvas.render_sprite(
+    canvas.draw_sprite(
         (offset + game_state.apple) * scale,
         &env.assets.sprites.items.apple,
     );
-    canvas.render_sprite(
+    canvas.draw_sprite(
         (offset + game_state.snake.head) * scale,
         &env.assets.sprites.items.snake_head,
     );
     for &tail in &game_state.snake.tail {
-        canvas.render_sprite(
+        canvas.draw_sprite(
             (offset + tail) * scale,
             &env.assets.sprites.items.snake_tail,
         );
     }
 
     let score = game_state.score() as usize;
-    canvas.render_sprite(
+    canvas.draw_sprite(
         Position::from_xy(32 * 10, 8),
         &env.assets.sprites.numbers.large[score / 10],
     );
-    canvas.render_sprite(
+    canvas.draw_sprite(
         Position::from_xy(32 * 10 + 16, 8),
         &env.assets.sprites.numbers.large[score % 10],
     );
@@ -321,8 +321,8 @@ impl GameOverStage {
     fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
 
-        canvas.render_sprite(Position::from_xy(64, 40), &env.assets.sprites.strings.game);
-        canvas.render_sprite(Position::from_xy(64, 100), &env.assets.sprites.strings.over);
+        canvas.draw_sprite(Position::from_xy(64, 40), &env.assets.sprites.strings.game);
+        canvas.draw_sprite(Position::from_xy(64, 100), &env.assets.sprites.strings.over);
         render_high_score(env, canvas);
 
         canvas.fill_rgba(Rgb::BLACK.alpha(60));

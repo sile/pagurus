@@ -120,7 +120,7 @@ impl<S: 'static + System> Imports<S> {
     pub fn to_import_object(&self, store: &Store, env: &Env<S>) -> ImportObject {
         wasmer::imports! {
             "env" => {
-                "systemVideoRender" => Function::new_native_with_env(&store, env.clone(), Self::system_video_render),
+                "systemVideoDraw" => Function::new_native_with_env(&store, env.clone(), Self::system_video_draw),
                 "systemAudioEnqueue" => Function::new_native_with_env(&store, env.clone(), Self::system_audio_enqueue),
                 "systemClockGameTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_game_time),
                 "systemClockUnixTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_unix_time),
@@ -133,14 +133,14 @@ impl<S: 'static + System> Imports<S> {
         }
     }
 
-    fn system_video_render(env: &Env<S>, data: WasmPtr<u8, Array>, data_len: u32, width: u32) {
+    fn system_video_draw(env: &Env<S>, data: WasmPtr<u8, Array>, data_len: u32, width: u32) {
         env.with_system_and_memory(|system, memory| unsafe {
             let data = std::slice::from_raw_parts(
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
             let frame = VideoFrame::new(data, width).unwrap_or_else(|e| panic!("{e}"));
-            system.video_render(frame);
+            system.video_draw(frame);
         });
     }
 

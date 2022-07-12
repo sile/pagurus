@@ -18,8 +18,8 @@ class Game {
     const systemRef = new SystemRef();
     const importObject = {
       env: {
-        systemVideoRender(videoFrameOffset: number, videoFrameLen: number, width: number) {
-          systemRef.getSystem().videoRender(videoFrameOffset, videoFrameLen, width);
+        systemVideoDraw(videoFrameOffset: number, videoFrameLen: number, width: number) {
+          systemRef.getSystem().videoDraw(videoFrameOffset, videoFrameLen, width);
         },
         systemAudioEnqueue(dataOffset: number, dataLen: number): number {
           return systemRef.getSystem().audioEnqueue(dataOffset, dataLen);

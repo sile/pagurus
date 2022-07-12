@@ -167,7 +167,7 @@ impl SdlSystem {
 }
 
 impl System for SdlSystem {
-    fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
+    fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         if frame.size() != self.prev_frame_size {
             self.sdl_canvas
                 .set_logical_size(frame.size().width, frame.size().height)

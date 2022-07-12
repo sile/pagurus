@@ -36,8 +36,7 @@ pub struct TimeoutEvent {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum WindowEvent {
-    Resized { size: Size },
-    RerenderNeeded,
+    RedrawNeeded { size: Size },
     FocusGained,
     FocusLost,
 }

@@ -73,7 +73,7 @@ impl SnakeGame {
     fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
         let assets = self.assets.as_ref().or_fail()?;
         self.canvas
-            .render_sprite(Default::default(), &assets.sprites.background);
+            .draw_sprite(Default::default(), &assets.sprites.background);
 
         let mut env = Env::new(
             system,
@@ -85,7 +85,7 @@ impl SnakeGame {
         self.stage.render(&mut env, &mut self.canvas).or_fail()?;
 
         let frame = self.canvas.to_video_frame().or_fail()?;
-        system.video_render(frame.as_ref());
+        system.video_draw(frame.as_ref());
 
         Ok(())
     }
@@ -105,7 +105,7 @@ impl SnakeGame {
             Event::Terminating => {
                 return Ok(false);
             }
-            Event::Window(WindowEvent::Resized { .. } | WindowEvent::RerenderNeeded) => {
+            Event::Window(WindowEvent::RedrawNeeded { .. }) => {
                 self.render(system).or_fail()?;
                 return Ok(true);
             }

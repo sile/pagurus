@@ -26,7 +26,7 @@ impl Canvas {
         &self.data
     }
 
-    pub fn render_sprite(&mut self, offset: Position, sprite: &Sprite) {
+    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
         let canvas_region = self.size.to_region();
         for (pixel_pos, pixel) in sprite.pixels() {
             let canvas_pos = pixel_pos + offset;

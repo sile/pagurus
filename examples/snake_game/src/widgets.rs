@@ -157,7 +157,7 @@ impl ButtonWidget {
             ButtonState::Focused => &self.sprite.focused,
             ButtonState::Pressed | ButtonState::Clicked => &self.sprite.pressed,
         };
-        canvas.render_sprite(self.position, button);
+        canvas.draw_sprite(self.position, button);
         Ok(())
     }
 }
@@ -256,7 +256,7 @@ impl CursorWidget {
             CursorState::Left => &self.sprite.select_left,
             CursorState::Right => &self.sprite.select_right,
         };
-        canvas.render_sprite(self.position - 16, cursor);
+        canvas.draw_sprite(self.position - 16, cursor);
     }
 }
 

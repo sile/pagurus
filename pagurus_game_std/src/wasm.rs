@@ -131,13 +131,13 @@ macro_rules! export_wasm_functions {
 pub struct WasmSystem;
 
 impl System for WasmSystem {
-    fn video_render(&mut self, frame: VideoFrame<&[u8]>) {
+    fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         extern "C" {
-            fn systemVideoRender(data: *const u8, data_len: i32, width: i32);
+            fn systemVideoDraw(data: *const u8, data_len: i32, width: i32);
         }
         let data = frame.bytes();
         let width = frame.size().width as i32;
-        unsafe { systemVideoRender(data.as_ptr(), data.len() as i32, width) }
+        unsafe { systemVideoDraw(data.as_ptr(), data.len() as i32, width) }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

@@ -54,7 +54,7 @@ fn to_pagurus_mouse_event(sdl_event: SdlEvent) -> Option<MouseEvent> {
 
 fn to_pagurus_window_event(sdl_event: SdlWindowEvent) -> Option<WindowEvent> {
     match sdl_event {
-        SdlWindowEvent::SizeChanged(width, height) => Some(WindowEvent::Resized {
+        SdlWindowEvent::SizeChanged(width, height) => Some(WindowEvent::RedrawNeeded {
             size: Size::from_wh(width as u32, height as u32),
         }),
         SdlWindowEvent::FocusGained => Some(WindowEvent::FocusGained),

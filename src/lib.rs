@@ -13,7 +13,7 @@ pub mod spatial;
 pub type Result<T, E = Failure> = std::result::Result<T, E>;
 
 pub trait System {
-    fn video_render(&mut self, frame: VideoFrame<&[u8]>);
+    fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
     fn audio_enqueue(&mut self, data: AudioData) -> usize;
     fn console_log(&mut self, message: &str);
     fn clock_game_time(&mut self) -> Duration;
