@@ -6,9 +6,11 @@ use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::{event::Event, Game, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
+use pagurus_game_std::color::Rgb;
 use pagurus_game_std::image::Canvas;
 use pagurus_game_std::logger::Logger;
 use pagurus_game_std::random::StdRng;
+use pagurus_game_std::window::LogicalWindow;
 
 pagurus_game_std::export_wasm_functions!(SnakeGame);
 
@@ -24,6 +26,7 @@ pub struct SnakeGame {
     high_score: HighScore,
     canvas: Canvas,
     stage: Stage,
+    logical_window: LogicalWindow,
 }
 
 impl<S: System> Game<S> for SnakeGame {
@@ -44,6 +47,7 @@ impl<S: System> Game<S> for SnakeGame {
 
         // Canvas.
         self.canvas = Canvas::new(WINDOW_SIZE);
+        self.logical_window = LogicalWindow::new(WINDOW_SIZE);
 
         // Stage.
         let mut env = Env::new(
@@ -54,7 +58,6 @@ impl<S: System> Game<S> for SnakeGame {
             self.assets.as_ref().or_fail()?,
         );
         self.stage.initialize(&mut env).or_fail()?;
-        self.render(system).or_fail()?;
 
         // High Score.
         system.state_load(STATE_HIGH_SCORE);
@@ -72,8 +75,15 @@ impl<S: System> Game<S> for SnakeGame {
 impl SnakeGame {
     fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
         let assets = self.assets.as_ref().or_fail()?;
-        self.canvas
-            .draw_sprite(Default::default(), &assets.sprites.background);
+
+        self.canvas.resize(self.logical_window.size());
+        self.canvas.fill_rgba(Rgb::BLACK.alpha(255));
+
+        let mut canvas_view = self
+            .canvas
+            .view(self.logical_window.canvas_region())
+            .or_fail()?;
+        canvas_view.draw_sprite(Default::default(), &assets.sprites.background);
 
         let mut env = Env::new(
             system,
@@ -82,7 +92,7 @@ impl SnakeGame {
             &mut self.high_score,
             assets,
         );
-        self.stage.render(&mut env, &mut self.canvas).or_fail()?;
+        self.stage.render(&mut env, &mut canvas_view).or_fail()?;
 
         let frame = self.canvas.to_video_frame().or_fail()?;
         system.video_draw(frame.as_ref());
@@ -95,6 +105,8 @@ impl SnakeGame {
         system: &mut S,
         event: Event,
     ) -> Result<bool> {
+        let event = self.logical_window.handle_event(event);
+
         let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
             event
         } else {

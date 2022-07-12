@@ -6,3 +6,4 @@ pub mod ogg;
 pub mod png;
 pub mod random;
 pub mod wasm;
+pub mod window;

@@ -10,7 +10,7 @@ use pagurus::input::Key;
 use pagurus::spatial::Position;
 use pagurus::{ActionId, Result, System};
 use pagurus_game_std::color::Rgb;
-use pagurus_game_std::image::Canvas;
+use pagurus_game_std::image::CanvasView;
 use std::time::Duration;
 
 #[derive(Debug, Default)]
@@ -47,7 +47,7 @@ impl Stage {
         }
     }
 
-    pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut CanvasView) -> Result<()> {
         match self {
             Stage::Uninitialized => Err(Failure::unreachable()),
             Stage::Title(x) => x.render(env, canvas).or_fail(),
@@ -101,7 +101,7 @@ impl TitleStage {
         }
     }
 
-    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut CanvasView) -> Result<()> {
         self.play_button.render(env, canvas).or_fail()?;
         self.exit_button.render(env, canvas).or_fail()?;
 
@@ -204,14 +204,14 @@ impl PlayStage {
         Ok(())
     }
 
-    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut CanvasView) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
         self.cursor.render(canvas);
         Ok(())
     }
 }
 
-fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
+fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut CanvasView) {
     let score = env.high_score.0;
     canvas.draw_sprite(
         Position::from_xy(180, 160),
@@ -227,7 +227,7 @@ fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
     );
 }
 
-fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_state: &GameState) {
+fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut CanvasView, game_state: &GameState) {
     let offset = Position::from_xy(1, 1);
     let scale = CELL_SIZE;
 
@@ -318,7 +318,7 @@ impl GameOverStage {
         }
     }
 
-    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut CanvasView) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
 
         canvas.draw_sprite(Position::from_xy(64, 40), &env.assets.sprites.strings.game);

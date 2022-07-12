@@ -102,7 +102,7 @@ class Game {
   }
 
   private createWasmBytes(bytes: Uint8Array): number {
-    const wasmBytesPtr = (this.wasmInstance.exports.allocateFreeBytes as CallableFunction)(bytes.length);
+    const wasmBytesPtr = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(bytes.length);
     const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr);
     const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr);
     new Uint8Array(this.memory.buffer, offset, len).set(bytes);

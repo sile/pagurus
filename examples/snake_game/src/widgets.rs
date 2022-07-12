@@ -6,7 +6,7 @@ use pagurus::failure::OrFail;
 use pagurus::input::{Key, MouseButton};
 use pagurus::spatial::{Contains, Position, Region};
 use pagurus::{Result, System};
-use pagurus_game_std::image::Canvas;
+use pagurus_game_std::image::CanvasView;
 
 #[derive(Debug)]
 pub struct ButtonGroup<'a, const N: usize> {
@@ -151,7 +151,7 @@ impl ButtonWidget {
         Region::new(self.position, Button::SIZE)
     }
 
-    pub fn render<S: System>(&mut self, _env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    pub fn render<S: System>(&mut self, _env: &mut Env<S>, canvas: &mut CanvasView) -> Result<()> {
         let button = match self.state {
             ButtonState::Normal => &self.sprite.normal,
             ButtonState::Focused => &self.sprite.focused,
@@ -241,7 +241,7 @@ impl CursorWidget {
         Ok(())
     }
 
-    pub fn render(&self, canvas: &mut Canvas) {
+    pub fn render(&self, canvas: &mut CanvasView) {
         if !self.enabled {
             return;
         }

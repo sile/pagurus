@@ -1,4 +1,4 @@
-use pagurus::event::{Event, StateEvent, TimeoutEvent};
+use pagurus::event::{Event, StateEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::spatial::Size;
 use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
@@ -88,6 +88,14 @@ impl SdlSystemBuilder {
             .map_err(Failure::new)?;
         let sdl_event_pump = sdl_context.event_pump().map_err(Failure::new)?;
 
+        let (width, height) = sdl_canvas.window().size();
+        sdl_event
+            .event_sender()
+            .push_custom_event(Event::Window(WindowEvent::RedrawNeeded {
+                size: Size::from_wh(width, height),
+            }))
+            .map_err(Failure::new)?;
+
         // I/O Thread
         let io_request_tx = IoThread::spawn(sdl_event.event_sender());
 
@@ -100,7 +108,6 @@ impl SdlSystemBuilder {
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
             data_dir: self.data_dir,
-            prev_frame_size: Size::default(),
         })
     }
 }
@@ -120,7 +127,6 @@ pub struct SdlSystem {
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
     data_dir: PathBuf,
-    prev_frame_size: Size,
 }
 
 impl SdlSystem {
@@ -168,13 +174,6 @@ impl SdlSystem {
 
 impl System for SdlSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        if frame.size() != self.prev_frame_size {
-            self.sdl_canvas
-                .set_logical_size(frame.size().width, frame.size().height)
-                .unwrap_or_else(|e| panic!("{e}"));
-            self.prev_frame_size = frame.size();
-        }
-
         self.sdl_canvas.clear();
 
         let texture_creator = self.sdl_canvas.texture_creator();

@@ -18,7 +18,7 @@ type MouseEvent =
   | { down: { position: Position; button: MouseButton } }
   | { up: { position: Position; button: MouseButton } };
 
-type WindowEvent = "rerenderNeeded" | "focusGained" | "focusLost" | { resized: { size: Size } };
+type WindowEvent = "focusGained" | "focusLost" | { redrawNeeded: { size: Size } };
 
 type StateEvent =
   | { loaded: { id: ActionId; data?: Uint8Array; failed?: Failure } }

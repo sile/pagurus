@@ -13,8 +13,15 @@ pub struct Canvas {
 impl Canvas {
     pub fn new(size: Size) -> Self {
         Self {
-            data: size.iter().map(|_| Rgb::WHITE).collect(),
+            data: vec![Rgb::BLACK; size.len()],
             size,
+        }
+    }
+
+    pub fn resize(&mut self, size: Size) {
+        if size != self.size {
+            self.size = size;
+            self.data = vec![Rgb::BLACK; size.len()];
         }
     }
 
@@ -26,21 +33,28 @@ impl Canvas {
         &self.data
     }
 
-    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
-        let canvas_region = self.size.to_region();
-        for (pixel_pos, pixel) in sprite.pixels() {
-            let canvas_pos = pixel_pos + offset;
-            if canvas_region.contains(&canvas_pos) {
-                let i = canvas_pos.y as usize * self.size.width as usize + canvas_pos.x as usize;
-                self.data[i] = pixel.to_alpha_blend_rgb(self.data[i]);
-            }
+    pub fn view(&mut self, region: Region) -> Result<CanvasView> {
+        self.size.to_region().contains(&region).or_fail()?;
+        Ok(CanvasView {
+            canvas: self,
+            region,
+        })
+    }
+
+    pub fn to_view(&mut self) -> CanvasView {
+        let region = self.size.to_region();
+        CanvasView {
+            canvas: self,
+            region,
         }
     }
 
+    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
+        self.to_view().draw_sprite(offset, sprite);
+    }
+
     pub fn fill_rgba(&mut self, color: Rgba) {
-        for pixel in &mut self.data {
-            *pixel = color.to_alpha_blend_rgb(*pixel);
-        }
+        self.to_view().fill_rgba(color);
     }
 
     pub fn to_video_frame(&self) -> Result<VideoFrame<Vec<u8>>> {
@@ -51,6 +65,33 @@ impl Canvas {
             bytes.push(pixel.b);
         }
         VideoFrame::new(bytes, self.size.width).or_fail()
+    }
+}
+
+#[derive(Debug)]
+pub struct CanvasView<'a> {
+    canvas: &'a mut Canvas,
+    region: Region,
+}
+
+impl<'a> CanvasView<'a> {
+    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
+        let w = self.canvas.size.width as i32;
+        for (pixel_pos, pixel) in sprite.pixels() {
+            let canvas_pos = pixel_pos + offset + self.region.position;
+            if self.region.contains(&canvas_pos) {
+                let i = (canvas_pos.y * w + canvas_pos.x) as usize;
+                self.canvas.data[i] = pixel.to_alpha_blend_rgb(self.canvas.data[i]);
+            }
+        }
+    }
+
+    pub fn fill_rgba(&mut self, color: Rgba) {
+        let w = self.canvas.size.width as i32;
+        for pos in self.region.iter() {
+            let i = (pos.y * w + pos.x) as usize;
+            self.canvas.data[i] = color.to_alpha_blend_rgb(self.canvas.data[i]);
+        }
     }
 }
 

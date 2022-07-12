@@ -21,7 +21,8 @@ class System {
 
     this.startTime = performance.now();
     this.nextActionId = 0n;
-    this.eventQueue = [];
+
+    this.eventQueue = [{ window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } }];
   }
 
   nextEvent(): Promise<Event> {

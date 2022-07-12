@@ -2,9 +2,8 @@ use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
 use ndk::aaudio::{AAudioFormat, AAudioStream, AAudioStreamState};
-use pagurus::event::{Event, MouseEvent, TimeoutEvent, WindowEvent};
+use pagurus::event::{Event, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::spatial::{Position, Size};
 use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -34,13 +33,13 @@ impl AndroidSystemBuilder {
         let event_poller = EventPoller::new().or_fail()?;
 
         let (event_tx, event_rx) = mpsc::channel();
-        let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
 
-        let window_size = if let Some(window) = &*ndk_glue::native_window() {
-            Window::new(window).get_window_size()
-        } else {
-            Size::default()
-        };
+        if let Some(window) = &*ndk_glue::native_window() {
+            let size = Window::new(window).get_window_size();
+            let _ = event_tx.send(Event::Window(WindowEvent::RedrawNeeded { size }));
+        }
+
+        let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
 
         let audio = ndk::aaudio::AAudioStreamBuilder::new()
             .or_fail()?
@@ -59,8 +58,6 @@ impl AndroidSystemBuilder {
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
             data_dir,
-            window_size,
-            frame_size: Size::default(),
         })
     }
 }
@@ -75,8 +72,6 @@ pub struct AndroidSystem {
     event_rx: mpsc::Receiver<Event>,
     io_request_tx: mpsc::Sender<IoRequest>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
-    window_size: Size,
-    frame_size: Size,
 }
 
 impl AndroidSystem {
@@ -107,83 +102,27 @@ impl AndroidSystem {
             }
 
             if let Some(event) = self.event_poller.poll_once_timeout(timeout).or_fail()? {
-                if let Some(event) = self.handle_event(event) {
-                    return Ok(event);
-                }
+                return Ok(event);
             }
-        }
-    }
-
-    pub fn window_size(&self) -> Size {
-        self.window_size
-    }
-
-    fn handle_event(&mut self, event: Event) -> Option<Event> {
-        match event {
-            Event::Window(WindowEvent::RedrawNeeded { size }) => {
-                self.window_size = size;
-                Some(event)
-            }
-            Event::Mouse(event) => Some(Event::Mouse(self.adjust_mouse_position(event))),
-            _ => Some(event),
         }
     }
 
     fn state_file_path(&self, name: &str) -> PathBuf {
         self.data_dir.join(urlencoding::encode(name).as_ref())
     }
-
-    fn adjust_mouse_position(&self, mut event: MouseEvent) -> MouseEvent {
-        let logical_size = self.frame_size;
-        let actual_size = self.window_size;
-        let mut position = event.position();
-        let scale_w = logical_size.width as f32 / actual_size.width as f32;
-        let scale_h = logical_size.height as f32 / actual_size.height as f32;
-        if logical_size.aspect_ratio() > actual_size.aspect_ratio() {
-            let height = (actual_size.height as f32 * scale_w).round() as i32;
-            position.x = (position.x as f32 * scale_w).round() as i32;
-            position.y = (position.y as f32 * scale_w).round() as i32;
-            position.y -= (height - logical_size.height as i32) / 2;
-        } else if logical_size.aspect_ratio() < actual_size.aspect_ratio() {
-            let width = (actual_size.width as f32 * scale_h).round() as i32;
-            position.y = (position.y as f32 * scale_h).round() as i32;
-            position.x = (position.x as f32 * scale_h).round() as i32;
-            position.x -= (width - logical_size.width as i32) / 2;
-        }
-
-        event.set_position(position);
-        event
-    }
 }
 
 impl System for AndroidSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        self.frame_size = frame.size();
-
         if let Some(window) = &*ndk_glue::native_window() {
             let window = Window::new(window);
-            let window_size = window.get_window_size();
-
-            let mut buffer_offset = Position::ORIGIN;
-            let mut buffer_size = frame.size();
-
-            if frame.size().aspect_ratio() > window_size.aspect_ratio() {
-                let scale = frame.size().width as f32 / window_size.width as f32;
-                buffer_size.height = (window_size.height as f32 * scale).round() as u32;
-                buffer_offset.y = (buffer_size.height as i32 - frame.size().height as i32) / 2;
-            } else if frame.size().aspect_ratio() < window_size.aspect_ratio() {
-                let scale = frame.size().height as f32 / window_size.height as f32;
-                buffer_size.width = (window_size.width as f32 * scale).round() as u32;
-                buffer_offset.x = (buffer_size.width as i32 - frame.size().width as i32) / 2;
-            }
-            window.set_buffer_size(buffer_size);
+            window.set_buffer_size(frame.size());
 
             if let Some(mut buffer) = window.acquire_buffer() {
                 let stride = buffer.stride() as usize;
                 let dst = buffer.as_slice_mut();
                 for (pos, pixel) in frame.r5g6g5_pixels() {
-                    let i = (pos.y + buffer_offset.y) as usize * stride
-                        + (pos.x + buffer_offset.x) as usize;
+                    let i = pos.y as usize * stride + pos.x as usize;
                     dst[i] = pixel;
                 }
             }
