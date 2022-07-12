@@ -91,7 +91,7 @@ class Game {
       }
 
       let error = this.getWasmString(result);
-      if (JSON.parse(error) === undefined) {
+      if (JSON.parse(error) === null) {
         return false;
       } else {
         throw new Error(error);

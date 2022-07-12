@@ -16,11 +16,11 @@
           game.initialize(system);
           while (true) {
               const event = await system.nextEvent();
-              console.log(JSON.stringify(event));
               if (!game.handleEvent(system, event)) {
                   break;
               }
           }
+          alert("Exited the game");
       });
     </script>
   </body>
