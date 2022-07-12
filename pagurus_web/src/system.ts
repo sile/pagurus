@@ -5,10 +5,13 @@ class System {
   private db: IDBDatabase;
   private canvas: HTMLCanvasElement;
   private canvasCtx: CanvasRenderingContext2D;
+  private audioContext?: AudioContext;
   private startTime: number;
   private nextActionId: ActionId;
   private eventQueue: Event[];
   private resolveNextEvent?: Function;
+  private audioBufferQueue: AudioBuffer[];
+  private isAudioPlaying: boolean;
 
   static async create(
     wasmMemory: WebAssembly.Memory,
@@ -62,6 +65,9 @@ class System {
 
     const initialEvent = { window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } };
     this.eventQueue = [initialEvent];
+
+    this.audioBufferQueue = [];
+    this.isAudioPlaying = false;
   }
 
   nextEvent(): Promise<Event> {
@@ -114,8 +120,54 @@ class System {
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
-    // TODO
+    if (this.audioContext === undefined) {
+      this.audioContext = new AudioContext();
+    }
+
+    // TODO: use audio-worklet
+    // - https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletGlobalScope/registerProcessor
+    // - https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletNode
+    const data = new Uint8ClampedArray(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
+    const buffer = this.audioContext.createBuffer(1, audioDataLen / 2, 48000);
+    const tmpBuffer = new Float32Array(audioDataLen / 2);
+
+    for (let i = 0; i < audioDataLen; i += 2) {
+      var n = (data[i] << 8) | data[i + 1];
+      if (n > 0x7fff) {
+        n -= 0x10000;
+      }
+      tmpBuffer[i / 2] = n / 0x7fff;
+    }
+
+    buffer.copyToChannel(tmpBuffer, 0);
+    this.audioBufferQueue.push(buffer);
+
+    if (!this.isAudioPlaying) {
+      this.playAudioBuffer();
+    }
+
     return audioDataLen / 2;
+  }
+
+  private playAudioBuffer() {
+    if (this.audioContext === undefined) {
+      throw new Error("unreachable");
+    }
+
+    const buffer = this.audioBufferQueue.shift();
+    if (buffer === undefined) {
+      this.isAudioPlaying = false;
+      return;
+    }
+    this.isAudioPlaying = true;
+
+    const source = this.audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.onended = () => {
+      this.playAudioBuffer();
+    };
+    source.connect(this.audioContext.destination);
+    source.start();
   }
 
   consoleLog(messageOffset: number, messageLen: number) {
