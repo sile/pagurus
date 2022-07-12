@@ -33,17 +33,17 @@ class Game {
         systemClockUnixTime(): number {
           return systemRef.getSystem().clockUnixTime();
         },
-        systemClockSetTimeout(timeout: number): ActionId {
-          return systemRef.getSystem().clockSetTimeout(timeout);
+        systemClockSetTimeout(timeout: number): bigint {
+          return BigInt(systemRef.getSystem().clockSetTimeout(timeout));
         },
-        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): ActionId {
-          return systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen);
+        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): bigint {
+          return BigInt(systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen));
         },
-        systemStateLoad(nameOffset: number, nameLen: number): ActionId {
-          return systemRef.getSystem().stateLoad(nameOffset, nameLen);
+        systemStateLoad(nameOffset: number, nameLen: number): bigint {
+          return BigInt(systemRef.getSystem().stateLoad(nameOffset, nameLen));
         },
-        systemStateDelete(nameOffset: number, nameLen: number): ActionId {
-          return systemRef.getSystem().stateDelete(nameOffset, nameLen);
+        systemStateDelete(nameOffset: number, nameLen: number): bigint {
+          return BigInt(systemRef.getSystem().stateDelete(nameOffset, nameLen));
         },
       },
     };

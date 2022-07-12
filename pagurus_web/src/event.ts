@@ -25,7 +25,7 @@ type StateEvent =
   | { saved: { id: ActionId; failed?: Failure } }
   | { deleted: { id: ActionId; failed?: Failure } };
 
-type ActionId = bigint;
+type ActionId = number;
 
 type MouseButton = "left" | "middle" | "right";
 
@@ -78,4 +78,21 @@ type Key =
   | "ctrl"
   | "alt";
 
-export { Event, TimeoutEvent, KeyEvent, MouseEvent, WindowEvent, StateEvent, ActionId, MouseButton, Key };
+function toPagurusKey(key: string): Key | undefined {
+  switch (key) {
+    case "Enter":
+      return "return";
+    case "ArrowUp":
+      return "up";
+    case "ArrowDown":
+      return "down";
+    case "ArrowLeft":
+      return "left";
+    case "ArrowRight":
+      return "right";
+    default:
+      return;
+  }
+}
+
+export { Event, TimeoutEvent, KeyEvent, MouseEvent, WindowEvent, StateEvent, ActionId, MouseButton, Key, toPagurusKey };

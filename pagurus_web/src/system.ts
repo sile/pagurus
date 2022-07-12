@@ -1,4 +1,4 @@
-import { ActionId, Event } from "./event";
+import { ActionId, Event, Key, toPagurusKey } from "./event";
 
 class System {
   private wasmMemory: WebAssembly.Memory;
@@ -45,7 +45,20 @@ class System {
     this.canvasCtx = canvasCtx;
 
     this.startTime = performance.now();
-    this.nextActionId = 0n;
+    this.nextActionId = 0;
+
+    document.addEventListener("keyup", (event) => {
+      if (this.handleKeyup(event)) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (this.handleKeydown(event)) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
 
     const initialEvent = { window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } };
     this.eventQueue = [initialEvent];
@@ -60,6 +73,22 @@ class System {
         this.resolveNextEvent = resolve;
       });
     }
+  }
+
+  private handleKeyup(event: KeyboardEvent): boolean {
+    let key = toPagurusKey(event.key);
+    if (key !== undefined) {
+      this.enqueueEvent({ key: { up: { key } } });
+    }
+    return key !== undefined;
+  }
+
+  private handleKeydown(event: KeyboardEvent): boolean {
+    let key = toPagurusKey(event.key);
+    if (key !== undefined) {
+      this.enqueueEvent({ key: { down: { key } } });
+    }
+    return key !== undefined;
   }
 
   private enqueueEvent(event: Event) {
@@ -85,6 +114,7 @@ class System {
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
+    // TODO
     return audioDataLen / 2;
   }
 
@@ -169,7 +199,7 @@ class System {
 
   private getNextActionId(): ActionId {
     let actionId = this.nextActionId;
-    this.nextActionId = this.nextActionId + 1n;
+    this.nextActionId = this.nextActionId + 1;
     return actionId;
   }
 }
