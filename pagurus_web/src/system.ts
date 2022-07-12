@@ -2,6 +2,7 @@ import { ActionId, Event } from "./event";
 
 class System {
   private wasmMemory: WebAssembly.Memory;
+  private db: IDBDatabase;
   private canvas: HTMLCanvasElement;
   private canvasCtx: CanvasRenderingContext2D;
   private startTime: number;
@@ -9,8 +10,32 @@ class System {
   private eventQueue: Event[];
   private resolveNextEvent?: Function;
 
-  constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement) {
+  static async create(
+    wasmMemory: WebAssembly.Memory,
+    canvas: HTMLCanvasElement,
+    databaseName: string = "PAGURUS_DB_TEMP0" // TODO
+  ): Promise<System> {
+    const openRequest = indexedDB.open(databaseName);
+    return new Promise((resolve, reject) => {
+      openRequest.onupgradeneeded = (event) => {
+        // @ts-ignore
+        const db: IDBDatabase = event.target.result;
+        db.createObjectStore("states", { keyPath: "name" });
+      };
+      openRequest.onsuccess = (event) => {
+        // @ts-ignore
+        const db: IDBDatabase = event.target.result;
+        resolve(new System(wasmMemory, canvas, db));
+      };
+      openRequest.onerror = (event) => {
+        reject(new Error(`failed to open database: event=${event}`));
+      };
+    });
+  }
+
+  private constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement, db: IDBDatabase) {
     this.wasmMemory = wasmMemory;
+    this.db = db;
 
     this.canvas = canvas;
     const canvasCtx = this.canvas.getContext("2d");
@@ -22,7 +47,8 @@ class System {
     this.startTime = performance.now();
     this.nextActionId = 0n;
 
-    this.eventQueue = [{ window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } }];
+    const initialEvent = { window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } };
+    this.eventQueue = [initialEvent];
   }
 
   nextEvent(): Promise<Event> {
@@ -76,7 +102,7 @@ class System {
   }
 
   clockSetTimeout(timeout: number): ActionId {
-    let actionId = this.getNextActionId();
+    const actionId = this.getNextActionId();
     setTimeout(() => {
       this.enqueueEvent({ timeout: { id: actionId } });
     }, timeout * 1000);
@@ -84,43 +110,54 @@ class System {
   }
 
   stateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): ActionId {
-    let actionId = this.getNextActionId();
+    const actionId = this.getNextActionId();
+    const name = this.getWasmString(nameOffset, nameLen);
+    const data = new Uint8Array(this.wasmMemory.buffer, dataOffset, dataLen).slice();
+    const system = this;
+
+    const transaction = this.db.transaction(["states"], "readwrite");
+    const objectStore = transaction.objectStore("states");
+    const request = objectStore.add({ name, data });
+    request.onsuccess = function (event) {
+      system.enqueueEvent({ state: { saved: { id: actionId } } });
+    };
+
     return actionId;
   }
 
   stateLoad(nameOffset: number, nameLen: number): ActionId {
-    let actionId = this.getNextActionId();
+    const actionId = this.getNextActionId();
+    const name = this.getWasmString(nameOffset, nameLen);
+    const system = this;
 
-    // TODO: use index db
-
-    // const name = this.getWasmString(nameOffset, nameLen);
-    // let failed;
-    // let data;
-    // try {
-    //   const item = localStorage.getItem(name);
-    //   if (item !== null) {
-    //     data = new TextEncoder().encode(item);
-    //   }
-    // } catch (e) {
-    //   failed = { reason: "${e}" };
-    // }
-    // this.eventQueue.push({ state: { loaded: { id: actionId, data, failed } } });
+    const transaction = this.db.transaction(["states"], "readwrite");
+    const objectStore = transaction.objectStore("states");
+    const request = objectStore.get(name);
+    request.onsuccess = function (event) {
+      // @ts-ignore
+      if (event.target.result === undefined) {
+        system.enqueueEvent({ state: { loaded: { id: actionId } } });
+      } else {
+        // @ts-ignore
+        const data = event.target.result.data;
+        system.enqueueEvent({ state: { loaded: { id: actionId, data } } });
+      }
+    };
 
     return actionId;
   }
 
   stateDelete(nameOffset: number, nameLen: number): ActionId {
-    let actionId = this.getNextActionId();
+    const actionId = this.getNextActionId();
+    const name = this.getWasmString(nameOffset, nameLen);
+    const system = this;
 
-    // TODO: use indexedDB
-    // const name = this.getWasmString(nameOffset, nameLen);
-    // let failed;
-    // try {
-    //   localStorage.removeItem(name);
-    // } catch (e) {
-    //   failed = { reason: "${e}" };
-    // }
-    // this.eventQueue.push({ state: { deleted: { id: actionId, failed } } });
+    const transaction = this.db.transaction(["states"], "readwrite");
+    const objectStore = transaction.objectStore("states");
+    const request = objectStore.delete(name);
+    request.onsuccess = function (event) {
+      system.enqueueEvent({ state: { deleted: { id: actionId } } });
+    };
 
     return actionId;
   }

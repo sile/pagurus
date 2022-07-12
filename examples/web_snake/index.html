@@ -12,7 +12,7 @@
     <script>
       Pagurus.Game.load("../../target/wasm32-unknown-unknown/release/snake_game.wasm").then(async game => {
           const canvas = document.getElementById("canvas");
-          const system = new Pagurus.System(game.memory, canvas);
+          const system = await Pagurus.System.create(game.memory, canvas);
           game.initialize(system);
           while (true) {
               const event = await system.nextEvent();
