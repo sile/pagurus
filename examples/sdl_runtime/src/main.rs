@@ -1,5 +1,6 @@
 use clap::Parser;
 use pagurus::failure::OrFail;
+use pagurus::spatial::Size;
 use pagurus::{Game, Result};
 use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
 use pagurus_wasmer::WasmGame;
@@ -8,6 +9,12 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 struct Args {
     game_wasm_path: PathBuf,
+
+    #[clap(long, default_value_t = 800)]
+    width: u32,
+
+    #[clap(long, default_value_t = 600)]
+    height: u32,
 }
 
 fn main() -> Result<()> {
@@ -20,6 +27,7 @@ fn main() -> Result<()> {
     // System
     let mut system = SdlSystemBuilder::new()
         .title("Pagurus SDL Runtime")
+        .window_size(Some(Size::from_wh(args.width, args.height)))
         .build()
         .or_fail()?;
 
