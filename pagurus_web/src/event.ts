@@ -95,4 +95,29 @@ function toPagurusKey(key: string): Key | undefined {
   }
 }
 
-export { Event, TimeoutEvent, KeyEvent, MouseEvent, WindowEvent, StateEvent, ActionId, MouseButton, Key, toPagurusKey };
+function toPagurusMouseButton(button: number): MouseButton | undefined {
+  switch (button) {
+    case 0:
+      return "left";
+    case 1:
+      return "middle";
+    case 2:
+      return "right";
+    default:
+      return;
+  }
+}
+
+export {
+  Event,
+  TimeoutEvent,
+  KeyEvent,
+  MouseEvent,
+  WindowEvent,
+  StateEvent,
+  ActionId,
+  MouseButton,
+  Key,
+  toPagurusKey,
+  toPagurusMouseButton,
+};

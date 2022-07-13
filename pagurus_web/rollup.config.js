@@ -1,7 +1,5 @@
 import typescript from '@rollup/plugin-typescript';
 import pkg from './package.json';
-import commonjs from '@rollup/plugin-commonjs';
-import resolve from '@rollup/plugin-node-resolve';
 
 const banner = `/**
  * ${pkg.name}
@@ -16,9 +14,7 @@ export default [
   {
     input: 'src/pagurus.ts',
     plugins: [
-      typescript({module: "esnext"}),
-      commonjs(),
-      resolve(),
+      typescript({module: "esnext"})
     ],
     output: {
       sourcemap: false,
@@ -31,9 +27,7 @@ export default [
   {
     input: 'src/pagurus.ts',
     plugins: [
-      typescript({module: "esnext"}),
-      commonjs(),
-      resolve()
+      typescript({module: "esnext"})
     ],
     output: {
       sourcemap: false,

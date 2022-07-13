@@ -1,4 +1,5 @@
-import { ActionId, Event, Key, toPagurusKey } from "./event";
+import { ActionId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
+import { Position } from "./spatial";
 
 class System {
   private wasmMemory: WebAssembly.Memory;
@@ -63,6 +64,32 @@ class System {
       }
     });
 
+    this.canvas.addEventListener("mousemove", (event) => {
+      this.handleMousemove(event);
+    });
+    this.canvas.addEventListener("mousedown", (event) => {
+      this.handleMousedown(event);
+    });
+    this.canvas.addEventListener("mouseup", (event) => {
+      this.handleMouseup(event);
+    });
+
+    this.canvas.addEventListener("touchmove", (event) => {
+      this.handleTouchmove(event);
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    this.canvas.addEventListener("touchstart", (event) => {
+      this.handleTouchstart(event);
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    this.canvas.addEventListener("touchend", (event) => {
+      this.handleTouchend(event);
+      event.stopPropagation();
+      event.preventDefault();
+    });
+
     const initialEvent = { window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } };
     this.eventQueue = [initialEvent];
 
@@ -95,6 +122,73 @@ class System {
       this.enqueueEvent({ key: { down: { key } } });
     }
     return key !== undefined;
+  }
+
+  private touchPosition(touch: Touch): Position {
+    const rect = this.canvas.getBoundingClientRect();
+    return { x: Math.round(touch.clientX - rect.left), y: Math.round(touch.clientY - rect.top) };
+  }
+
+  private handleTouchmove(event: TouchEvent) {
+    const touches = event.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+      const touch = touches[i];
+      if (touch.identifier === 0) {
+        const position = this.touchPosition(touch);
+        this.enqueueEvent({ mouse: { move: { position } } });
+        break;
+      }
+    }
+  }
+
+  private handleTouchstart(event: TouchEvent) {
+    const touches = event.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+      const touch = touches[i];
+      if (touch.identifier === 0) {
+        const button = "left";
+        const position = this.touchPosition(touch);
+        this.enqueueEvent({ mouse: { down: { position, button } } });
+        break;
+      }
+    }
+  }
+
+  private handleTouchend(event: TouchEvent) {
+    const touches = event.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+      const touch = touches[i];
+      if (touch.identifier === 0) {
+        const button = "left";
+        const position = this.touchPosition(touch);
+        this.enqueueEvent({ mouse: { up: { position, button } } });
+        break;
+      }
+    }
+  }
+
+  private handleMousemove(event: MouseEvent) {
+    const x = event.offsetX;
+    const y = event.offsetY;
+    this.enqueueEvent({ mouse: { move: { position: { x, y } } } });
+  }
+
+  private handleMousedown(event: MouseEvent) {
+    const x = event.offsetX;
+    const y = event.offsetY;
+    const button = toPagurusMouseButton(event.button);
+    if (button !== undefined) {
+      this.enqueueEvent({ mouse: { down: { position: { x, y }, button } } });
+    }
+  }
+
+  private handleMouseup(event: MouseEvent) {
+    const x = event.offsetX;
+    const y = event.offsetY;
+    const button = toPagurusMouseButton(event.button);
+    if (button !== undefined) {
+      this.enqueueEvent({ mouse: { up: { position: { x, y }, button } } });
+    }
   }
 
   private enqueueEvent(event: Event) {
@@ -199,9 +293,12 @@ class System {
 
     const transaction = this.db.transaction(["states"], "readwrite");
     const objectStore = transaction.objectStore("states");
-    const request = objectStore.add({ name, data });
+    const request = objectStore.put({ name, data });
     request.onsuccess = function (event) {
       system.enqueueEvent({ state: { saved: { id: actionId } } });
+    };
+    request.onerror = function (event) {
+      system.enqueueEvent({ state: { saved: { id: actionId, failed: { reason: "PUT_FAILURE" } } } });
     };
 
     return actionId;
@@ -225,6 +322,9 @@ class System {
         system.enqueueEvent({ state: { loaded: { id: actionId, data } } });
       }
     };
+    request.onerror = function (event) {
+      system.enqueueEvent({ state: { loaded: { id: actionId, failed: { reason: "GET_FAILURE" } } } });
+    };
 
     return actionId;
   }
@@ -239,6 +339,9 @@ class System {
     const request = objectStore.delete(name);
     request.onsuccess = function (event) {
       system.enqueueEvent({ state: { deleted: { id: actionId } } });
+    };
+    request.onerror = function (event) {
+      system.enqueueEvent({ state: { deleted: { id: actionId, failed: { reason: "DELETE_FAILURE" } } } });
     };
 
     return actionId;
