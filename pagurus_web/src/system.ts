@@ -17,7 +17,7 @@ class System {
   static async create(
     wasmMemory: WebAssembly.Memory,
     canvas: HTMLCanvasElement,
-    databaseName: string = "PAGURUS_DB_TEMP0" // TODO
+    databaseName: string = "PAGURUS_STATE_DB"
   ): Promise<System> {
     const openRequest = indexedDB.open(databaseName);
     return new Promise((resolve, reject) => {
