@@ -69,6 +69,8 @@ pub trait OrFail {
     type Item;
 
     fn or_fail(self) -> Result<Self::Item, Failure>;
+
+    #[track_caller]
     fn or_fail_with_reason<F>(self, f: F) -> Result<Self::Item, Failure>
     where
         F: FnOnce(String) -> String,

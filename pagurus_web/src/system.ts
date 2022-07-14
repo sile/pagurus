@@ -1,12 +1,13 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
 import { ActionId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
-import { Position } from "./spatial";
+import { Position, Size } from "./spatial";
 
 class System {
   private wasmMemory: WebAssembly.Memory;
   private db: IDBDatabase;
   private canvas: HTMLCanvasElement;
   private canvasCtx: CanvasRenderingContext2D;
+  private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
   private audioDataBuffer: number[];
@@ -48,6 +49,7 @@ class System {
       throw Error("failed to get canvas 2D context");
     }
     this.canvasCtx = canvasCtx;
+    this.canvasSize = { width: canvas.width, height: canvas.height };
 
     this.startTime = performance.now();
     this.nextActionId = 0;
@@ -91,7 +93,7 @@ class System {
       event.preventDefault();
     });
 
-    const initialEvent = { window: { redrawNeeded: { size: { width: canvas.width, height: canvas.height } } } };
+    const initialEvent = { window: { redrawNeeded: { size: this.canvasSize } } };
     this.eventQueue = [initialEvent];
 
     this.audioDataBuffer = [];
@@ -200,9 +202,20 @@ class System {
     }
   }
 
+  notifyRedrawNeeded() {
+    this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
+    this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
+  }
+
   videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number) {
-    const canvasHeight = videoFrameLen / 3 / width;
-    const image = this.canvasCtx.createImageData(width, canvasHeight);
+    if (this.canvasSize.width != this.canvas.width || this.canvasSize.height != this.canvas.height) {
+      this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
+      this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
+      return;
+    }
+
+    const height = videoFrameLen / 3 / width;
+    const image = this.canvasCtx.createImageData(width, height);
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
     for (let i = 0; i < videoFrameLen / 3; i++) {
       image.data.set(videoFrame.subarray(i * 3, i * 3 + 3), i * 4);

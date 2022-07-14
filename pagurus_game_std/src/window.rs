@@ -79,6 +79,8 @@ impl LogicalWindow {
                     (actual_window.width as f32 * scale).round() as u32;
                 let padding = (self.logical_window_size.width - canvas.width) / 2;
                 self.canvas_region.position = Position::from_xy(padding as i32, 0);
+            } else {
+                self.canvas_region.position = Position::ORIGIN;
             }
         }
 

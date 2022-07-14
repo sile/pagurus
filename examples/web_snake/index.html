@@ -3,16 +3,22 @@
     <meta charset="utf-8">
     <title>Pagurus: Web Snake</title>
   </head>
-  <body>
-    <h1>Pagurus: Web Snake</h1>
-
-    <canvas id="canvas" width="800" height="600" style="background-color:black;border: 1px solid;"></canvas>
-
+  <body style="background-color:black">
+    <canvas id="canvas" style="background-color:black; padding:0; margin:auto; display:block"></canvas>
     <script src="../../pagurus_web/dist/pagurus.js"></script>
     <script>
       Pagurus.Game.load("../../target/wasm32-unknown-unknown/release/snake_game.wasm").then(async game => {
           const canvas = document.getElementById("canvas");
           const system = await Pagurus.System.create(game.memory, canvas);
+
+          const resizeCanvas = () => {
+              canvas.height = document.body.clientHeight * 0.95;
+              canvas.width = document.body.clientWidth * 0.95;
+              system.notifyRedrawNeeded();
+          }
+          resizeCanvas();
+          window.addEventListener('resize', resizeCanvas);
+
           game.initialize(system);
           while (true) {
               const event = await system.nextEvent();

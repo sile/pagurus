@@ -34,7 +34,15 @@ impl Canvas {
     }
 
     pub fn view(&mut self, region: Region) -> Result<CanvasView> {
-        self.size.to_region().contains(&region).or_fail()?;
+        self.size
+            .to_region()
+            .contains(&region)
+            .or_fail_with_reason(|_| {
+                format!(
+                    "failed to create canvas view: canvas_size={:?}, view_region={:?}",
+                    self.size, region
+                )
+            })?;
         Ok(CanvasView {
             canvas: self,
             region,
