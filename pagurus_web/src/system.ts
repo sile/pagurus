@@ -14,27 +14,27 @@ class System {
   private startTime: number;
   private nextActionId: ActionId;
   private eventQueue: Event[];
-  private resolveNextEvent?: Function;
+  private resolveNextEvent?: (event: Event) => void;
 
   static async create(
     wasmMemory: WebAssembly.Memory,
     canvas: HTMLCanvasElement,
-    databaseName: string = "PAGURUS_STATE_DB"
+    databaseName = "PAGURUS_STATE_DB"
   ): Promise<System> {
     const openRequest = indexedDB.open(databaseName);
     return new Promise((resolve, reject) => {
       openRequest.onupgradeneeded = (event) => {
         // @ts-ignore
-        const db: IDBDatabase = event.target.result;
+        const db: IDBDatabase = event.target.result as IDBDatabase;
         db.createObjectStore("states", { keyPath: "name" });
       };
       openRequest.onsuccess = (event) => {
         // @ts-ignore
-        const db: IDBDatabase = event.target.result;
+        const db: IDBDatabase = event.target.result as IDBDatabase;
         resolve(new System(wasmMemory, canvas, db));
       };
-      openRequest.onerror = (event) => {
-        reject(new Error(`failed to open database: event=${event}`));
+      openRequest.onerror = () => {
+        reject(new Error(`failed to open database (indexedDB)`));
       };
     });
   }
@@ -111,7 +111,7 @@ class System {
   }
 
   private handleKeyup(event: KeyboardEvent): boolean {
-    let key = toPagurusKey(event.key);
+    const key = toPagurusKey(event.key);
     if (key !== undefined) {
       this.enqueueEvent({ key: { up: { key } } });
     }
@@ -119,7 +119,7 @@ class System {
   }
 
   private handleKeydown(event: KeyboardEvent): boolean {
-    let key = toPagurusKey(event.key);
+    const key = toPagurusKey(event.key);
     if (key !== undefined) {
       this.enqueueEvent({ key: { down: { key } } });
     }
@@ -221,15 +221,19 @@ class System {
       image.data.set(videoFrame.subarray(i * 3, i * 3 + 3), i * 4);
       image.data[i * 4 + 3] = 255;
     }
-    createImageBitmap(image).then((bitmap) => {
-      this.canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
-    });
+    createImageBitmap(image)
+      .then((bitmap) => {
+        this.canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
+      })
+      .catch((error) => {
+        throw error;
+      });
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
     const data = new Uint8Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
     for (let i = 0; i < audioDataLen; i += 2) {
-      var n = (data[i] << 8) | data[i + 1];
+      let n = (data[i] << 8) | data[i + 1];
       if (n > 0x7fff) {
         n -= 0x10000;
       }
@@ -246,6 +250,9 @@ class System {
           this.audioInputNode.connect(audioContext.destination);
           this.audioInputNode.port.postMessage(this.audioDataBuffer);
           this.audioDataBuffer = [];
+        })
+        .catch((error) => {
+          throw error;
         });
     } else if (this.audioInputNode !== undefined) {
       this.audioInputNode.port.postMessage(this.audioDataBuffer);
@@ -280,16 +287,15 @@ class System {
     const actionId = this.getNextActionId();
     const name = this.getWasmString(nameOffset, nameLen);
     const data = new Uint8Array(this.wasmMemory.buffer, dataOffset, dataLen).slice();
-    const system = this;
 
     const transaction = this.db.transaction(["states"], "readwrite");
     const objectStore = transaction.objectStore("states");
     const request = objectStore.put({ name, data });
-    request.onsuccess = function (event) {
-      system.enqueueEvent({ state: { saved: { id: actionId } } });
+    request.onsuccess = () => {
+      this.enqueueEvent({ state: { saved: { id: actionId } } });
     };
-    request.onerror = function (event) {
-      system.enqueueEvent({ state: { saved: { id: actionId, failed: { reason: "PUT_FAILURE" } } } });
+    request.onerror = () => {
+      this.enqueueEvent({ state: { saved: { id: actionId, failed: { reason: "PUT_FAILURE" } } } });
     };
 
     return actionId;
@@ -298,23 +304,25 @@ class System {
   stateLoad(nameOffset: number, nameLen: number): ActionId {
     const actionId = this.getNextActionId();
     const name = this.getWasmString(nameOffset, nameLen);
-    const system = this;
 
     const transaction = this.db.transaction(["states"], "readwrite");
     const objectStore = transaction.objectStore("states");
     const request = objectStore.get(name);
-    request.onsuccess = function (event) {
+    request.onsuccess = (event) => {
       // @ts-ignore
       if (event.target.result === undefined) {
-        system.enqueueEvent({ state: { loaded: { id: actionId } } });
+        this.enqueueEvent({ state: { loaded: { id: actionId } } });
       } else {
         // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
         const data = event.target.result.data;
-        system.enqueueEvent({ state: { loaded: { id: actionId, data } } });
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        this.enqueueEvent({ state: { loaded: { id: actionId, data } } });
       }
     };
-    request.onerror = function (event) {
-      system.enqueueEvent({ state: { loaded: { id: actionId, failed: { reason: "GET_FAILURE" } } } });
+    request.onerror = () => {
+      this.enqueueEvent({ state: { loaded: { id: actionId, failed: { reason: "GET_FAILURE" } } } });
     };
 
     return actionId;
@@ -323,16 +331,15 @@ class System {
   stateDelete(nameOffset: number, nameLen: number): ActionId {
     const actionId = this.getNextActionId();
     const name = this.getWasmString(nameOffset, nameLen);
-    const system = this;
 
     const transaction = this.db.transaction(["states"], "readwrite");
     const objectStore = transaction.objectStore("states");
     const request = objectStore.delete(name);
-    request.onsuccess = function (event) {
-      system.enqueueEvent({ state: { deleted: { id: actionId } } });
+    request.onsuccess = () => {
+      this.enqueueEvent({ state: { deleted: { id: actionId } } });
     };
-    request.onerror = function (event) {
-      system.enqueueEvent({ state: { deleted: { id: actionId, failed: { reason: "DELETE_FAILURE" } } } });
+    request.onerror = () => {
+      this.enqueueEvent({ state: { deleted: { id: actionId, failed: { reason: "DELETE_FAILURE" } } } });
     };
 
     return actionId;
@@ -344,7 +351,7 @@ class System {
   }
 
   private getNextActionId(): ActionId {
-    let actionId = this.nextActionId;
+    const actionId = this.nextActionId;
     this.nextActionId = this.nextActionId + 1;
     return actionId;
   }

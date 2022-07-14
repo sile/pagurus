@@ -1,4 +1,4 @@
-const AUDIO_WORKLET_PROCESSOR_CODE: string = `
+const AUDIO_WORKLET_PROCESSOR_CODE = `
 class PagurusAudioWorkletProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -25,6 +25,6 @@ class PagurusAudioWorkletProcessor extends AudioWorkletProcessor {
 registerProcessor("pagurus-audio-worklet-processor", PagurusAudioWorkletProcessor);
 `;
 
-const AUDIO_WORKLET_PROCESSOR_NAME: string = "pagurus-audio-worklet-processor";
+const AUDIO_WORKLET_PROCESSOR_NAME = "pagurus-audio-worklet-processor";
 
 export { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME };

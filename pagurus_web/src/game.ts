@@ -1,4 +1,4 @@
-import { Event, ActionId } from "./event";
+import { Event } from "./event";
 import { System } from "./system";
 
 class Game {
@@ -9,7 +9,7 @@ class Game {
 
   private constructor(wasmInstance: WebAssembly.Instance, systemRef: SystemRef) {
     this.wasmInstance = wasmInstance;
-    this.gameInstance = (wasmInstance.exports.gameNew as CallableFunction)();
+    this.gameInstance = (wasmInstance.exports.gameNew as CallableFunction)() as number;
     this.memory = wasmInstance.exports.memory as WebAssembly.Memory;
     this.systemRef = systemRef;
   }
@@ -56,7 +56,7 @@ class Game {
   initialize(system: System) {
     this.systemRef.setSystem(system);
     try {
-      const error = (this.wasmInstance.exports.gameInitialize as CallableFunction)(this.gameInstance);
+      const error = (this.wasmInstance.exports.gameInitialize as CallableFunction)(this.gameInstance) as number;
       if (error !== 0) {
         throw new Error(this.getWasmString(error));
       }
@@ -85,12 +85,12 @@ class Game {
         this.gameInstance,
         eventBytesPtr,
         dataBytesPtr
-      );
+      ) as number;
       if (result === 0) {
         return true;
       }
 
-      let error = this.getWasmString(result);
+      const error = this.getWasmString(result);
       if (JSON.parse(error) === null) {
         return false;
       } else {
@@ -102,17 +102,17 @@ class Game {
   }
 
   private createWasmBytes(bytes: Uint8Array): number {
-    const wasmBytesPtr = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(bytes.length);
-    const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr);
-    const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr);
+    const wasmBytesPtr = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(bytes.length) as number;
+    const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr) as number;
+    const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr) as number;
     new Uint8Array(this.memory.buffer, offset, len).set(bytes);
     return wasmBytesPtr;
   }
 
   private getWasmString(wasmBytesPtr: number): string {
     try {
-      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr);
-      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr);
+      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr) as number;
+      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr) as number;
       const bytes = new Uint8Array(this.memory.buffer, offset, len);
       return new TextDecoder("utf-8").decode(bytes);
     } finally {
