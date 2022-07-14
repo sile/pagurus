@@ -2,8 +2,12 @@
 name = "pagurus"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Takeru Ohta <phjgt308@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Ultra-portable game engine suited for offline 2D games powered by WebAssembly"
+homepage = "https://github.com/sile/pagurus"
+repository = "https://github.com/sile/pagurus"
+readme = "README.md"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

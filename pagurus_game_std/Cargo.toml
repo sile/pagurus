@@ -2,8 +2,12 @@
 name = "pagurus_game_std"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Takeru Ohta <phjgt308@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "The standard library to develop Pagurus games"
+homepage = "https://github.com/sile/pagurus"
+repository = "https://github.com/sile/pagurus"
+readme = "README.md"
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"] }
