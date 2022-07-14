@@ -58,7 +58,7 @@ pub fn memory_allocate_bytes(size: i32) -> *mut Vec<u8> {
 }
 
 pub unsafe fn memory_bytes_offset(bytes_ptr: *mut Vec<u8>) -> *mut u8 {
-    (&mut *bytes_ptr).as_mut_ptr()
+    (*bytes_ptr).as_mut_ptr()
 }
 
 pub unsafe fn memory_bytes_len(bytes_ptr: *mut Vec<u8>) -> i32 {
