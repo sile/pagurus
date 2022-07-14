@@ -28,7 +28,7 @@ impl<'a> Bytes<'a> {
         let rust_slice = unsafe {
             let ptr = memory
                 .data_ptr()
-                .offset(convert::value_to_usize(&offset).or_fail()? as isize);
+                .add(convert::value_to_usize(&offset).or_fail()?);
             std::slice::from_raw_parts_mut(ptr, len as usize)
         };
         Ok(Self {
@@ -42,7 +42,7 @@ impl<'a> Bytes<'a> {
     pub fn from_slice(memory: &'a Memory, exports: &'a Exports, data: &[u8]) -> Result<Self> {
         let bytes_ptr = exports.memory_allocate_bytes(data.len() as u32).or_fail()?;
         let bytes = Self::new(memory, exports, bytes_ptr, Some(data.len() as u32)).or_fail()?;
-        bytes.rust_slice.copy_from_slice(&data);
+        bytes.rust_slice.copy_from_slice(data);
         Ok(bytes)
     }
 

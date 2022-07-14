@@ -120,15 +120,15 @@ impl<S: 'static + System> Imports<S> {
     pub fn to_import_object(&self, store: &Store, env: &Env<S>) -> ImportObject {
         wasmer::imports! {
             "env" => {
-                "systemVideoDraw" => Function::new_native_with_env(&store, env.clone(), Self::system_video_draw),
-                "systemAudioEnqueue" => Function::new_native_with_env(&store, env.clone(), Self::system_audio_enqueue),
-                "systemClockGameTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_game_time),
-                "systemClockUnixTime" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_unix_time),
-                "systemClockSetTimeout" => Function::new_native_with_env(&store, env.clone(), Self::system_clock_set_timeout),
-                "systemConsoleLog" => Function::new_native_with_env(&store, env.clone(), Self::system_console_log),
-                "systemStateSave" => Function::new_native_with_env(&store, env.clone(), Self::system_state_save),
-                "systemStateLoad" => Function::new_native_with_env(&store, env.clone(), Self::system_state_load),
-                "systemStateDelete" => Function::new_native_with_env(&store, env.clone(), Self::system_state_delete),
+                "systemVideoDraw" => Function::new_native_with_env(store, env.clone(), Self::system_video_draw),
+                "systemAudioEnqueue" => Function::new_native_with_env(store, env.clone(), Self::system_audio_enqueue),
+                "systemClockGameTime" => Function::new_native_with_env(store, env.clone(), Self::system_clock_game_time),
+                "systemClockUnixTime" => Function::new_native_with_env(store, env.clone(), Self::system_clock_unix_time),
+                "systemClockSetTimeout" => Function::new_native_with_env(store, env.clone(), Self::system_clock_set_timeout),
+                "systemConsoleLog" => Function::new_native_with_env(store, env.clone(), Self::system_console_log),
+                "systemStateSave" => Function::new_native_with_env(store, env.clone(), Self::system_state_save),
+                "systemStateLoad" => Function::new_native_with_env(store, env.clone(), Self::system_state_load),
+                "systemStateDelete" => Function::new_native_with_env(store, env.clone(), Self::system_state_delete),
             }
         }
     }
@@ -195,7 +195,7 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            system.state_save(&name, data).get() as i64
+            system.state_save(name, data).get() as i64
         })
     }
 
@@ -204,7 +204,7 @@ impl<S: 'static + System> Imports<S> {
             let name = name
                 .get_utf8_str(memory, name_len)
                 .unwrap_or_else(|| panic!("invalid UTF-8 string"));
-            system.state_load(&name).get() as i64
+            system.state_load(name).get() as i64
         })
     }
 
@@ -213,7 +213,7 @@ impl<S: 'static + System> Imports<S> {
             let name = name
                 .get_utf8_str(memory, name_len)
                 .unwrap_or_else(|| panic!("invalid UTF-8 string"));
-            system.state_delete(&name).get() as i64
+            system.state_delete(name).get() as i64
         })
     }
 }
