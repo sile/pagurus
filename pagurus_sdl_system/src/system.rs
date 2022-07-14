@@ -14,12 +14,15 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
+type CustomWindowFn = Box<dyn 'static + Fn(VideoSubsystem) -> Result<Window>>;
+type CustomCanvasFn = Box<dyn 'static + Fn(Window) -> Result<Canvas<Window>>>;
+
 pub struct SdlSystemBuilder {
     data_dir: PathBuf,
     title: String,
     window_size: Option<Size>,
-    custom_window: Option<Box<dyn 'static + Fn(VideoSubsystem) -> Result<Window>>>,
-    custom_canvas: Option<Box<dyn 'static + Fn(Window) -> Result<Canvas<Window>>>>,
+    custom_window: Option<CustomWindowFn>,
+    custom_canvas: Option<CustomCanvasFn>,
 }
 
 impl SdlSystemBuilder {

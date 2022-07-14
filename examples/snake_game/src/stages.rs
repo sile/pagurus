@@ -335,6 +335,7 @@ impl GameOverStage {
 }
 
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 enum HandleEventResult {
     Ok,
     Exit,

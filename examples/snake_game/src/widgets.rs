@@ -204,12 +204,10 @@ impl CursorWidget {
                         } else {
                             env.change_state(&mut self.state, CursorState::Right);
                         }
+                    } else if delta.y < 0 {
+                        env.change_state(&mut self.state, CursorState::Up);
                     } else {
-                        if delta.y < 0 {
-                            env.change_state(&mut self.state, CursorState::Up);
-                        } else {
-                            env.change_state(&mut self.state, CursorState::Down);
-                        }
+                        env.change_state(&mut self.state, CursorState::Down);
                     }
                     return Ok(());
                 }

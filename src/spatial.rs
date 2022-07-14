@@ -24,6 +24,10 @@ impl Size {
         (self.width * self.height) as usize
     }
 
+    pub fn is_empty(self) -> bool {
+        self.width == 0 && self.height == 0
+    }
+
     pub fn iter(self) -> impl Iterator<Item = Position> {
         (0..self.height as i32)
             .flat_map(move |y| (0..self.width as i32).map(move |x| Position { x, y }))

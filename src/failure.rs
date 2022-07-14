@@ -93,7 +93,7 @@ impl OrFail for bool {
         } else {
             let location = Location::caller();
             Err(Failure::with_location(
-                format!("assertion failed"),
+                "assertion failed".to_owned(),
                 location,
             ))
         }
@@ -110,7 +110,7 @@ impl<T> OrFail for Option<T> {
         } else {
             let location = Location::caller();
             Err(Failure::with_location(
-                format!("expected `Some(_)`, but got `None`"),
+                "expected `Some(_)`, but got `None`".to_owned(),
                 location,
             ))
         }

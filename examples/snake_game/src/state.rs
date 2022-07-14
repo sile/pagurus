@@ -55,21 +55,15 @@ impl GameState {
 
     fn can_snake_move(&self, direction: Direction) -> bool {
         let new_head = direction.move_position(self.snake.head);
-        if !Self::BOARD_SIZE.contains(&new_head) {
-            false
-        } else if self
-            .snake
-            .tail
-            .iter()
-            .rev()
-            .skip(1)
-            .copied()
-            .any(|p| p == new_head)
-        {
-            false
-        } else {
-            true
-        }
+        Self::BOARD_SIZE.contains(&new_head)
+            && self
+                .snake
+                .tail
+                .iter()
+                .rev()
+                .skip(1)
+                .copied()
+                .all(|p| p != new_head)
     }
 
     fn spawn_apple<R: Rng>(&mut self, rng: &mut R) {
