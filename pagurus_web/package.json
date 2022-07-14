@@ -1,7 +1,14 @@
 {
   "name": "pagurus",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.1.0",
+  "author": "Takeru Ohta",
+  "description": "Library to run Pagurus games on Web Browsers",
+  "license": "(MIT OR Apache-2.0)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sile/pagurus.git"
+  },
+  "homepage": "https://github.com/sile/pagurus",
   "main": "dist/pagurus.js",
   "module": "dist/pagurus.mjs",
   "types": "dist/pagurus.ts",
@@ -12,7 +19,6 @@
     "fmt": "prettier --write src",
     "example": "npx serve -S -l 8888 .."
   },
-  "author": "",
   "files": [
     "dist"
   ],
