@@ -28,28 +28,28 @@ jobs:
           command: check
           args: --workspace --exclude '*android*'
 
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [stable, beta, nightly]
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+  # test:
+  #   name: Test Suite
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       toolchain: [stable, beta, nightly]
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
 
-      - name: Install ${{ matrix.toolchain }} toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.toolchain }}
-          override: true
+  #     - name: Install ${{ matrix.toolchain }} toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ matrix.toolchain }}
+  #         override: true
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --workspace --exclude '*android*'
+  #     - name: Run cargo test
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
+  #         args: --workspace --exclude '*android*'
 
   lints:
     name: Lints
