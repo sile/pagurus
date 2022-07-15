@@ -15,5 +15,11 @@ pagurus = { path = "../../", version = "0.1" }
 pagurus_android_system = { path = "../../pagurus_android_system/", version = "0.1" }
 pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.1" }
 
+[package.metadata.android]
+apk_name = "snake"
+
 [package.metadata.android.sdk]
 min_sdk_version = 26
+
+[package.metadata.android.application]
+label = "Snake"
