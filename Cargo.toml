@@ -19,7 +19,8 @@ members = [
     "pagurus_wasmer",
     "pagurus_sdl_system",
     "pagurus_android_system",
-    "examples/snake_game",
-    "examples/sdl_runtime",
     "examples/android_snake",
+    "examples/sdl_runtime",
+    "examples/sdl_snake",
+    "examples/snake_game",
 ]
