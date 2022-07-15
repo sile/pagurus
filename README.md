@@ -29,7 +29,7 @@ Run the game using SDL:
 ```console
 $ cargo run --release -p sdl_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
 
-// Or
+// or
 
 $ cargo run --release -p sdl_snake
 ```
