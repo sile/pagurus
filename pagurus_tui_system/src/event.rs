@@ -37,7 +37,9 @@ impl TerminalEventPoller {
     fn run_once(&mut self, stdin: &mut impl Read) {
         for key in stdin.keys() {
             let key = key.unwrap_or_else(|e| panic!("{e}"));
-            if let Some(key) = to_pagurus_key(key) {
+            if let termion::event::Key::Esc = key {
+                let _ = self.event_tx.send(Event::Terminating);
+            } else if let Some(key) = to_pagurus_key(key) {
                 let _ = self.event_tx.send(Event::Key(KeyEvent::Down { key }));
                 let _ = self.event_tx.send(Event::Key(KeyEvent::Up { key }));
             }
