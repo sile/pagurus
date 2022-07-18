@@ -1,3 +1,4 @@
+use crate::event::TerminalEventPoller;
 use crate::io::{IoRequest, IoThread};
 use image::{DynamicImage, Rgb, RgbImage};
 use pagurus::event::{TimeoutEvent, WindowEvent};
@@ -34,6 +35,9 @@ impl TuiSystemBuilder {
         let _ = event_tx.send(Event::Window(WindowEvent::RedrawNeeded {
             size: terminal_size(),
         }));
+
+        // Terminal event poller
+        TerminalEventPoller::spawn(event_tx.clone()).or_fail()?;
 
         // I/O Thread
         let io_request_tx = IoThread::spawn(event_tx);

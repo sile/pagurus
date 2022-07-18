@@ -10,3 +10,4 @@ pagurus = { path = "../", version = "0.1" }
 viuer = "0.6.1"
 urlencoding = "2"
 image = "0.24.2"
+termion = "1.5.6"
