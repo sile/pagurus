@@ -1,4 +1,5 @@
 use crate::io::{IoRequest, IoThread};
+use image::{DynamicImage, Rgb, RgbImage};
 use pagurus::event::{TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
@@ -10,15 +11,18 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant, UNIX_EPOCH},
 };
+use viuer::Config;
 
 pub struct TuiSystemBuilder {
     data_dir: PathBuf,
+    window_size: Size,
 }
 
 impl TuiSystemBuilder {
     pub fn new() -> Self {
         Self {
             data_dir: PathBuf::from(TuiSystem::DEFAULT_DATA_DIR),
+            window_size: TuiSystem::DEFAULT_WINDOW_SIZE,
         }
     }
 
@@ -31,7 +35,7 @@ impl TuiSystemBuilder {
         // Event
         let (event_tx, event_rx) = mpsc::channel();
         let _ = event_tx.send(Event::Window(WindowEvent::RedrawNeeded {
-            size: Size::square(0),
+            size: self.window_size,
         }));
 
         // I/O Thread
@@ -43,6 +47,7 @@ impl TuiSystemBuilder {
             io_request_tx,
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
+            window_size: self.window_size,
             data_dir: self.data_dir,
         })
     }
@@ -61,11 +66,15 @@ pub struct TuiSystem {
     io_request_tx: mpsc::Sender<IoRequest>,
     timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
     next_action_id: ActionId,
+    window_size: Size,
     data_dir: PathBuf,
 }
 
 impl TuiSystem {
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
+
+    // TODO: use viuer::terminal_size() instead
+    pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(40, 30);
 
     pub fn new() -> Result<Self> {
         TuiSystemBuilder::default().build().or_fail()
@@ -104,7 +113,18 @@ impl TuiSystem {
 
 impl System for TuiSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        todo!()
+        let config = Config {
+            width: Some(self.window_size.width),
+            height: Some(self.window_size.height),
+            ..Default::default()
+        };
+
+        let mut image = RgbImage::new(frame.size().width, frame.size().height);
+        for (pos, (r, g, b)) in frame.r8g8b8_pixels() {
+            image.put_pixel(pos.x as u32, pos.y as u32, Rgb([r, g, b]));
+        }
+        let image = DynamicImage::ImageRgb8(image);
+        viuer::print(&image, &config).unwrap_or_else(|e| panic!("{e}"));
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

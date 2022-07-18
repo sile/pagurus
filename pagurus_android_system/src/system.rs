@@ -121,7 +121,7 @@ impl System for AndroidSystem {
             if let Some(mut buffer) = window.acquire_buffer() {
                 let stride = buffer.stride() as usize;
                 let dst = buffer.as_slice_mut();
-                for (pos, pixel) in frame.r5g6g5_pixels() {
+                for (pos, pixel) in frame.r5g6b5_pixels() {
                     let i = pos.y as usize * stride + pos.x as usize;
                     dst[i] = pixel;
                 }

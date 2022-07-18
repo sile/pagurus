@@ -51,17 +51,26 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
         self.bytes.as_ref()
     }
 
-    pub fn r5g6g5_pixels(&self) -> impl '_ + Iterator<Item = (Position, u16)> {
+    pub fn r8g8b8_pixels(&self) -> impl '_ + Iterator<Item = (Position, (u8, u8, u8))> {
         (0..self.size().height).flat_map(move |y| {
             (0..self.size().width).map(move |x| {
                 let pos = Position::from_xy(x as i32, y as i32);
                 let i = y as usize * (self.size().width as usize) + x as usize;
-                let r = self.bytes()[i * 3] as u16;
-                let g = self.bytes()[i * 3 + 1] as u16;
-                let b = self.bytes()[i * 3 + 2] as u16;
-                let pixel = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | (b >> 3);
-                (pos, pixel)
+                let r = self.bytes()[i * 3];
+                let g = self.bytes()[i * 3 + 1];
+                let b = self.bytes()[i * 3 + 2];
+                (pos, (r, g, b))
             })
+        })
+    }
+
+    pub fn r5g6b5_pixels(&self) -> impl '_ + Iterator<Item = (Position, u16)> {
+        self.r8g8b8_pixels().map(|(pos, (r, g, b))| {
+            let r = u16::from(r);
+            let g = u16::from(g);
+            let b = u16::from(b);
+            let pixel = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | (b >> 3);
+            (pos, pixel)
         })
     }
 
