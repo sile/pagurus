@@ -49,3 +49,8 @@ $ npm run example  // A HTTP server listening on 8888 port will start
 
 $ open http://localhost:8888/examples/web_snake/
 ```
+
+Run the game on a terminal (audio is disabled):
+```console
+$ cargo run --release -p tui_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
+```
