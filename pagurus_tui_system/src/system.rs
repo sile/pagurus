@@ -15,12 +15,14 @@ use std::{
 
 pub struct TuiSystemBuilder {
     data_dir: PathBuf,
+    aspect_ratio: Option<Size>,
 }
 
 impl TuiSystemBuilder {
     pub fn new() -> Self {
         Self {
             data_dir: PathBuf::from(TuiSystem::DEFAULT_DATA_DIR),
+            aspect_ratio: None,
         }
     }
 
@@ -29,11 +31,16 @@ impl TuiSystemBuilder {
         self
     }
 
+    pub fn aspect_ratio(mut self, ratio: Option<Size>) -> Self {
+        self.aspect_ratio = ratio;
+        self
+    }
+
     pub fn build(self) -> Result<TuiSystem> {
         // Event
         let (event_tx, event_rx) = mpsc::channel();
         let _ = event_tx.send(Event::Window(WindowEvent::RedrawNeeded {
-            size: terminal_size(),
+            size: self.aspect_ratio.unwrap_or_else(terminal_size),
         }));
 
         // Terminal event poller
