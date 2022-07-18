@@ -1,0 +1,11 @@
+[package]
+name = "pagurus_tui_system"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pagurus = { path = "../", version = "0.1" }
+viuer = "0.6.1"
+urlencoding = "2"
