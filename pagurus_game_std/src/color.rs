@@ -1,5 +1,49 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(packed)]
+pub enum Color {
+    Rgb(Rgb),
+    Rgba(Rgba),
+}
+
+impl Color {
+    pub const BLACK: Self = Self::rgb(0, 0, 0);
+    pub const WHITE: Self = Self::rgb(255, 255, 255);
+    pub const RED: Self = Self::rgb(255, 0, 0);
+
+    pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
+        Self::Rgb(Rgb::new(r, g, b))
+    }
+
+    pub fn alpha(self, a: u8) -> Self {
+        match self {
+            Color::Rgb(x) => Self::Rgba(x.alpha(a)),
+            Color::Rgba(mut x) => {
+                x.a = a;
+                Self::Rgba(x)
+            }
+        }
+    }
+
+    pub fn to_rgba(self) -> Rgba {
+        match self {
+            Color::Rgb(x) => x.alpha(255),
+            Color::Rgba(x) => x,
+        }
+    }
+}
+
+impl From<Rgb> for Color {
+    fn from(x: Rgb) -> Self {
+        Self::Rgb(x)
+    }
+}
+
+impl From<Rgba> for Color {
+    fn from(x: Rgba) -> Self {
+        Self::Rgba(x)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Rgb {
     pub r: u8,
     pub g: u8,
@@ -26,7 +70,6 @@ impl Rgb {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(packed)]
 pub struct Rgba {
     pub r: u8,
     pub g: u8,

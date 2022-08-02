@@ -12,6 +12,8 @@ pub struct Size {
 }
 
 impl Size {
+    pub const EMPTY: Self = Self::square(0);
+
     pub const fn from_wh(width: u32, height: u32) -> Self {
         Self { width, height }
     }

@@ -1,4 +1,4 @@
-use crate::color::{Rgb, Rgba};
+use crate::color::{Color, Rgb, Rgba};
 use pagurus::failure::OrFail;
 use pagurus::spatial::{Contains, Position, Region, Size};
 use pagurus::{Result, VideoFrame};
@@ -65,6 +65,10 @@ impl Canvas {
         self.to_view().fill_rgba(color);
     }
 
+    pub fn fill_rgb(&mut self, color: Rgb) {
+        self.to_view().fill_rgb(color);
+    }
+
     pub fn to_video_frame(&self) -> Result<VideoFrame<Vec<u8>>> {
         let mut bytes = Vec::with_capacity(self.size.len() * 3);
         for pixel in &self.data {
@@ -94,11 +98,28 @@ impl<'a> CanvasView<'a> {
         }
     }
 
+    pub fn draw_pixel(&mut self, position: Position, color: Color) {
+        let w = self.canvas.size.width as i32;
+        let canvas_pos = position + self.region.position;
+        if self.region.contains(&canvas_pos) {
+            let i = (canvas_pos.y * w + canvas_pos.x) as usize;
+            self.canvas.data[i] = color.to_rgba().to_alpha_blend_rgb(self.canvas.data[i]);
+        }
+    }
+
     pub fn fill_rgba(&mut self, color: Rgba) {
         let w = self.canvas.size.width as i32;
         for pos in self.region.iter() {
             let i = (pos.y * w + pos.x) as usize;
             self.canvas.data[i] = color.to_alpha_blend_rgb(self.canvas.data[i]);
+        }
+    }
+
+    pub fn fill_rgb(&mut self, color: Rgb) {
+        let w = self.canvas.size.width as i32;
+        for pos in self.region.iter() {
+            let i = (pos.y * w + pos.x) as usize;
+            self.canvas.data[i] = color;
         }
     }
 }
@@ -195,7 +216,7 @@ impl std::fmt::Debug for Sprite {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "Sprite {{ image_size: {:?}, sprite_region: {:?}, .. }}",
+            "Sprite {{ size: {:?}, region: {:?} }}",
             self.image_size, self.sprite_region
         )
     }
