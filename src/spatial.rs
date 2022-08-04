@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
 };
 
 #[derive(
@@ -103,6 +103,14 @@ impl Mul<u32> for Position {
 
     fn mul(self, scale: u32) -> Self::Output {
         Self::from_xy(self.x * scale as i32, self.y * scale as i32)
+    }
+}
+
+impl Div<u32> for Position {
+    type Output = Self;
+
+    fn div(self, scale: u32) -> Self::Output {
+        Self::from_xy(self.x / scale as i32, self.y / scale as i32)
     }
 }
 
