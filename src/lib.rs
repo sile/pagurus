@@ -1,19 +1,19 @@
-use spatial::Position;
-
 use crate::event::Event;
 use crate::failure::{Failure, OrFail};
-use crate::spatial::Size;
+use crate::video::VideoFrame;
 use std::time::Duration;
+use video::PixelFormat;
 
 pub mod event;
 pub mod failure;
 pub mod input;
 pub mod spatial;
+pub mod video;
 
 pub type Result<T, E = Failure> = std::result::Result<T, E>;
 
 pub trait System {
-    fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
+    fn video_draw(&mut self, frame: VideoFrame);
     fn audio_enqueue(&mut self, data: AudioData) -> usize;
     fn console_log(&mut self, message: &str);
     fn clock_game_time(&mut self) -> Duration;
@@ -24,66 +24,15 @@ pub trait System {
     fn state_delete(&mut self, name: &str) -> ActionId;
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemConfig {
+    pub pixel_format: PixelFormat,
+}
+
 pub trait Game<S: System> {
     fn initialize(&mut self, system: &mut S) -> Result<()>;
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
-}
-
-#[derive(Debug)]
-pub struct VideoFrame<B> {
-    bytes: B,
-    frame_size: Size,
-}
-
-impl<B: AsRef<[u8]>> VideoFrame<B> {
-    pub const PIXEL_FORMAT: &'static str = "RGB24";
-
-    pub fn new(bytes: B, width: u32) -> Result<Self> {
-        let n = bytes.as_ref().len();
-        (n % 3 == 0).or_fail()?;
-        ((n / 3) as u32 % width == 0).or_fail()?;
-
-        let frame_size = Size::from_wh(width, (n / 3) as u32 / width);
-        Ok(Self { bytes, frame_size })
-    }
-
-    pub fn bytes(&self) -> &[u8] {
-        self.bytes.as_ref()
-    }
-
-    pub fn r8g8b8_pixels(&self) -> impl '_ + Iterator<Item = (Position, (u8, u8, u8))> {
-        (0..self.size().height).flat_map(move |y| {
-            (0..self.size().width).map(move |x| {
-                let pos = Position::from_xy(x as i32, y as i32);
-                let i = y as usize * (self.size().width as usize) + x as usize;
-                let r = self.bytes()[i * 3];
-                let g = self.bytes()[i * 3 + 1];
-                let b = self.bytes()[i * 3 + 2];
-                (pos, (r, g, b))
-            })
-        })
-    }
-
-    pub fn r5g6b5_pixels(&self) -> impl '_ + Iterator<Item = (Position, u16)> {
-        self.r8g8b8_pixels().map(|(pos, (r, g, b))| {
-            let r = u16::from(r);
-            let g = u16::from(g);
-            let b = u16::from(b);
-            let pixel = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | (b >> 3);
-            (pos, pixel)
-        })
-    }
-
-    pub fn size(&self) -> Size {
-        self.frame_size
-    }
-
-    pub fn as_ref(&self) -> VideoFrame<&[u8]> {
-        VideoFrame {
-            bytes: self.bytes.as_ref(),
-            frame_size: self.frame_size,
-        }
-    }
 }
 
 #[derive(Debug)]
