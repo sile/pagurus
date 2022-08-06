@@ -156,6 +156,16 @@ impl Region {
         (start.y..end.y).flat_map(move |y| (start.x..end.x).map(move |x| Position::from_xy(x, y)))
     }
 
+    // TODO: remove
+    pub fn edges(self) -> impl Iterator<Item = Position> {
+        // TODO: optimzie
+        let start = self.start();
+        let end = self.end();
+        self.iter().filter(move |p| {
+            p.x == start.x || p.x == end.x - 1 || p.y == start.y || p.y == end.y - 1
+        })
+    }
+
     pub fn shift_x(mut self, n: i32) -> Self {
         self.position.x += self.size.width as i32 * n;
         self
