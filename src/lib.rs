@@ -1,9 +1,10 @@
+use crate::audio::AudioData;
 use crate::event::Event;
-use crate::failure::{Failure, OrFail};
-use crate::video::VideoFrame;
+use crate::failure::Failure;
+use crate::video::{PixelFormat, VideoFrame};
 use std::time::Duration;
-use video::PixelFormat;
 
+pub mod audio;
 pub mod event;
 pub mod failure;
 pub mod input;
@@ -33,32 +34,6 @@ pub struct SystemConfig {
 pub trait Game<S: System> {
     fn initialize(&mut self, system: &mut S) -> Result<()>;
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
-}
-
-#[derive(Debug)]
-pub struct AudioData<'a> {
-    bytes: &'a [u8],
-}
-
-impl<'a> AudioData<'a> {
-    pub const CHANNELS: u8 = 1;
-    pub const SAMPLE_RATE: u32 = 48_000;
-    pub const BIT_DEPTH: u8 = 16;
-
-    pub fn new(bytes: &'a [u8]) -> Result<Self> {
-        (bytes.len() % 2 == 0).or_fail()?;
-        Ok(Self { bytes })
-    }
-
-    pub fn bytes(&self) -> &[u8] {
-        self.bytes
-    }
-
-    pub fn samples(&self) -> impl 'a + Iterator<Item = i16> {
-        self.bytes
-            .chunks_exact(2)
-            .map(|v| (i16::from(v[0]) << 8) | i16::from(v[1]))
-    }
 }
 
 #[derive(
