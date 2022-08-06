@@ -1,125 +1,72 @@
 use crate::color::{Color, Rgb, Rgba};
 use pagurus::failure::OrFail;
 use pagurus::spatial::{Contains, Position, Region, Size};
-use pagurus::{Result, VideoFrame};
+use pagurus::{video::VideoFrame, Result};
 use std::sync::Arc;
 
-#[derive(Debug, Default, Clone)]
-pub struct Canvas {
-    data: Vec<Rgb>,
-    size: Size,
-}
-
-impl Canvas {
-    pub fn new(size: Size) -> Self {
-        Self {
-            data: vec![Rgb::BLACK; size.len()],
-            size,
-        }
-    }
-
-    pub fn resize(&mut self, size: Size) {
-        if size != self.size {
-            self.size = size;
-            self.data = vec![Rgb::BLACK; size.len()];
-        }
-    }
-
-    pub fn size(&self) -> Size {
-        self.size
-    }
-
-    pub fn data(&self) -> &[Rgb] {
-        &self.data
-    }
-
-    pub fn view(&mut self, region: Region) -> Result<CanvasView> {
-        self.size
-            .to_region()
-            .contains(&region)
-            .or_fail_with_reason(|_| {
-                format!(
-                    "failed to create canvas view: canvas_size={:?}, view_region={:?}",
-                    self.size, region
-                )
-            })?;
-        Ok(CanvasView {
-            canvas: self,
-            region,
-        })
-    }
-
-    pub fn to_view(&mut self) -> CanvasView {
-        let region = self.size.to_region();
-        CanvasView {
-            canvas: self,
-            region,
-        }
-    }
-
-    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
-        self.to_view().draw_sprite(offset, sprite);
-    }
-
-    pub fn fill_rgba(&mut self, color: Rgba) {
-        self.to_view().fill_rgba(color);
-    }
-
-    pub fn fill_rgb(&mut self, color: Rgb) {
-        self.to_view().fill_rgb(color);
-    }
-
-    pub fn to_video_frame(&self) -> Result<VideoFrame<Vec<u8>>> {
-        let mut bytes = Vec::with_capacity(self.size.len() * 3);
-        for pixel in &self.data {
-            bytes.push(pixel.r);
-            bytes.push(pixel.g);
-            bytes.push(pixel.b);
-        }
-        VideoFrame::new(bytes, self.size.width).or_fail()
-    }
-}
-
 #[derive(Debug)]
-pub struct CanvasView<'a> {
-    canvas: &'a mut Canvas,
-    region: Region,
+pub struct Canvas<'a> {
+    frame: &'a mut VideoFrame,
+    origin: Position,
+    drawing_region: Region,
 }
 
-impl<'a> CanvasView<'a> {
-    pub fn draw_sprite(&mut self, offset: Position, sprite: &Sprite) {
-        let w = self.canvas.size.width as i32;
-        for (pixel_pos, pixel) in sprite.pixels() {
-            let canvas_pos = pixel_pos + offset + self.region.position;
-            if self.region.contains(&canvas_pos) {
-                let i = (canvas_pos.y * w + canvas_pos.x) as usize;
-                self.canvas.data[i] = pixel.to_alpha_blend_rgb(self.canvas.data[i]);
+impl<'a> Canvas<'a> {
+    pub fn new(frame: &'a mut VideoFrame) -> Self {
+        let drawing_region = frame.resolution().to_region();
+        Self {
+            frame,
+            origin: Position::ORIGIN,
+            drawing_region,
+        }
+    }
+
+    pub fn subregion(&mut self, region: Region) -> Canvas {
+        let drawing_region = self.drawing_region.intersection(region + self.origin);
+        Canvas {
+            frame: self.frame,
+            origin: region.position + self.origin,
+            drawing_region,
+        }
+    }
+
+    pub fn offset(&mut self, offset: Position) -> Canvas {
+        Canvas {
+            frame: self.frame,
+            origin: self.origin + offset,
+            drawing_region: self.drawing_region,
+        }
+    }
+
+    pub fn fill_color(&mut self, color: Color) {
+        for pos in self.drawing_region.iter() {
+            self.draw_pixel_unchecked(pos, color);
+        }
+    }
+
+    pub fn draw_pixel(&mut self, pos: Position, color: Color) {
+        let frame_pos = pos + self.origin;
+        if self.drawing_region.contains(&frame_pos) {
+            self.draw_pixel_unchecked(frame_pos, color);
+        }
+    }
+
+    pub fn draw_sprite(&mut self, sprite: &Sprite) {
+        for (pos, pixel) in sprite.pixels() {
+            self.draw_pixel(pos, Color::Rgba(pixel));
+        }
+    }
+
+    fn draw_pixel_unchecked(&mut self, pos: Position, color: Color) {
+        match color {
+            Color::Rgb(c) => {
+                self.frame.write_rgb(pos, c.r, c.g, c.b);
             }
-        }
-    }
-
-    pub fn draw_pixel(&mut self, position: Position, color: Color) {
-        let w = self.canvas.size.width as i32;
-        let canvas_pos = position + self.region.position;
-        if self.region.contains(&canvas_pos) {
-            let i = (canvas_pos.y * w + canvas_pos.x) as usize;
-            self.canvas.data[i] = color.to_rgba().to_alpha_blend_rgb(self.canvas.data[i]);
-        }
-    }
-
-    pub fn fill_rgba(&mut self, color: Rgba) {
-        let w = self.canvas.size.width as i32;
-        for pos in self.region.iter() {
-            let i = (pos.y * w + pos.x) as usize;
-            self.canvas.data[i] = color.to_alpha_blend_rgb(self.canvas.data[i]);
-        }
-    }
-
-    pub fn fill_rgb(&mut self, color: Rgb) {
-        let w = self.canvas.size.width as i32;
-        for pos in self.region.iter() {
-            let i = (pos.y * w + pos.x) as usize;
-            self.canvas.data[i] = color;
+            Color::Rgba(c) => {
+                let (r, g, b) = self.frame.read_rgb(pos);
+                let c = c.to_alpha_blend_rgb(Rgb::new(r, g, b));
+                self.frame.write_rgb(pos, c.r, c.g, c.b);
+            }
         }
     }
 }

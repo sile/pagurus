@@ -2,7 +2,9 @@ use crate::bytes::{Bytes, BytesPtr};
 use crate::convert;
 use crate::env::Env;
 use pagurus::failure::OrFail;
-use pagurus::{AudioData, Result, System, VideoFrame};
+use pagurus::spatial::Size;
+use pagurus::video::PixelFormat;
+use pagurus::{audio::AudioData, video::VideoFrame, Result, System};
 use std::marker::PhantomData;
 use std::time::Duration;
 use wasmer::{Array, Function, ImportObject, Store, Value, WasmPtr};
@@ -40,8 +42,11 @@ impl Exports {
         Ok(values[0].clone())
     }
 
-    pub fn game_initialize(&self, game: &Value) -> Result<Option<BytesPtr>> {
-        let values = self.game_initialize.call(&[game.clone()]).or_fail()?;
+    pub fn game_initialize(&self, game: &Value, config: Bytes) -> Result<Option<BytesPtr>> {
+        let values = self
+            .game_initialize
+            .call(&[game.clone(), config.take()])
+            .or_fail()?;
         convert::check_single_value(&values).or_fail()?;
         let error = convert::value_to_usize(&values[0]).or_fail()?;
         if error == 0 {
@@ -133,13 +138,22 @@ impl<S: 'static + System> Imports<S> {
         }
     }
 
-    fn system_video_draw(env: &Env<S>, data: WasmPtr<u8, Array>, data_len: u32, width: u32) {
+    fn system_video_draw(
+        env: &Env<S>,
+        data: WasmPtr<u8, Array>,
+        data_len: u32,
+        width: u32,
+        format: u32,
+    ) {
         env.with_system_and_memory(|system, memory| unsafe {
             let data = std::slice::from_raw_parts(
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            let frame = VideoFrame::new(data, width).unwrap_or_else(|e| panic!("{e}"));
+            let format = PixelFormat::from_u8(format as u8).unwrap_or_else(|e| panic!("{e}"));
+            let resolution =
+                Size::from_wh(width, data.len() as u32 / width / format.bytes() as u32);
+            let frame = VideoFrame::new(format, data, resolution).unwrap_or_else(|e| panic!("{e}"));
             system.video_draw(frame);
         });
     }

@@ -1,7 +1,7 @@
 #![allow(clippy::missing_safety_doc)] // FIXME
 
 use pagurus::event::{Event, StateEvent};
-use pagurus::{ActionId, AudioData, Game, System, VideoFrame};
+use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Game, System, SystemConfig};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -11,12 +11,15 @@ where
     Box::into_raw(Box::new(G::default()))
 }
 
-pub unsafe fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
+pub unsafe fn game_initialize<G>(game: *mut G, config_bytes_ptr: *mut Vec<u8>) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
     let game = &mut *game;
-    if let Err(e) = game.initialize(&mut WasmSystem) {
+    let config: SystemConfig = deserialize(config_bytes_ptr).unwrap_or_else(|e| {
+        panic!("failed to deserialize `SystemConfig`: {e}");
+    });
+    if let Err(e) = game.initialize(&mut WasmSystem, config) {
         serialize(&e).unwrap_or_else(|e| {
             panic!("failed to serialize `Failure`: {e}");
         })
@@ -92,8 +95,8 @@ macro_rules! export_wasm_functions {
         }
 
         #[no_mangle]
-        pub unsafe fn gameInitialize(game: *mut $game) -> *mut Vec<u8> {
-            $crate::wasm::game_initialize(game)
+        pub unsafe fn gameInitialize(game: *mut $game, config: *mut Vec<u8>) -> *mut Vec<u8> {
+            $crate::wasm::game_initialize(game, config)
         }
 
         #[no_mangle]
@@ -133,11 +136,12 @@ pub struct WasmSystem;
 impl System for WasmSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         extern "C" {
-            fn systemVideoDraw(data: *const u8, data_len: i32, width: i32);
+            fn systemVideoDraw(data: *const u8, data_len: usize, width: u32, format: u32);
         }
-        let data = frame.bytes();
-        let width = frame.size().width as i32;
-        unsafe { systemVideoDraw(data.as_ptr(), data.len() as i32, width) }
+        let data = frame.data();
+        let width = frame.resolution().width;
+        let format = u32::from(frame.format().as_u8());
+        unsafe { systemVideoDraw(data.as_ptr(), data.len(), width, format) }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

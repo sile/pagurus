@@ -205,6 +205,24 @@ impl Contains<Position> for Region {
     }
 }
 
+impl Add<Position> for Region {
+    type Output = Self;
+
+    fn add(mut self, rhs: Position) -> Self::Output {
+        self.position = self.position + rhs;
+        self
+    }
+}
+
+impl Sub<Position> for Region {
+    type Output = Self;
+
+    fn sub(mut self, rhs: Position) -> Self::Output {
+        self.position = self.position - rhs;
+        self
+    }
+}
+
 pub trait Contains<T> {
     fn contains(&self, target: &T) -> bool;
 }

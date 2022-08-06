@@ -1,8 +1,9 @@
 use crate::ogg::AudioDataStream;
 use pagurus::{
+    audio::AudioData,
     event::{Event, TimeoutEvent},
     failure::OrFail,
-    ActionId, AudioData, Result, System,
+    ActionId, Result, System,
 };
 use std::time::Duration;
 

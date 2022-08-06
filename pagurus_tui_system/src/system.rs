@@ -4,7 +4,10 @@ use image::{DynamicImage, Rgb, RgbImage};
 use pagurus::event::{TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
-use pagurus::{event::Event, ActionId, AudioData, Result, System, VideoFrame};
+use pagurus::video::PixelFormat;
+use pagurus::{
+    audio::AudioData, event::Event, video::VideoFrame, ActionId, Result, System, SystemConfig,
+};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::{
@@ -77,6 +80,10 @@ pub struct TuiSystem {
 }
 
 impl TuiSystem {
+    pub const CONFIG: SystemConfig = SystemConfig {
+        pixel_format: PixelFormat::Rgb24,
+    };
+
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
 
     pub fn new() -> Result<Self> {
@@ -116,8 +123,9 @@ impl TuiSystem {
 
 impl System for TuiSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        let mut image = RgbImage::new(frame.size().width, frame.size().height);
-        for (pos, (r, g, b)) in frame.r8g8b8_pixels() {
+        let mut image = RgbImage::new(frame.resolution().width, frame.resolution().height);
+        for pos in frame.resolution().iter() {
+            let (r, g, b) = frame.read_rgb(pos);
             image.put_pixel(pos.x as u32, pos.y as u32, Rgb([r, g, b]));
         }
         let image = DynamicImage::ImageRgb8(image);

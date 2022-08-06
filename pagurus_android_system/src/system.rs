@@ -4,7 +4,9 @@ use crate::window::Window;
 use ndk::aaudio::{AAudioFormat, AAudioStream, AAudioStreamState};
 use pagurus::event::{Event, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::{ActionId, AudioData, Result, System, VideoFrame};
+use pagurus::video::PixelFormat;
+use pagurus::SystemConfig;
+use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Result, System};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::sync::mpsc;
@@ -75,6 +77,16 @@ pub struct AndroidSystem {
 }
 
 impl AndroidSystem {
+    #[cfg(target_endian = "little")]
+    pub const CONFIG: SystemConfig = SystemConfig {
+        pixel_format: PixelFormat::Rgb16Le,
+    };
+
+    #[cfg(target_endian = "big")]
+    pub const CONFIG: SystemConfig = SystemConfig {
+        pixel_format: PixelFormat::Rgb16Be,
+    };
+
     pub fn new() -> Result<Self> {
         AndroidSystemBuilder::default().build().or_fail()
     }
@@ -116,7 +128,7 @@ impl System for AndroidSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         if let Some(window) = &*ndk_glue::native_window() {
             let window = Window::new(window);
-            window.set_buffer_size(frame.size());
+            window.set_buffer_size(frame.resolution());
 
             if let Some(mut buffer) = window.acquire_buffer() {
                 let stride = buffer.stride() as usize;

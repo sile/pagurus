@@ -207,27 +207,32 @@ class System {
     this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
   }
 
-  videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number) {
+  videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, format: number) {
+    if (format != 3) {
+      throw new Error(`expected RGB32(3) format, but got ${format}`);
+    }
+
     if (this.canvasSize.width != this.canvas.width || this.canvasSize.height != this.canvas.height) {
       this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
       this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
       return;
     }
 
-    const height = videoFrameLen / 3 / width;
-    const image = this.canvasCtx.createImageData(width, height);
+    const height = videoFrameLen / 4 / width;
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
-    for (let i = 0; i < videoFrameLen / 3; i++) {
-      image.data.set(videoFrame.subarray(i * 3, i * 3 + 3), i * 4);
-      image.data[i * 4 + 3] = 255;
+    if (width == this.canvas.width && height == this.canvas.height) {
+      const image = new ImageData(videoFrame, width, height);
+      this.canvasCtx.putImageData(image, 0, 0);
+    } else {
+      const image = new ImageData(videoFrame.slice(), width, height);
+      createImageBitmap(image)
+        .then((bitmap) => {
+          this.canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
+        })
+        .catch((error) => {
+          throw error;
+        });
     }
-    createImageBitmap(image)
-      .then((bitmap) => {
-        this.canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
-      })
-      .catch((error) => {
-        throw error;
-      });
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {

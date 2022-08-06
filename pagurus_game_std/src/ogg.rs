@@ -1,5 +1,5 @@
 use pagurus::Result;
-use pagurus::{failure::OrFail, AudioData};
+use pagurus::{audio::AudioData, failure::OrFail};
 use std::borrow::Cow;
 use std::io::Cursor;
 
