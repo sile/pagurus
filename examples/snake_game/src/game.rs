@@ -4,9 +4,10 @@ use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
 use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
+use pagurus::video::VideoFrame;
 use pagurus::{event::Event, Game, Result, System};
 use pagurus_game_std::audio::AudioPlayer;
-use pagurus_game_std::color::Rgb;
+use pagurus_game_std::color::Color;
 use pagurus_game_std::image::Canvas;
 use pagurus_game_std::logger::Logger;
 use pagurus_game_std::random::StdRng;
@@ -24,7 +25,7 @@ pub struct SnakeGame {
     assets: Option<Assets>,
     audio_player: AudioPlayer,
     high_score: HighScore,
-    canvas: Canvas,
+    video_frame: VideoFrame,
     stage: Stage,
     logical_window: LogicalWindow,
 }
@@ -46,7 +47,7 @@ impl<S: System> Game<S> for SnakeGame {
         );
 
         // Canvas.
-        self.canvas = Canvas::new(WINDOW_SIZE);
+        self.video_frame = VideoFrame::new(system.video_frame_spec(WINDOW_SIZE));
         self.logical_window = LogicalWindow::new(WINDOW_SIZE);
 
         // Stage.
@@ -76,14 +77,14 @@ impl SnakeGame {
     fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
         let assets = self.assets.as_ref().or_fail()?;
 
-        self.canvas.resize(self.logical_window.size());
-        self.canvas.fill_rgba(Rgb::BLACK.alpha(255));
+        if self.video_frame.spec().resolution != self.logical_window.size() {
+            self.video_frame = VideoFrame::new(system.video_frame_spec(self.logical_window.size()));
+        }
+        let mut canvas = Canvas::new(&mut self.video_frame);
+        canvas.fill_color(Color::BLACK);
 
-        let mut canvas_view = self
-            .canvas
-            .view(self.logical_window.canvas_region())
-            .or_fail()?;
-        canvas_view.draw_sprite(Default::default(), &assets.sprites.background);
+        let mut canvas = canvas.subregion(self.logical_window.canvas_region());
+        canvas.draw_sprite(&assets.sprites.background);
 
         let mut env = Env::new(
             system,
@@ -92,10 +93,9 @@ impl SnakeGame {
             &mut self.high_score,
             assets,
         );
-        self.stage.render(&mut env, &mut canvas_view).or_fail()?;
+        self.stage.render(&mut env, &mut canvas).or_fail()?;
 
-        let frame = self.canvas.to_video_frame().or_fail()?;
-        system.video_draw(frame.as_ref());
+        system.video_draw(self.video_frame.as_ref());
 
         Ok(())
     }
