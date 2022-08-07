@@ -18,8 +18,17 @@ class Game {
     const systemRef = new SystemRef();
     const importObject = {
       env: {
-        systemVideoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, format: number) {
-          systemRef.getSystem().videoDraw(videoFrameOffset, videoFrameLen, width, format);
+        systemVideoDraw(
+          videoFrameOffset: number,
+          videoFrameLen: number,
+          width: number,
+          stride: number,
+          format: number
+        ) {
+          systemRef.getSystem().videoDraw(videoFrameOffset, videoFrameLen, width, stride, format);
+        },
+        systemVideoFrameSpec(width: number, height: number, pixelFormatPtr: number, stridePtr: number) {
+          systemRef.getSystem().videoFrameSpec(width, height, pixelFormatPtr, stridePtr);
         },
         systemAudioEnqueue(dataOffset: number, dataLen: number): number {
           return systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
@@ -56,12 +65,7 @@ class Game {
   initialize(system: System) {
     this.systemRef.setSystem(system);
     try {
-      const config = {pixelFormat: "RGB32"};
-      const configBytesPtr = this.createWasmBytes(new TextEncoder().encode(JSON.stringify(config)));
-      const error = (this.wasmInstance.exports.gameInitialize as CallableFunction)(
-        this.gameInstance,
-        configBytesPtr
-      ) as number;
+      const error = (this.wasmInstance.exports.gameInitialize as CallableFunction)(this.gameInstance) as number;
       if (error !== 0) {
         throw new Error(this.getWasmString(error));
       }

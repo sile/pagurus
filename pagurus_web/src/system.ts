@@ -207,9 +207,12 @@ class System {
     this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
   }
 
-  videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, format: number) {
+  videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, stride: number, format: number) {
     if (format != 3) {
       throw new Error(`expected RGB32(3) format, but got ${format}`);
+    }
+    if (width != stride) {
+      throw new Error(`width ${width} differs from stride ${stride}`);
     }
 
     if (this.canvasSize.width != this.canvas.width || this.canvasSize.height != this.canvas.height) {
@@ -233,6 +236,11 @@ class System {
           throw error;
         });
     }
+  }
+
+  videoFrameSpec(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {
+    new DataView(this.wasmMemory.buffer).setUint8(pixelFormatPtr, 3);
+    new DataView(this.wasmMemory.buffer).setUint32(stridePtr, width, true);
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
