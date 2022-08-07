@@ -8,6 +8,6 @@ publish = false
 
 [dependencies]
 clap = { version = "3", features = ["derive"] }
-pagurus = { path = "../../", version = "0.1" }
-pagurus_sdl_system = { path = "../../pagurus_sdl_system/", version = "0.1" }
-pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.1" }
+pagurus = { path = "../../", version = "0.2" }
+pagurus_sdl_system = { path = "../../pagurus_sdl_system/", version = "0.2" }
+pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.2" }
