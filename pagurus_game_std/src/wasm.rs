@@ -1,7 +1,9 @@
 #![allow(clippy::missing_safety_doc)] // FIXME
 
 use pagurus::event::{Event, StateEvent};
-use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Game, System, SystemConfig};
+use pagurus::spatial::Size;
+use pagurus::video::{PixelFormat, VideoFrameSpec};
+use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Game, System};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -11,15 +13,12 @@ where
     Box::into_raw(Box::new(G::default()))
 }
 
-pub unsafe fn game_initialize<G>(game: *mut G, config_bytes_ptr: *mut Vec<u8>) -> *mut Vec<u8>
+pub unsafe fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
     let game = &mut *game;
-    let config: SystemConfig = deserialize(config_bytes_ptr).unwrap_or_else(|e| {
-        panic!("failed to deserialize `SystemConfig`: {e}");
-    });
-    if let Err(e) = game.initialize(&mut WasmSystem, config) {
+    if let Err(e) = game.initialize(&mut WasmSystem) {
         serialize(&e).unwrap_or_else(|e| {
             panic!("failed to serialize `Failure`: {e}");
         })
@@ -95,8 +94,8 @@ macro_rules! export_wasm_functions {
         }
 
         #[no_mangle]
-        pub unsafe fn gameInitialize(game: *mut $game, config: *mut Vec<u8>) -> *mut Vec<u8> {
-            $crate::wasm::game_initialize(game, config)
+        pub unsafe fn gameInitialize(game: *mut $game) -> *mut Vec<u8> {
+            $crate::wasm::game_initialize(game)
         }
 
         #[no_mangle]
@@ -136,12 +135,45 @@ pub struct WasmSystem;
 impl System for WasmSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         extern "C" {
-            fn systemVideoDraw(data: *const u8, data_len: usize, width: u32, format: u32);
+            fn systemVideoDraw(
+                data: *const u8,
+                data_len: usize,
+                width: u32,
+                stride: u32,
+                format: u32,
+            );
         }
         let data = frame.data();
-        let width = frame.resolution().width;
-        let format = u32::from(frame.format().as_u8());
-        unsafe { systemVideoDraw(data.as_ptr(), data.len(), width, format) }
+        let width = frame.spec().resolution.width;
+        let stride = frame.spec().stride;
+        let format = u32::from(frame.spec().pixel_format.as_u8());
+        unsafe { systemVideoDraw(data.as_ptr(), data.len(), width, stride, format) }
+    }
+
+    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+        extern "C" {
+            fn systemVideoFrameSpec(
+                width: u32,
+                height: u32,
+                pixel_format: *mut u8,
+                stride: *mut u32,
+            );
+        }
+        let mut pixel_format = 0;
+        let mut stride = 0;
+        unsafe {
+            systemVideoFrameSpec(
+                resolution.width,
+                resolution.height,
+                &mut pixel_format,
+                &mut stride,
+            )
+        };
+        VideoFrameSpec {
+            pixel_format: PixelFormat::from_u8(pixel_format).unwrap_or_else(|e| panic!("{e}")),
+            resolution,
+            stride,
+        }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

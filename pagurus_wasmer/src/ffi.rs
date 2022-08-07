@@ -3,7 +3,7 @@ use crate::convert;
 use crate::env::Env;
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
-use pagurus::video::PixelFormat;
+use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, Result, System};
 use std::marker::PhantomData;
 use std::time::Duration;
@@ -42,11 +42,8 @@ impl Exports {
         Ok(values[0].clone())
     }
 
-    pub fn game_initialize(&self, game: &Value, config: Bytes) -> Result<Option<BytesPtr>> {
-        let values = self
-            .game_initialize
-            .call(&[game.clone(), config.take()])
-            .or_fail()?;
+    pub fn game_initialize(&self, game: &Value) -> Result<Option<BytesPtr>> {
+        let values = self.game_initialize.call(&[game.clone()]).or_fail()?;
         convert::check_single_value(&values).or_fail()?;
         let error = convert::value_to_usize(&values[0]).or_fail()?;
         if error == 0 {
@@ -126,6 +123,7 @@ impl<S: 'static + System> Imports<S> {
         wasmer::imports! {
             "env" => {
                 "systemVideoDraw" => Function::new_native_with_env(store, env.clone(), Self::system_video_draw),
+                "systemVideoFrameSpec" => Function::new_native_with_env(store, env.clone(), Self::system_video_frame_spec),
                 "systemAudioEnqueue" => Function::new_native_with_env(store, env.clone(), Self::system_audio_enqueue),
                 "systemClockGameTime" => Function::new_native_with_env(store, env.clone(), Self::system_clock_game_time),
                 "systemClockUnixTime" => Function::new_native_with_env(store, env.clone(), Self::system_clock_unix_time),
@@ -143,6 +141,7 @@ impl<S: 'static + System> Imports<S> {
         data: WasmPtr<u8, Array>,
         data_len: u32,
         width: u32,
+        stride: u32,
         format: u32,
     ) {
         env.with_system_and_memory(|system, memory| unsafe {
@@ -150,12 +149,35 @@ impl<S: 'static + System> Imports<S> {
                 memory.data_ptr().offset(data.offset() as isize),
                 data_len as usize,
             );
-            let format = PixelFormat::from_u8(format as u8).unwrap_or_else(|e| panic!("{e}"));
-            let resolution =
-                Size::from_wh(width, data.len() as u32 / width / format.bytes() as u32);
-            let frame = VideoFrame::new(format, data, resolution).unwrap_or_else(|e| panic!("{e}"));
+            let pixel_format = PixelFormat::from_u8(format as u8).unwrap_or_else(|e| panic!("{e}"));
+            let height = data.len() as u32 / stride / pixel_format.bytes() as u32;
+            let resolution = Size::from_wh(width, height);
+            let spec = VideoFrameSpec {
+                pixel_format,
+                resolution,
+                stride,
+            };
+            let frame = VideoFrame::with_data(spec, data).unwrap_or_else(|e| panic!("{e}"));
             system.video_draw(frame);
         });
+    }
+
+    fn system_video_frame_spec(
+        env: &Env<S>,
+        width: u32,
+        height: u32,
+        pixel_format: WasmPtr<u8>,
+        stride: WasmPtr<u32>,
+    ) {
+        env.with_system_and_memory(|system, memory| {
+            let resolution = Size::from_wh(width, height);
+            let spec = system.video_frame_spec(resolution);
+            pixel_format
+                .deref(memory)
+                .expect("bug")
+                .set(spec.pixel_format.as_u8());
+            stride.deref(memory).expect("bug").set(spec.stride.to_le());
+        })
     }
 
     fn system_audio_enqueue(env: &Env<S>, data: WasmPtr<u8, Array>, data_len: u32) -> i32 {

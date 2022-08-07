@@ -4,8 +4,8 @@ use crate::window::Window;
 use ndk::aaudio::{AAudioFormat, AAudioStream, AAudioStreamState};
 use pagurus::event::{Event, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::video::PixelFormat;
-use pagurus::SystemConfig;
+use pagurus::spatial::Size;
+use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Result, System};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -77,16 +77,6 @@ pub struct AndroidSystem {
 }
 
 impl AndroidSystem {
-    #[cfg(target_endian = "little")]
-    pub const CONFIG: SystemConfig = SystemConfig {
-        pixel_format: PixelFormat::Rgb16Le,
-    };
-
-    #[cfg(target_endian = "big")]
-    pub const CONFIG: SystemConfig = SystemConfig {
-        pixel_format: PixelFormat::Rgb16Be,
-    };
-
     pub fn new() -> Result<Self> {
         AndroidSystemBuilder::default().build().or_fail()
     }
@@ -126,18 +116,48 @@ impl AndroidSystem {
 
 impl System for AndroidSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
+        let spec = frame.spec();
         if let Some(window) = &*ndk_glue::native_window() {
             let window = Window::new(window);
-            window.set_buffer_size(frame.resolution());
+            window.set_buffer_size(spec.resolution);
 
             if let Some(mut buffer) = window.acquire_buffer() {
-                let stride = buffer.stride() as usize;
+                let stride = buffer.stride() as u32;
                 let dst = buffer.as_slice_mut();
-                for (pos, pixel) in frame.r5g6b5_pixels() {
-                    let i = pos.y as usize * stride + pos.x as usize;
-                    dst[i] = pixel;
+                let src = frame.data();
+                if stride == spec.stride {
+                    dst.copy_from_slice(src);
+                } else {
+                    let w = spec.resolution.width as usize;
+                    for y in 0..spec.resolution.height {
+                        let i = y as usize * stride as usize;
+                        let j = y as usize * spec.stride as usize;
+                        dst[i..i + w].copy_from_slice(&src[j..j + w]);
+                    }
                 }
             }
+        }
+    }
+
+    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+        #[cfg(target_endian = "little")]
+        let pixel_format = PixelFormat::Rgb16Le;
+        #[cfg(target_endian = "big")]
+        let pixel_format = PixelFormat::Rgb16Be;
+
+        let mut stride = resolution.width;
+        if let Some(window) = &*ndk_glue::native_window() {
+            let window = Window::new(window);
+            window.set_buffer_size(resolution);
+            if let Some(buffer) = window.acquire_buffer() {
+                stride = buffer.stride() as u32;
+            }
+        }
+
+        VideoFrameSpec {
+            pixel_format,
+            resolution,
+            stride,
         }
     }
 

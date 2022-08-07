@@ -2,11 +2,28 @@ use crate::failure::{Failure, OrFail};
 use crate::spatial::{Position, Size};
 use crate::Result;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoFrameSpec {
+    pub pixel_format: PixelFormat,
+    pub resolution: Size,
+    pub stride: u32,
+}
+
+impl VideoFrameSpec {
+    pub fn data_len(&self) -> usize {
+        (self.resolution.height * self.stride) as usize * self.pixel_format.bytes()
+    }
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum PixelFormat {
     Rgb16Be = 0,
     Rgb16Le = 1,
+    #[default]
     Rgb24 = 2,
     Rgb32 = 3,
 }
@@ -36,37 +53,21 @@ impl PixelFormat {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VideoFrame<B = Vec<u8>> {
-    format: PixelFormat,
+    spec: VideoFrameSpec,
     data: B,
-    resolution: Size,
-}
-
-impl Default for VideoFrame {
-    fn default() -> Self {
-        Self::empty(PixelFormat::Rgb24)
-    }
 }
 
 impl VideoFrame<Vec<u8>> {
-    pub fn empty(format: PixelFormat) -> Self {
-        Self {
-            format,
-            data: Vec::new(),
-            resolution: Size::EMPTY,
-        }
-    }
-
-    pub fn set_resolution(&mut self, resolution: Size) {
-        self.resolution = resolution;
-        self.data = vec![255; resolution.len() * self.format.bytes()];
+    pub fn new(spec: VideoFrameSpec) -> Self {
+        let data = vec![255; spec.resolution.len() * spec.pixel_format.bytes()];
+        Self { spec, data }
     }
 
     pub fn as_ref(&self) -> VideoFrame<&[u8]> {
         VideoFrame {
-            format: self.format,
-            resolution: self.resolution,
+            spec: self.spec.clone(),
             data: &self.data,
         }
     }
@@ -74,8 +75,8 @@ impl VideoFrame<Vec<u8>> {
     #[inline]
     pub fn write_rgb(&mut self, pos: Position, r: u8, g: u8, b: u8) {
         let d = &mut self.data;
-        let i = pos.y as usize * self.resolution.width as usize + pos.x as usize;
-        match self.format {
+        let i = pos.y as usize * self.spec.resolution.width as usize + pos.x as usize;
+        match self.spec.pixel_format {
             PixelFormat::Rgb16Be => {
                 let r = u16::from(r);
                 let g = u16::from(g);
@@ -107,21 +108,13 @@ impl VideoFrame<Vec<u8>> {
 }
 
 impl<B: AsRef<[u8]>> VideoFrame<B> {
-    pub fn new(format: PixelFormat, data: B, resolution: Size) -> Result<Self> {
-        (data.as_ref().len() == resolution.len() * format.bytes()).or_fail()?;
-        Ok(Self {
-            format,
-            data,
-            resolution,
-        })
+    pub fn with_data(spec: VideoFrameSpec, data: B) -> Result<Self> {
+        (data.as_ref().len() == spec.data_len()).or_fail()?;
+        Ok(Self { spec, data })
     }
 
-    pub fn format(&self) -> PixelFormat {
-        self.format
-    }
-
-    pub fn resolution(&self) -> Size {
-        self.resolution
+    pub fn spec(&self) -> &VideoFrameSpec {
+        &self.spec
     }
 
     pub fn data(&self) -> &[u8] {
@@ -131,8 +124,8 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
     #[inline]
     pub fn read_rgb(&self, pos: Position) -> (u8, u8, u8) {
         let d = self.data();
-        let i = pos.y as usize * self.resolution.width as usize + pos.x as usize;
-        match self.format {
+        let i = pos.y as usize * self.spec.stride as usize + pos.x as usize;
+        match self.spec.pixel_format {
             PixelFormat::Rgb16Be => {
                 let v = u16::from(d[i * 2]) << 8 | u16::from(d[i * 2 + 1]);
                 (

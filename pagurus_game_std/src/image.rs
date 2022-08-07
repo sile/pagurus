@@ -13,7 +13,7 @@ pub struct Canvas<'a> {
 
 impl<'a> Canvas<'a> {
     pub fn new(frame: &'a mut VideoFrame) -> Self {
-        let drawing_region = frame.resolution().to_region();
+        let drawing_region = frame.spec().resolution.to_region();
         Self {
             frame,
             origin: Position::ORIGIN,

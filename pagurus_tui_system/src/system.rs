@@ -4,10 +4,8 @@ use image::{DynamicImage, Rgb, RgbImage};
 use pagurus::event::{TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
-use pagurus::video::PixelFormat;
-use pagurus::{
-    audio::AudioData, event::Event, video::VideoFrame, ActionId, Result, System, SystemConfig,
-};
+use pagurus::video::{PixelFormat, VideoFrameSpec};
+use pagurus::{audio::AudioData, event::Event, video::VideoFrame, ActionId, Result, System};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::{
@@ -80,10 +78,6 @@ pub struct TuiSystem {
 }
 
 impl TuiSystem {
-    pub const CONFIG: SystemConfig = SystemConfig {
-        pixel_format: PixelFormat::Rgb24,
-    };
-
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
 
     pub fn new() -> Result<Self> {
@@ -123,13 +117,22 @@ impl TuiSystem {
 
 impl System for TuiSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        let mut image = RgbImage::new(frame.resolution().width, frame.resolution().height);
-        for pos in frame.resolution().iter() {
+        let resolution = frame.spec().resolution;
+        let mut image = RgbImage::new(resolution.width, resolution.height);
+        for pos in resolution.iter() {
             let (r, g, b) = frame.read_rgb(pos);
             image.put_pixel(pos.x as u32, pos.y as u32, Rgb([r, g, b]));
         }
         let image = DynamicImage::ImageRgb8(image);
         viuer::print(&image, &Default::default()).unwrap_or_else(|e| panic!("{e}"));
+    }
+
+    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+        VideoFrameSpec {
+            pixel_format: PixelFormat::Rgb24,
+            resolution,
+            stride: resolution.width,
+        }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {

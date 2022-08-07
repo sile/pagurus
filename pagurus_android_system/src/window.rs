@@ -81,10 +81,10 @@ impl<'a> WindowBuffer<'a> {
         self.inner.stride
     }
 
-    pub fn as_slice_mut(&mut self) -> &mut [u16] {
+    pub fn as_slice_mut(&mut self) -> &mut [u8] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.inner.bits as *mut u16,
+                self.inner.bits as *mut u8,
                 self.inner.height as usize * self.inner.stride as usize * 2,
             )
         }

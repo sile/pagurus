@@ -1,8 +1,7 @@
 use pagurus::event::{Event, StateEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::spatial::Size;
-use pagurus::video::PixelFormat;
-use pagurus::SystemConfig;
+use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Result, System};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::event::EventSender;
@@ -139,10 +138,6 @@ impl SdlSystem {
     pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
 
-    pub const CONFIG: SystemConfig = SystemConfig {
-        pixel_format: PixelFormat::Rgb24,
-    };
-
     pub fn new() -> Result<Self> {
         SdlSystemBuilder::default().build().or_fail()
     }
@@ -183,20 +178,19 @@ impl SdlSystem {
 
 impl System for SdlSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        assert_eq!(frame.format(), Self::CONFIG.pixel_format);
-
         self.sdl_canvas.clear();
 
+        let resolution = frame.spec().resolution;
         let texture_creator = self.sdl_canvas.texture_creator();
         let mut texture = texture_creator
             .create_texture_static(
                 Some(PixelFormatEnum::RGB24),
-                frame.resolution().width,
-                frame.resolution().height,
+                resolution.width,
+                resolution.height,
             )
             .unwrap_or_else(|e| panic!("failed to create a texture: {e}"));
         texture
-            .update(None, frame.data(), frame.resolution().width as usize * 3)
+            .update(None, frame.data(), resolution.width as usize * 3)
             .unwrap_or_else(|e| panic!("failed to update texture: {e}"));
 
         self.sdl_canvas
@@ -204,6 +198,14 @@ impl System for SdlSystem {
             .unwrap_or_else(|e| panic!("failed to copy texture to canvas: {e}"));
 
         self.sdl_canvas.present();
+    }
+
+    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+        VideoFrameSpec {
+            pixel_format: PixelFormat::Rgb24,
+            resolution,
+            stride: resolution.width,
+        }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
