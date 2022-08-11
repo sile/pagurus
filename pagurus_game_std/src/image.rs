@@ -21,6 +21,12 @@ impl<'a> Canvas<'a> {
         }
     }
 
+    pub fn drawing_region(&self) -> Region {
+        self.drawing_region
+    }
+
+    // TODO: absolute_view()
+
     pub fn subregion(&mut self, region: Region) -> Canvas {
         let drawing_region = self.drawing_region.intersection(region + self.origin);
         Canvas {
