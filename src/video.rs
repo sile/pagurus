@@ -75,7 +75,7 @@ impl VideoFrame<Vec<u8>> {
     #[inline]
     pub fn write_rgb(&mut self, pos: Position, r: u8, g: u8, b: u8) {
         let d = &mut self.data;
-        let i = pos.y as usize * self.spec.resolution.width as usize + pos.x as usize;
+        let i = pos.y as usize * self.spec.stride as usize + pos.x as usize;
         match self.spec.pixel_format {
             PixelFormat::Rgb16Be => {
                 let r = u16::from(r);
@@ -119,6 +119,11 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
 
     pub fn data(&self) -> &[u8] {
         self.data.as_ref()
+    }
+
+    // TODO: remove
+    pub fn position_to_index(&self, pos: Position) -> usize {
+        pos.y as usize * self.spec.stride as usize + pos.x as usize
     }
 
     #[inline]

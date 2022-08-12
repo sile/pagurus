@@ -29,6 +29,10 @@ impl<'a> Canvas<'a> {
         self.origin
     }
 
+    pub fn frame(&self) -> &VideoFrame {
+        self.frame
+    }
+
     // TODO: rename
     pub fn mask_region(&mut self, region: Region) -> Canvas {
         let drawing_region = self.drawing_region.intersection(region + self.origin);
