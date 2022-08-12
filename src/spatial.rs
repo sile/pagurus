@@ -181,8 +181,14 @@ impl Region {
     pub fn intersection(mut self, other: Self) -> Self {
         self.position.x = std::cmp::max(self.position.x, other.position.x);
         self.position.y = std::cmp::max(self.position.y, other.position.y);
-        self.size.width = std::cmp::min(self.size.width, other.size.width);
-        self.size.height = std::cmp::min(self.size.height, other.size.height);
+        self.size.width = std::cmp::max(
+            0,
+            std::cmp::min(self.end().x, other.end().x) - self.position.x,
+        ) as u32;
+        self.size.height = std::cmp::max(
+            0,
+            std::cmp::min(self.end().y, other.end().y) - self.position.y,
+        ) as u32;
         self
     }
 }
