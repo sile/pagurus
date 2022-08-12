@@ -25,7 +25,15 @@ impl<'a> Canvas<'a> {
         self.drawing_region
     }
 
-    // TODO: absolute_view()
+    // TODO: rename
+    pub fn mask_region(&mut self, region: Region) -> Canvas {
+        let drawing_region = self.drawing_region.intersection(region + self.origin);
+        Canvas {
+            frame: self.frame,
+            origin: self.origin,
+            drawing_region,
+        }
+    }
 
     pub fn subregion(&mut self, region: Region) -> Canvas {
         let drawing_region = self.drawing_region.intersection(region + self.origin);
