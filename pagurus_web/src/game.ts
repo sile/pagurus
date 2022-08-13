@@ -117,7 +117,7 @@ class Game {
       const nameBytesPtr = this.createWasmBytes(new TextEncoder().encode(name));
       const result = (this.wasmInstance.exports.gameQuery as CallableFunction)(this.gameInstance, nameBytesPtr);
       const bytes = this.getWasmBytes(result);
-      if (bytes[-1] === 0) {
+      if (bytes[bytes.length - 1] === 0) {
         return bytes.subarray(0, bytes.length - 1);
       } else {
         const error = new TextDecoder("utf-8").decode(bytes.subarray(0, bytes.length - 1));
