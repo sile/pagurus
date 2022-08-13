@@ -115,13 +115,13 @@ class Game {
 
     try {
       const nameBytesPtr = this.createWasmBytes(new TextEncoder().encode(name));
-      const result = (this.wasmInstance.exports.query as CallableFunction)(this.gameInstance, nameBytesPtr);
+      const result = (this.wasmInstance.exports.gameQuery as CallableFunction)(this.gameInstance, nameBytesPtr);
       const bytes = this.getWasmBytes(result);
       if (bytes[-1] === 0) {
         return bytes.subarray(0, bytes.length - 1);
       } else {
         const error = new TextDecoder("utf-8").decode(bytes.subarray(0, bytes.length - 1));
-        throw new Error(JSON.parse(error));
+        throw new Error(error);
       }
     } finally {
       this.systemRef.clearSystem();
@@ -134,14 +134,14 @@ class Game {
     try {
       const nameBytesPtr = this.createWasmBytes(new TextEncoder().encode(name));
       const dataBytesPtr = this.createWasmBytes(data);
-      const result = (this.wasmInstance.exports.command as CallableFunction)(
+      const result = (this.wasmInstance.exports.gameCommand as CallableFunction)(
         this.gameInstance,
         nameBytesPtr,
         dataBytesPtr
       );
       if (result !== 0) {
         const error = this.getWasmString(result);
-        throw new Error(JSON.parse(error));
+        throw new Error(error);
       }
     } finally {
       this.systemRef.clearSystem();
