@@ -1,6 +1,7 @@
 #![allow(clippy::missing_safety_doc)] // FIXME
 
 use pagurus::event::{Event, StateEvent};
+use pagurus::failure::{Failure, OrFail};
 use pagurus::spatial::Size;
 use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Game, System};
@@ -37,6 +38,7 @@ where
 {
     let game = &mut *game;
     let mut event: Event = deserialize(event_bytes_ptr).unwrap_or_else(|e| {
+        // TODO: return result
         panic!("failed to deserialize `Event`: {e}");
     });
     if data_ptr.is_null() {
@@ -55,6 +57,54 @@ where
     }
 }
 
+pub unsafe fn game_query<G>(game: *mut G, name: *mut Vec<u8>) -> *mut Vec<u8>
+where
+    G: Game<WasmSystem>,
+{
+    const OK_BYTE: u8 = 0;
+    const ERR_BYTE: u8 = 1;
+
+    let game = &mut *game;
+    let result = vec_into_string(name)
+        .or_fail()
+        .and_then(|name| game.query(&mut WasmSystem, &name).or_fail());
+    let vec = match result {
+        Ok(mut v) => {
+            v.push(OK_BYTE);
+            v
+        }
+        Err(e) => {
+            let mut v = serde_json::to_vec(&e).unwrap_or_else(|e| {
+                panic!("failed to serialize `Failure`: {e}");
+            });
+            v.push(ERR_BYTE);
+            v
+        }
+    };
+    Box::into_raw(Box::new(vec))
+}
+
+pub unsafe fn game_command<G>(
+    game: *mut G,
+    name: *mut Vec<u8>,
+    command: *mut Vec<u8>,
+) -> *mut Vec<u8>
+where
+    G: Game<WasmSystem>,
+{
+    let game = &mut *game;
+    let command = *Box::from_raw(command);
+    let result = vec_into_string(name)
+        .or_fail()
+        .and_then(|name| game.command(&mut WasmSystem, &name, &command).or_fail());
+    match result {
+        Ok(()) => std::ptr::null_mut(),
+        Err(e) => serialize(&e).unwrap_or_else(|e| {
+            panic!("failed to serialize `Failure`: {e}");
+        }),
+    }
+}
+
 pub fn memory_allocate_bytes(size: i32) -> *mut Vec<u8> {
     Box::into_raw(Box::new(vec![0u8; size as usize]))
 }
@@ -69,6 +119,10 @@ pub unsafe fn memory_bytes_len(bytes_ptr: *mut Vec<u8>) -> i32 {
 
 pub unsafe fn memory_free_bytes(bytes_ptr: *mut Vec<u8>) {
     let _ = Box::from_raw(bytes_ptr);
+}
+
+fn vec_into_string(vec: *mut Vec<u8>) -> Result<String, Failure> {
+    unsafe { String::from_utf8(*Box::from_raw(vec)).or_fail() }
 }
 
 fn serialize<T>(item: &T) -> Result<*mut Vec<u8>, serde_json::Error>
@@ -105,6 +159,20 @@ macro_rules! export_wasm_functions {
             data_ptr: *mut Vec<u8>,
         ) -> *mut Vec<u8> {
             $crate::wasm::game_handle_event(game, event_bytes_ptr, data_ptr)
+        }
+
+        #[no_mangle]
+        pub unsafe fn gameQuery(game: *mut $game, name: *mut Vec<u8>) -> *mut Vec<u8> {
+            $crate::wasm::game_query(game, name)
+        }
+
+        #[no_mangle]
+        pub unsafe fn gameCommand(
+            game: *mut $game,
+            name: *mut Vec<u8>,
+            data: *mut Vec<u8>,
+        ) -> *mut Vec<u8> {
+            $crate::wasm::game_command(game, name, data)
         }
 
         #[no_mangle]

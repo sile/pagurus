@@ -110,6 +110,44 @@ class Game {
     }
   }
 
+  query(system: System, name: string): Uint8Array {
+    this.systemRef.setSystem(system);
+
+    try {
+      const nameBytesPtr = this.createWasmBytes(new TextEncoder().encode(name));
+      const result = (this.wasmInstance.exports.gameQuery as CallableFunction)(this.gameInstance, nameBytesPtr);
+      const bytes = this.getWasmBytes(result);
+      if (bytes[bytes.length - 1] === 0) {
+        return bytes.subarray(0, bytes.length - 1);
+      } else {
+        const error = new TextDecoder("utf-8").decode(bytes.subarray(0, bytes.length - 1));
+        throw new Error(error);
+      }
+    } finally {
+      this.systemRef.clearSystem();
+    }
+  }
+
+  command(system: System, name: string, data: Uint8Array) {
+    this.systemRef.setSystem(system);
+
+    try {
+      const nameBytesPtr = this.createWasmBytes(new TextEncoder().encode(name));
+      const dataBytesPtr = this.createWasmBytes(data);
+      const result = (this.wasmInstance.exports.gameCommand as CallableFunction)(
+        this.gameInstance,
+        nameBytesPtr,
+        dataBytesPtr
+      );
+      if (result !== 0) {
+        const error = this.getWasmString(result);
+        throw new Error(error);
+      }
+    } finally {
+      this.systemRef.clearSystem();
+    }
+  }
+
   private createWasmBytes(bytes: Uint8Array): number {
     const wasmBytesPtr = (this.wasmInstance.exports.memoryAllocateBytes as CallableFunction)(bytes.length) as number;
     const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr) as number;
@@ -124,6 +162,16 @@ class Game {
       const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr) as number;
       const bytes = new Uint8Array(this.memory.buffer, offset, len);
       return new TextDecoder("utf-8").decode(bytes);
+    } finally {
+      (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(wasmBytesPtr);
+    }
+  }
+
+  private getWasmBytes(wasmBytesPtr: number): Uint8Array {
+    try {
+      const offset = (this.wasmInstance.exports.memoryBytesOffset as CallableFunction)(wasmBytesPtr) as number;
+      const len = (this.wasmInstance.exports.memoryBytesLen as CallableFunction)(wasmBytesPtr) as number;
+      return new Uint8Array(this.memory.buffer, offset, len).slice();
     } finally {
       (this.wasmInstance.exports.memoryFreeBytes as CallableFunction)(wasmBytesPtr);
     }

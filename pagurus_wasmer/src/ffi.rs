@@ -14,6 +14,8 @@ pub struct Exports {
     game_new: Function,
     game_initialize: Function,
     game_handle_event: Function,
+    game_query: Function,
+    game_command: Function,
     memory_allocate_bytes: Function,
     memory_free_bytes: Function,
     memory_bytes_offset: Function,
@@ -26,6 +28,8 @@ impl Exports {
             game_new: exports.get_function("gameNew").or_fail()?.clone(),
             game_initialize: exports.get_function("gameInitialize").or_fail()?.clone(),
             game_handle_event: exports.get_function("gameHandleEvent").or_fail()?.clone(),
+            game_query: exports.get_function("gameQuery").or_fail()?.clone(),
+            game_command: exports.get_function("gameCommand").or_fail()?.clone(),
             memory_allocate_bytes: exports
                 .get_function("memoryAllocateBytes")
                 .or_fail()?
@@ -67,6 +71,29 @@ impl Exports {
         let values = self
             .game_handle_event
             .call(&[game.clone(), event.take(), data.map_or(null, |d| d.take())])
+            .or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
+        let error = convert::value_to_usize(&values[0]).or_fail()?;
+        if error == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(BytesPtr(values[0].clone())))
+        }
+    }
+
+    pub fn game_query(&self, game: &Value, name: Bytes) -> Result<BytesPtr> {
+        let values = self
+            .game_query
+            .call(&[game.clone(), name.take()])
+            .or_fail()?;
+        convert::check_single_value(&values).or_fail()?;
+        Ok(BytesPtr(values[0].clone()))
+    }
+
+    pub fn game_command(&self, game: &Value, name: Bytes, data: Bytes) -> Result<Option<BytesPtr>> {
+        let values = self
+            .game_command
+            .call(&[game.clone(), name.take(), data.take()])
             .or_fail()?;
         convert::check_single_value(&values).or_fail()?;
         let error = convert::value_to_usize(&values[0]).or_fail()?;
