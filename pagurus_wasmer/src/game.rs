@@ -94,4 +94,34 @@ impl<S: System> Game<S> for WasmGame<S> {
             Ok(true)
         }
     }
+
+    fn query(&mut self, system: &mut S, name: &str) -> Result<Vec<u8>> {
+        self.env.set_system(system).or_fail()?;
+
+        let name = Bytes::from_slice(&self.memory, &self.exports, name.as_bytes()).or_fail()?;
+        let bytes_ptr = self.exports.game_query(&self.game, name).or_fail()?;
+        let bytes = Bytes::new(&self.memory, &self.exports, bytes_ptr, None).or_fail()?;
+        let (data, ok) = bytes.as_slice().split_at(bytes.as_slice().len() - 1);
+        if ok[0] == 0 {
+            Ok(data.to_owned())
+        } else {
+            Err(serde_json::from_slice(data).or_fail()?)
+        }
+    }
+
+    fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
+        self.env.set_system(system).or_fail()?;
+
+        let name = Bytes::from_slice(&self.memory, &self.exports, name.as_bytes()).or_fail()?;
+        let data = Bytes::from_slice(&self.memory, &self.exports, data).or_fail()?;
+        if let Some(err_bytes_ptr) = self
+            .exports
+            .game_command(&self.game, name, data)
+            .or_fail()?
+        {
+            Err(self.deserialize(err_bytes_ptr).or_fail()?)
+        } else {
+            Ok(())
+        }
+    }
 }

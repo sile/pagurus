@@ -30,6 +30,20 @@ pub trait System {
 pub trait Game<S: System> {
     fn initialize(&mut self, system: &mut S) -> Result<()>;
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool>;
+
+    #[allow(unused_variables)]
+    fn query(&mut self, system: &mut S, name: &str) -> Result<Vec<u8>> {
+        Err(crate::failure::Failure::new(format!(
+            "unknown query: {name:?}"
+        )))
+    }
+
+    #[allow(unused_variables)]
+    fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
+        Err(crate::failure::Failure::new(format!(
+            "unknown command: {name:?}"
+        )))
+    }
 }
 
 #[derive(
