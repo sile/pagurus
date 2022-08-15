@@ -152,6 +152,15 @@ impl Region {
         )
     }
 
+    pub fn center(self) -> Position {
+        let start = self.start();
+        let end = self.end();
+        Position::from_xy(
+            (end.x - start.x) / 2 + start.x,
+            (end.y - start.y) / 2 + start.y,
+        )
+    }
+
     pub fn iter(self) -> impl Iterator<Item = Position> {
         let start = self.start();
         let end = self.end();
