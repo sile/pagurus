@@ -141,6 +141,16 @@ impl Region {
         Self { position, size }
     }
 
+    pub fn from_positions(pos0: Position, pos1: Position) -> Self {
+        let start_x = std::cmp::min(pos0.x, pos1.x);
+        let start_y = std::cmp::min(pos0.y, pos1.y);
+        let end_x = std::cmp::max(pos0.x, pos1.x);
+        let end_y = std::cmp::max(pos0.y, pos1.y);
+        let position = Position::from_xy(start_x, start_y);
+        let size = Size::from_wh((end_x - start_x) as u32, (end_y - start_y) as u32);
+        Self { position, size }
+    }
+
     pub const fn start(self) -> Position {
         self.position
     }
