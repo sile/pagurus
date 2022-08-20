@@ -98,4 +98,37 @@ impl Rgba {
             b: blend(self.b, dst.b, self.a),
         }
     }
+
+    pub fn alpha_blend(self, dst: Self) -> Self {
+        fn blend(s: u32, d: u32, a: u32) -> u32 {
+            s + d - (d * a / 0xFFFF)
+        }
+
+        let a = blend(
+            u32::from(self.a) * 0xFF,
+            u32::from(dst.a) * 0xFF,
+            u32::from(self.a) * 0xFF,
+        );
+        let r = blend(
+            u32::from(self.r) * u32::from(self.a),
+            u32::from(dst.r) * u32::from(dst.a),
+            u32::from(self.a) * 0xFF,
+        );
+        let g = blend(
+            u32::from(self.g) * u32::from(self.a),
+            u32::from(dst.g) * u32::from(dst.a),
+            u32::from(self.a) * 0xFF,
+        );
+        let b = blend(
+            u32::from(self.b) * u32::from(self.a),
+            u32::from(dst.b) * u32::from(dst.a),
+            u32::from(self.a) * 0xFF,
+        );
+        Self {
+            r: (r * 0xFFFF / a / 0xFF) as u8,
+            g: (g * 0xFFFF / a / 0xFF) as u8,
+            b: (b * 0xFFFF / a / 0xFF) as u8,
+            a: (a / 0xFF) as u8,
+        }
+    }
 }
