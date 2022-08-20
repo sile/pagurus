@@ -50,6 +50,14 @@ impl Contains<Position> for Size {
     }
 }
 
+impl Add<u32> for Size {
+    type Output = Self;
+
+    fn add(self, rhs: u32) -> Self::Output {
+        Self::from_wh(self.width + rhs, self.height + rhs)
+    }
+}
+
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
 )]
@@ -207,6 +215,27 @@ impl Region {
         self.size.height =
             std::cmp::max(0, std::cmp::min(self_end.y, other_end.y) - self.position.y) as u32;
         self
+    }
+
+    pub fn union(self, other: Self) -> Self {
+        let start = Position::from_xy(
+            std::cmp::min(self.start().x, other.start().x),
+            std::cmp::min(self.start().y, other.start().y),
+        );
+        let end = Position::from_xy(
+            std::cmp::max(self.end().x, other.end().x),
+            std::cmp::max(self.end().y, other.end().y),
+        );
+        Self::from_positions(start, end)
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.size.width == 0 || self.size.height == 0
+    }
+
+    pub fn in_contact_with(self, other: Self) -> bool {
+        Region::new(self.position, self.size + 1)
+            .contains(&Region::new(other.position, other.size + 1))
     }
 }
 
