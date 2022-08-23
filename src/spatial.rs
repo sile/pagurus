@@ -72,6 +72,16 @@ impl Position {
     pub const fn from_xy(x: i32, y: i32) -> Self {
         Self { x, y }
     }
+
+    pub fn move_x(mut self, n: i32) -> Self {
+        self.x += n;
+        self
+    }
+
+    pub fn move_y(mut self, n: i32) -> Self {
+        self.y += n;
+        self
+    }
 }
 
 impl Add for Position {
