@@ -90,6 +90,14 @@ pub enum MouseEvent {
 }
 
 impl MouseEvent {
+    pub fn is_up(self) -> bool {
+        matches!(self, Self::Up { .. })
+    }
+
+    pub fn is_down(&self) -> bool {
+        matches!(self, Self::Down { .. })
+    }
+
     pub fn position(&self) -> Position {
         match self {
             Self::Up { position, .. } | Self::Down { position, .. } | Self::Move { position } => {
