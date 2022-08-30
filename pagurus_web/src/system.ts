@@ -221,6 +221,10 @@ class System {
       return;
     }
 
+    if (width === 0 || videoFrameLen === 0) {
+      return;
+    }
+
     const height = videoFrameLen / 4 / width;
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
     if (width == this.canvas.width && height == this.canvas.height) {
