@@ -58,6 +58,30 @@ impl Add<u32> for Size {
     }
 }
 
+impl Sub<u32> for Size {
+    type Output = Self;
+
+    fn sub(self, rhs: u32) -> Self::Output {
+        Self::from_wh(self.width - rhs, self.height - rhs)
+    }
+}
+
+impl Mul<u32> for Size {
+    type Output = Self;
+
+    fn mul(self, scale: u32) -> Self::Output {
+        Self::from_wh(self.width * scale, self.height * scale)
+    }
+}
+
+impl Div<u32> for Size {
+    type Output = Self;
+
+    fn div(self, scale: u32) -> Self::Output {
+        Self::from_wh(self.width / scale, self.height / scale)
+    }
+}
+
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
 )]
