@@ -18,9 +18,9 @@ pub trait System {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
     fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec;
     fn audio_enqueue(&mut self, data: AudioData) -> usize;
-    fn console_log(&mut self, message: &str);
-    fn clock_game_time(&mut self) -> Duration;
-    fn clock_unix_time(&mut self) -> Duration;
+    fn console_log(&mut self, message: &str); // TODO: static
+    fn clock_game_time(&mut self) -> Duration; // TODO: &self
+    fn clock_unix_time(&mut self) -> Duration; // TODO: &self
     fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId;
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
     fn state_load(&mut self, name: &str) -> ActionId;
