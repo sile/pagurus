@@ -101,7 +101,7 @@ impl Rgba {
 
     pub fn alpha_blend(self, dst: Self) -> Self {
         fn blend(s: u32, d: u32, a: u32) -> u32 {
-            s + d - (d * a / 0xFFFF)
+            s + d - (d * a / (0xFF * 0xFF))
         }
 
         let a = blend(
@@ -125,10 +125,20 @@ impl Rgba {
             u32::from(self.a) * 0xFF,
         );
         Self {
-            r: (r * 0xFFFF / a / 0xFF) as u8,
-            g: (g * 0xFFFF / a / 0xFF) as u8,
-            b: (b * 0xFFFF / a / 0xFF) as u8,
+            r: (r * 0xFF * 0xFF / a / 0xFF) as u8,
+            g: (g * 0xFF * 0xFF / a / 0xFF) as u8,
+            b: (b * 0xFF * 0xFF / a / 0xFF) as u8,
             a: (a / 0xFF) as u8,
         }
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn alpha_blend_works() {
+        let black = Rgba::new(0, 0, 0, 255);
+        assert_eq!(black, black.alpha_blend(black));
     }
 }
