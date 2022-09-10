@@ -133,6 +133,7 @@ impl Rgba {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
