@@ -239,6 +239,16 @@ impl Region {
         self
     }
 
+    pub fn move_x(mut self, n: i32) -> Self {
+        self.position.x += n;
+        self
+    }
+
+    pub fn move_y(mut self, n: i32) -> Self {
+        self.position.y += n;
+        self
+    }
+
     pub fn intersection(mut self, other: Self) -> Self {
         let self_end = self.end();
         let other_end = other.end();
