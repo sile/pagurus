@@ -1,6 +1,6 @@
 [package]
 name = "pagurus_android_system"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -13,5 +13,5 @@ readme = "README.md"
 ndk = { version = "0.6", features = ["aaudio"] }
 ndk-glue = "0.6"
 ndk-sys = "0.3"
-pagurus = { path = "../", version = "0.2" }
+pagurus = { path = "../", version = "0.3" }
 urlencoding = "2"

@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 log = "0.4.17"
-pagurus = { path = "../../", version = "0.2" }
-pagurus_game_std = { path = "../../pagurus_game_std/", version = "0.2" }
+pagurus = { path = "../../", version = "0.3" }
+pagurus_game_std = { path = "../../pagurus_game_std/", version = "0.3" }
 rand = "0.8"
