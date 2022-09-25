@@ -135,11 +135,9 @@ class System {
     const touches = event.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      if (touch.identifier === 0) {
-        const position = this.touchPosition(touch);
-        this.enqueueEvent({ mouse: { move: { position } } });
-        break;
-      }
+      const position = this.touchPosition(touch);
+      this.enqueueEvent({ mouse: { move: { position } } });
+      break;
     }
   }
 
@@ -147,12 +145,10 @@ class System {
     const touches = event.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      if (touch.identifier === 0) {
-        const button = "left";
-        const position = this.touchPosition(touch);
-        this.enqueueEvent({ mouse: { down: { position, button } } });
-        break;
-      }
+      const button = "left";
+      const position = this.touchPosition(touch);
+      this.enqueueEvent({ mouse: { down: { position, button } } });
+      break;
     }
   }
 
@@ -160,12 +156,10 @@ class System {
     const touches = event.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      if (touch.identifier === 0) {
-        const button = "left";
-        const position = this.touchPosition(touch);
-        this.enqueueEvent({ mouse: { up: { position, button } } });
-        break;
-      }
+      const button = "left";
+      const position = this.touchPosition(touch);
+      this.enqueueEvent({ mouse: { up: { position, button } } });
+      break;
     }
   }
 
