@@ -55,6 +55,7 @@ Run the game on a terminal (audio is disabled):
 $ cargo run --release -p tui_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
 ```
 
-### Projects that use Pagurus
+Projects that use Pagurus
+-------------------------
 
 - [sile/pixcil](https://github.com/sile/pixcil): Pixel art editor
