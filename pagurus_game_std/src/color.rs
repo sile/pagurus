@@ -100,6 +100,10 @@ impl Rgba {
     }
 
     pub fn alpha_blend(self, dst: Self) -> Self {
+        if dst.a == 0 {
+            return self;
+        }
+
         fn blend(s: u32, d: u32, a: u32) -> u32 {
             s + d - (d * a / (0xFF * 0xFF))
         }
@@ -141,5 +145,8 @@ mod tests {
     fn alpha_blend_works() {
         let black = Rgba::new(0, 0, 0, 255);
         assert_eq!(black, black.alpha_blend(black));
+
+        let transparent = Rgba::new(0, 0, 0, 0);
+        assert_eq!(transparent, transparent.alpha_blend(transparent));
     }
 }
