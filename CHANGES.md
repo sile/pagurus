@@ -4,6 +4,7 @@ main
 pagurus
 -------
 
+- [CHANGE] Remove `PixelFormat::{Rgb16Be,Rgb16Le}`
 - [FIX] Fix video frame data size calculation bug
 
 pagurus_game_std
