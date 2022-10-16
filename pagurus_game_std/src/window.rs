@@ -52,8 +52,8 @@ impl LogicalWindow {
         position.x = (position.x as f32 * scale_x).round() as i32;
         position.y = (position.y as f32 * scale_y).round() as i32;
 
-        position.x -= self.canvas_region.position.x as i32;
-        position.y -= self.canvas_region.position.y as i32;
+        position.x -= self.canvas_region.position.x;
+        position.y -= self.canvas_region.position.y;
 
         event.set_position(position);
         event

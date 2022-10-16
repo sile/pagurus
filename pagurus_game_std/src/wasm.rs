@@ -11,7 +11,7 @@ pub fn game_new<G>() -> *mut G
 where
     G: Game<WasmSystem> + Default,
 {
-    Box::into_raw(Box::new(G::default()))
+    Box::into_raw(Box::default())
 }
 
 pub unsafe fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
