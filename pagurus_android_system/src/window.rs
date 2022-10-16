@@ -31,7 +31,7 @@ impl<'a> Window<'a> {
                 self.inner.ptr().as_mut(),
                 size.width as i32,
                 size.height as i32,
-                ndk_sys::AHardwareBuffer_Format_AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM as i32,
+                ndk_sys::AHardwareBuffer_Format_AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM as i32,
             );
             assert_eq!(ret, 0);
         }
@@ -85,7 +85,7 @@ impl<'a> WindowBuffer<'a> {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.inner.bits as *mut u8,
-                self.inner.height as usize * self.inner.stride as usize * 2,
+                self.inner.height as usize * self.inner.stride as usize * 3,
             )
         }
     }

@@ -140,10 +140,7 @@ impl System for AndroidSystem {
     }
 
     fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
-        #[cfg(target_endian = "little")]
-        let pixel_format = PixelFormat::Rgb16Le;
-        #[cfg(target_endian = "big")]
-        let pixel_format = PixelFormat::Rgb16Be;
+        let pixel_format = PixelFormat::Rgb24;
 
         let mut stride = resolution.width;
         if let Some(window) = &*ndk_glue::native_window() {
