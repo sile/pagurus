@@ -40,6 +40,15 @@ $ cargo install cargo-apk
 $ cargo apk run --release --lib -p android_snake
 ```
 
+Run the game on Windows:
+```console
+TODO
+
+// If you use Ubunto on WSL2, TODO
+$ sudo apt install gcc-mingw-w64-x86-64
+$ rustup target add x86_64-pc-windows-gnu
+```
+
 Run the game on a Web Browser:
 ```console
 $ cd pagurus_web/

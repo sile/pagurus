@@ -20,9 +20,11 @@ members = [
     "pagurus_sdl_system",
     "pagurus_tui_system",
     "pagurus_android_system",
+    "pagurus_windows_system",
     "examples/android_snake",
     "examples/sdl_snake",
     "examples/sdl_runtime",
     "examples/tui_runtime",
+    "examples/windows_runtime",
     "examples/snake_game",
 ]
