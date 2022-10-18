@@ -37,8 +37,8 @@ pub struct TimeoutEvent {
 #[non_exhaustive]
 pub enum WindowEvent {
     RedrawNeeded { size: Size },
-    FocusGained,
-    FocusLost,
+    FocusGained, // TODO(?): delete
+    FocusLost,   // TODO(?): delete
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

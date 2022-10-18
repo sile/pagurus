@@ -171,6 +171,10 @@ impl<S: 'static + System> Imports<S> {
         stride: u32,
         format: u32,
     ) {
+        if data_len == 0 {
+            return;
+        }
+
         env.with_system_and_memory(|system, memory| unsafe {
             let data = std::slice::from_raw_parts(
                 memory.data_ptr().offset(data.offset() as isize),

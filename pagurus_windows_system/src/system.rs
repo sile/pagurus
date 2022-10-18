@@ -67,12 +67,7 @@ impl WindowsSystem {
 
 impl WindowsSystem {
     pub fn next_event(&mut self) -> Event {
-        self.window.dispatch();
-        std::thread::sleep(Duration::from_secs(1));
-
-        Event::Window(WindowEvent::RedrawNeeded {
-            size: Size::from_wh(800, 600),
-        })
+        self.window.next_event()
     }
 }
 
