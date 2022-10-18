@@ -1,7 +1,7 @@
 use crate::window::Window;
 use pagurus::{
     audio::AudioData,
-    event::Event,
+    event::{Event, WindowEvent},
     failure::OrFail,
     spatial::Size,
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
@@ -67,15 +67,19 @@ impl WindowsSystem {
 
 impl WindowsSystem {
     pub fn next_event(&mut self) -> Event {
-        while self.window.dispatch() {}
-        todo!()
+        self.window.dispatch();
+        std::thread::sleep(Duration::from_secs(1));
+
+        Event::Window(WindowEvent::RedrawNeeded {
+            size: Size::from_wh(800, 600),
+        })
     }
 }
 
 impl System for WindowsSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        let dc = self.window.get_dc().map_err(|e| panic!("{e}"));
-        //todo!()
+        let dc = self.window.get_dc().unwrap_or_else(|e| panic!("{e}"));
+        dc.draw_bitmap(frame).unwrap_or_else(|e| panic!("{e}"));
     }
 
     fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {

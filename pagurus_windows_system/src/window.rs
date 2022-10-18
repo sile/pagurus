@@ -1,6 +1,7 @@
 use pagurus::{
     failure::{Failure, OrFail},
     spatial::Size,
+    video::VideoFrame,
     Result,
 };
 use std::ffi::CString;
@@ -10,7 +11,10 @@ use windows::{
     Win32::UI::WindowsAndMessaging::*,
     Win32::{
         Foundation::{HWND, LPARAM, LRESULT, WPARAM},
-        Graphics::Gdi::{GetDC, ReleaseDC, ValidateRect, HDC},
+        Graphics::Gdi::{
+            GetDC, InvalidateRect, ReleaseDC, SetDIBits, SetDIBitsToDevice, ValidateRect,
+            BITMAPINFO, BITMAPINFOHEADER, BI_COMPRESSION, BI_RGB, DIB_RGB_COLORS, HDC, RGBQUAD,
+        },
         System::LibraryLoader::GetModuleHandleA,
         UI::WindowsAndMessaging::{
             CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, LoadCursorW,
@@ -29,9 +33,11 @@ pub struct Window {
 
 impl Window {
     pub fn new(title: &str, window_size: Option<Size>) -> Result<Self> {
-        let mut global_window = WINDOW.lock().or_fail()?;
-        if global_window.is_some() {
-            return Err(Failure::new("TODO: message".to_owned()));
+        {
+            let global_window = WINDOW.lock().or_fail()?;
+            if global_window.is_some() {
+                return Err(Failure::new("TODO: message".to_owned()));
+            }
         }
 
         unsafe {
@@ -50,7 +56,6 @@ impl Window {
                 lpfnWndProc: Some(wndproc),
                 ..Default::default()
             };
-
             if RegisterClassA(&wc) == 0 {
                 return Err(Failure::new(
                     "Failed to register an window class".to_owned(),
@@ -62,7 +67,6 @@ impl Window {
             } else {
                 (CW_USEDEFAULT, CW_USEDEFAULT)
             };
-
             let hwnd = CreateWindowExA(
                 WINDOW_EX_STYLE::default(),
                 window_class,
@@ -78,6 +82,7 @@ impl Window {
                 None,
             );
 
+            let mut global_window = WINDOW.lock().or_fail()?;
             *global_window = Some(Self { hwnd }); // TODO
             Ok(Self { hwnd })
         }
@@ -110,7 +115,62 @@ impl Window {
 #[derive(Debug)]
 pub struct DeviceContext {
     hwnd: HWND,
-    dc: HDC,
+    dc: HDC, // TODO: hdc
+}
+
+impl DeviceContext {
+    pub fn draw_bitmap(&self, frame: VideoFrame<&[u8]>) -> Result<()> {
+        println!("draw");
+        // https://bg1.hatenablog.com/entry/2015/11/28/212838
+        // https://learn.microsoft.com/ja-jp/windows/win32/api/wingdi/nf-wingdi-setdibitstodevice
+
+        // SetDIBits(self.dc, hddb, 0, 0, tood!(), todo!(), DIB_RGB_COLORS);
+
+        // StretchDIBits
+
+        unsafe {
+            let mut bmi: BITMAPINFO = std::mem::zeroed();
+            bmi.bmiHeader = BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: 800,
+                biHeight: 600,
+                biPlanes: 1,
+                biBitCount: 24,
+                biCompression: BI_RGB,
+                biSizeImage: 0,
+                biXPelsPerMeter: 0, // TODO
+                biYPelsPerMeter: 0, // TODO
+                biClrUsed: 0,
+                biClrImportant: 0,
+            };
+            bmi.bmiColors[0] = RGBQUAD {
+                rgbBlue: 255,
+                rgbGreen: 255,
+                rgbRed: 255,
+                rgbReserved: 0,
+            };
+
+            SetDIBitsToDevice(
+                self.dc,
+                0,   // xDest,
+                0,   // yDest,
+                800, // w
+                600, // h,
+                0,   // xSrc,
+                0,   // ySrc,
+                0,   // StartScan,
+                800, // cLines,
+                // [in] const VOID       *lpvBits,
+                // [in] const BITMAPINFO *lpbmi,
+                frame.data().as_ptr() as _,
+                &bmi,
+                DIB_RGB_COLORS,
+            );
+
+            InvalidateRect(self.hwnd, None, true).as_bool().or_fail()?;
+        }
+        Ok(())
+    }
 }
 
 impl Drop for DeviceContext {
@@ -123,7 +183,9 @@ impl Drop for DeviceContext {
 }
 
 extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    let _global_window = WINDOW.lock().map_err(|e| panic!("{e}"));
+    {
+        let _global_window = WINDOW.lock().map_err(|e| panic!("{e}"));
+    }
 
     unsafe {
         match message {
