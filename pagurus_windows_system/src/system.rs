@@ -1,4 +1,4 @@
-use crate::window::Window;
+use crate::window::{Window, WindowBuilder};
 use pagurus::{
     audio::AudioData,
     event::{Event, WindowEvent},
@@ -15,41 +15,28 @@ use std::{
 #[derive(Debug)]
 pub struct WindowsSystemBuilder {
     data_dir: PathBuf,
-    title: String,
-    window_size: Option<Size>,
+    window: WindowBuilder,
 }
 
 impl WindowsSystemBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn title(mut self, title: &str) -> Self {
-        self.title = title.to_owned();
-        self
+    pub fn new(title: &str) -> Self {
+        Self {
+            data_dir: PathBuf::from(WindowsSystem::DEFAULT_DATA_DIR),
+            window: WindowBuilder::new(title),
+        }
     }
 
     pub fn window_size(mut self, size: Option<Size>) -> Self {
-        self.window_size = size;
+        self.window = self.window.window_size(size);
         self
     }
 
     pub fn build(self) -> Result<WindowsSystem> {
-        let window = Window::new(&self.title, self.window_size).or_fail()?;
+        let window = self.window.build().or_fail()?;
         Ok(WindowsSystem {
             window,
             start: Instant::now(),
         })
-    }
-}
-
-impl Default for WindowsSystemBuilder {
-    fn default() -> Self {
-        Self {
-            data_dir: PathBuf::from(WindowsSystem::DEFAULT_DATA_DIR),
-            title: WindowsSystem::DEFAULT_TITLE.to_owned(),
-            window_size: Some(WindowsSystem::DEFAULT_WINDOW_SIZE),
-        }
     }
 }
 
@@ -60,8 +47,6 @@ pub struct WindowsSystem {
 }
 
 impl WindowsSystem {
-    pub const DEFAULT_TITLE: &'static str = "Pagurus";
-    pub const DEFAULT_WINDOW_SIZE: Size = Size::from_wh(800, 600);
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
 }
 
@@ -73,20 +58,24 @@ impl WindowsSystem {
 
 impl System for WindowsSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        let dc = self.window.get_dc().unwrap_or_else(|e| panic!("{e}"));
-        dc.draw_bitmap(frame).unwrap_or_else(|e| panic!("{e}"));
+        self.window
+            .draw_video_frame(frame)
+            .unwrap_or_else(|e| panic!("{e}"));
     }
 
     fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+        let w = resolution.width;
+        let stride = w + (4 - (w % 4)) % 4;
         VideoFrameSpec {
             pixel_format: PixelFormat::Rgb24,
             resolution,
-            stride: resolution.width,
+            stride,
         }
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
-        todo!()
+        // todo!()
+        data.samples().count()
     }
 
     fn console_log(&mut self, message: &str) {
@@ -104,18 +93,22 @@ impl System for WindowsSystem {
     }
 
     fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        todo!()
+        //todo!()
+        ActionId::new(0)
     }
 
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
-        todo!()
+        //todo!()
+        ActionId::new(0)
     }
 
     fn state_load(&mut self, name: &str) -> ActionId {
-        todo!()
+        //todo!()
+        ActionId::new(0)
     }
 
     fn state_delete(&mut self, name: &str) -> ActionId {
-        todo!()
+        //todo!()
+        ActionId::new(0)
     }
 }

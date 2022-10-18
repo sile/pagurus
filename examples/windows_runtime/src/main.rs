@@ -25,8 +25,7 @@ fn main() -> Result<()> {
     let mut game = WasmGame::<WindowsSystem>::new(&wasm_bytes).or_fail()?;
 
     // System
-    let mut system = WindowsSystemBuilder::new()
-        .title("Pagurus Windows Runtime")
+    let mut system = WindowsSystemBuilder::new("Pagurus Windows Runtime")
         .window_size(Some(Size::from_wh(args.width, args.height)))
         .build()
         .or_fail()?;

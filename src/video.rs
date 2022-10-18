@@ -57,8 +57,8 @@ pub struct VideoFrame<B = Vec<u8>> {
 
 impl VideoFrame<Vec<u8>> {
     pub fn new(spec: VideoFrameSpec) -> Self {
-        let data =
-            vec![255; (spec.resolution.height * spec.stride) as usize * spec.pixel_format.bytes()];
+        let size = (spec.resolution.height * spec.stride) as usize * spec.pixel_format.bytes();
+        let data = vec![255; size];
         Self { spec, data }
     }
 
