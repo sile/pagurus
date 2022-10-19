@@ -6,7 +6,7 @@ use pagurus::{
     video::VideoFrame,
     Result,
 };
-use std::{cell::RefCell, sync::mpsc};
+use std::{cell::RefCell, sync::mpsc, time::Instant};
 use std::{collections::VecDeque, ffi::CString};
 use windows::{
     core::PCSTR,
@@ -69,15 +69,18 @@ impl Window {
         }
     }
 
-    pub fn next_event(&mut self) -> Event {
-        let event = self.wait_next_event();
-        if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
-            self.screen_size = *size;
+    pub fn next_event(&mut self, timeout: Option<Instant>) -> Option<Event> {
+        if let Some(event) = self.wait_next_event(timeout) {
+            if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
+                self.screen_size = *size;
+            }
+            Some(event)
+        } else {
+            None
         }
-        event
     }
 
-    fn wait_next_event(&mut self) -> Event {
+    fn wait_next_event(&mut self, timeout: Option<Instant>) -> Option<Event> {
         for event in self.handle.event_rx.try_iter() {
             if matches!(event, Event::Window(WindowEvent::RedrawNeeded { .. })) {
                 self.queued_redraw_event_count += 1;
@@ -92,13 +95,14 @@ impl Window {
                     continue;
                 }
             }
-            return event;
+            return Some(event);
         }
 
-        self.handle
-            .event_rx
-            .recv()
-            .unwrap_or_else(|_| unreachable!())
+        if let Some(timeout) = timeout.map(|t| t.duration_since(Instant::now())) {
+            self.handle.event_rx.recv_timeout(timeout).ok()
+        } else {
+            self.handle.event_rx.recv().ok()
+        }
     }
 
     pub fn draw_video_frame(&mut self, frame: VideoFrame<&[u8]>) -> Result<()> {

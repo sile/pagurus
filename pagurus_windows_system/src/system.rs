@@ -1,13 +1,15 @@
 use crate::window::{Window, WindowBuilder};
 use pagurus::{
     audio::AudioData,
-    event::Event,
+    event::{Event, TimeoutEvent},
     failure::OrFail,
     spatial::Size,
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
     ActionId, Result, System,
 };
 use std::{
+    cmp::Reverse,
+    collections::BinaryHeap,
     path::PathBuf,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -36,6 +38,8 @@ impl WindowsSystemBuilder {
         Ok(WindowsSystem {
             window,
             start: Instant::now(),
+            timeout_queue: BinaryHeap::new(),
+            next_action_id: ActionId::new(0),
         })
     }
 }
@@ -44,6 +48,8 @@ impl WindowsSystemBuilder {
 pub struct WindowsSystem {
     window: Window,
     start: Instant,
+    timeout_queue: BinaryHeap<Reverse<(Instant, ActionId)>>,
+    next_action_id: ActionId,
 }
 
 impl WindowsSystem {
@@ -52,7 +58,19 @@ impl WindowsSystem {
 
 impl WindowsSystem {
     pub fn next_event(&mut self) -> Event {
-        self.window.next_event()
+        loop {
+            if let Some(&Reverse((timeout, id))) = self.timeout_queue.peek() {
+                if timeout <= Instant::now() {
+                    self.timeout_queue.pop();
+                    return Event::Timeout(TimeoutEvent { id });
+                }
+            }
+
+            let timeout = self.timeout_queue.peek().map(|x| x.0 .0);
+            if let Some(event) = self.window.next_event(timeout) {
+                return event;
+            }
+        }
     }
 }
 
@@ -93,8 +111,10 @@ impl System for WindowsSystem {
     }
 
     fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        //todo!()
-        ActionId::new(0)
+        let id = self.next_action_id.get_and_increment();
+        self.timeout_queue
+            .push(Reverse((Instant::now() + timeout, id)));
+        id
     }
 
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
