@@ -1,7 +1,7 @@
 use pagurus::{
-    event::{Event, MouseEvent, WindowEvent},
+    event::{Event, KeyEvent, MouseEvent, WindowEvent},
     failure::{Failure, OrFail},
-    input::MouseButton,
+    input::{Key, MouseButton},
     spatial::{Position, Size},
     video::VideoFrame,
     Result,
@@ -344,6 +344,12 @@ unsafe extern "system" fn wndproc(
                 position: lparam_to_position(lparam),
             }));
         }
+        WM_KEYDOWN => {
+            event = wparam_to_key(wparam).map(|key| Event::Key(KeyEvent::Down { key }));
+        }
+        WM_KEYUP => {
+            event = wparam_to_key(wparam).map(|key| Event::Key(KeyEvent::Up { key }));
+        }
         WM_DESTROY => {
             quit = true;
         }
@@ -384,4 +390,68 @@ fn lparam_to_position(lparam: LPARAM) -> Position {
     let x = (lparam.0 & 0xFFFF) as i32;
     let y = ((lparam.0 >> 16) & 0xFFFF) as i32;
     Position::from_xy(x, y)
+}
+
+const VK_RETURN: u8 = 0x0d;
+const VK_BACK: u8 = 0x08;
+const VK_DELETE: u8 = 0x2E;
+const VK_SHIFT: u8 = 0x10;
+const VK_CONTROL: u8 = 0x11;
+const VK_MENU: u8 = 0x12;
+const VK_LEFT: u8 = 0x25;
+const VK_UP: u8 = 0x26;
+const VK_RIGHT: u8 = 0x27;
+const VK_DOWN: u8 = 0x28;
+
+fn wparam_to_key(wparam: WPARAM) -> Option<Key> {
+    match wparam.0 as u8 {
+        b'0' => Some(Key::Num0),
+        b'1' => Some(Key::Num1),
+        b'2' => Some(Key::Num2),
+        b'3' => Some(Key::Num3),
+        b'4' => Some(Key::Num4),
+        b'5' => Some(Key::Num5),
+        b'6' => Some(Key::Num6),
+        b'7' => Some(Key::Num7),
+        b'8' => Some(Key::Num8),
+        b'9' => Some(Key::Num9),
+        b'a' => Some(Key::A),
+        b'b' => Some(Key::B),
+        b'c' => Some(Key::C),
+        b'd' => Some(Key::D),
+        b'e' => Some(Key::E),
+        b'f' => Some(Key::F),
+        b'g' => Some(Key::G),
+        b'h' => Some(Key::H),
+        b'i' => Some(Key::I),
+        b'j' => Some(Key::J),
+        b'k' => Some(Key::K),
+        b'l' => Some(Key::L),
+        b'm' => Some(Key::M),
+        b'n' => Some(Key::N),
+        b'o' => Some(Key::O),
+        b'p' => Some(Key::P),
+        b'q' => Some(Key::Q),
+        b'r' => Some(Key::R),
+        b's' => Some(Key::S),
+        b't' => Some(Key::T),
+        b'u' => Some(Key::U),
+        b'v' => Some(Key::V),
+        b'w' => Some(Key::W),
+        b'x' => Some(Key::X),
+        b'y' => Some(Key::Y),
+        b'z' => Some(Key::Z),
+        b' ' => Some(Key::Space),
+        VK_RETURN => Some(Key::Return),
+        VK_BACK => Some(Key::Backspace),
+        VK_DELETE => Some(Key::Delete),
+        VK_SHIFT => Some(Key::Shift),
+        VK_CONTROL => Some(Key::Ctrl),
+        VK_MENU => Some(Key::Alt),
+        VK_LEFT => Some(Key::Left),
+        VK_UP => Some(Key::Up),
+        VK_RIGHT => Some(Key::Right),
+        VK_DOWN => Some(Key::Down),
+        _ => None,
+    }
 }
