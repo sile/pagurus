@@ -11,7 +11,9 @@ use windows::{
     core::PCSTR,
     Win32::UI::WindowsAndMessaging::*,
     Win32::{
-        Foundation::{GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
+        Foundation::{
+            GetLastError, CO_E_INIT_SCM_MAP_VIEW_OF_FILE, HWND, LPARAM, LRESULT, RECT, WPARAM,
+        },
         Graphics::Gdi::{
             GetDC, InvalidateRect, RedrawWindow, ReleaseDC, SetDIBitsToDevice, StretchDIBits,
             UpdateWindow, ValidateRect, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, BLACKNESS,
@@ -142,13 +144,9 @@ impl<'a> DeviceContext<'a> {
                 biClrUsed: 0,
                 biClrImportant: 0,
             },
-            bmiColors: [RGBQUAD {
-                rgbBlue: 255,
-                rgbGreen: 255,
-                rgbRed: 255,
-                rgbReserved: 0,
-            }],
+            bmiColors: std::mem::zeroed(), // Unused as `biClrUsed == 0`
         };
+
         if frame_size == screen_size {
             SetDIBitsToDevice(
                 self.hdc,

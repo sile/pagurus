@@ -67,7 +67,7 @@ impl System for WindowsSystem {
         let w = resolution.width;
         let stride = w + (4 - (w % 4)) % 4;
         VideoFrameSpec {
-            pixel_format: PixelFormat::Rgb24,
+            pixel_format: PixelFormat::Bgr24,
             resolution,
             stride,
         }

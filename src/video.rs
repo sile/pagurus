@@ -26,6 +26,7 @@ pub enum PixelFormat {
     #[default]
     Rgb24 = 2,
     Rgb32 = 3,
+    Bgr24 = 4,
 }
 
 impl PixelFormat {
@@ -33,6 +34,7 @@ impl PixelFormat {
         match self {
             PixelFormat::Rgb24 => 3,
             PixelFormat::Rgb32 => 4,
+            PixelFormat::Bgr24 => 3,
         }
     }
 
@@ -44,6 +46,7 @@ impl PixelFormat {
         match x {
             2 => Ok(Self::Rgb24),
             3 => Ok(Self::Rgb32),
+            4 => Ok(Self::Bgr24),
             _ => Err(Failure::new(format!("unknown pixel format: {x}"))),
         }
     }
@@ -79,6 +82,11 @@ impl VideoFrame<Vec<u8>> {
                 d[i * 3 + 1] = g;
                 d[i * 3 + 2] = b;
             }
+            PixelFormat::Bgr24 => {
+                d[i * 3] = b;
+                d[i * 3 + 1] = g;
+                d[i * 3 + 2] = r;
+            }
             PixelFormat::Rgb32 => {
                 d[i * 4] = r;
                 d[i * 4 + 1] = g;
@@ -113,6 +121,7 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
         let i = pos.y as usize * self.spec.stride as usize + pos.x as usize;
         match self.spec.pixel_format {
             PixelFormat::Rgb24 => (d[i * 3], d[i * 3 + 1], d[i * 3 + 2]),
+            PixelFormat::Bgr24 => (d[i * 3 + 2], d[i * 3 + 1], d[i * 3]),
             PixelFormat::Rgb32 => (d[i * 4], d[i * 4 + 1], d[i * 4 + 2]),
         }
     }

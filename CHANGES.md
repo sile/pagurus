@@ -4,6 +4,7 @@ main
 pagurus
 -------
 
+- [UPDATE] Add `PixelFormat::Bgr24` for Windows
 - [CHANGE] Remove `PixelFormat::{Rgb16Be,Rgb16Le}`
 - [FIX] Fix video frame data size calculation bug
 
