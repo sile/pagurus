@@ -1,7 +1,8 @@
 use pagurus::{
-    event::{Event, WindowEvent},
+    event::{Event, MouseEvent, WindowEvent},
     failure::{Failure, OrFail},
-    spatial::Size,
+    input::MouseButton,
+    spatial::{Position, Size},
     video::VideoFrame,
     Result,
 };
@@ -11,13 +12,10 @@ use windows::{
     core::PCSTR,
     Win32::UI::WindowsAndMessaging::*,
     Win32::{
-        Foundation::{
-            GetLastError, CO_E_INIT_SCM_MAP_VIEW_OF_FILE, HWND, LPARAM, LRESULT, RECT, WPARAM,
-        },
+        Foundation::{GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
         Graphics::Gdi::{
-            GetDC, InvalidateRect, RedrawWindow, ReleaseDC, SetDIBitsToDevice, StretchDIBits,
-            UpdateWindow, ValidateRect, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, BLACKNESS,
-            DIB_RGB_COLORS, HDC, RDW_UPDATENOW, RGBQUAD, SRCCOPY, SRCERASE, SRCINVERT, WHITENESS,
+            GetDC, ReleaseDC, SetDIBitsToDevice, StretchDIBits, ValidateRect, BITMAPINFO,
+            BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HDC, SRCCOPY,
         },
         System::LibraryLoader::GetModuleHandleA,
         UI::WindowsAndMessaging::{
@@ -305,6 +303,47 @@ unsafe extern "system" fn wndproc(
             }
             ValidateRect(hwnd, None);
         }
+        WM_MOUSEMOVE => {
+            event = Some(Event::Mouse(MouseEvent::Move {
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_LBUTTONDOWN => {
+            event = Some(Event::Mouse(MouseEvent::Down {
+                button: MouseButton::Left,
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_LBUTTONUP => {
+            event = Some(Event::Mouse(MouseEvent::Up {
+                button: MouseButton::Left,
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_RBUTTONDOWN => {
+            event = Some(Event::Mouse(MouseEvent::Down {
+                button: MouseButton::Right,
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_RBUTTONUP => {
+            event = Some(Event::Mouse(MouseEvent::Up {
+                button: MouseButton::Right,
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_MBUTTONDOWN => {
+            event = Some(Event::Mouse(MouseEvent::Down {
+                button: MouseButton::Middle,
+                position: lparam_to_position(lparam),
+            }));
+        }
+        WM_MBUTTONUP => {
+            event = Some(Event::Mouse(MouseEvent::Up {
+                button: MouseButton::Middle,
+                position: lparam_to_position(lparam),
+            }));
+        }
         WM_DESTROY => {
             quit = true;
         }
@@ -338,4 +377,11 @@ unsafe fn get_screen_size(hwnd: HWND) -> Result<Size> {
             GetLastError().0
         )))
     }
+}
+
+fn lparam_to_position(lparam: LPARAM) -> Position {
+    // FIXME: Use `GET_X_LPARAM` and `GET_Y_LPARAM` once `windows-rs` provides them.
+    let x = (lparam.0 & 0xFFFF) as i32;
+    let y = ((lparam.0 >> 16) & 0xFFFF) as i32;
+    Position::from_xy(x, y)
 }

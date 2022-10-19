@@ -1,7 +1,7 @@
 use crate::window::{Window, WindowBuilder};
 use pagurus::{
     audio::AudioData,
-    event::{Event, WindowEvent},
+    event::Event,
     failure::OrFail,
     spatial::Size,
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
