@@ -13,9 +13,9 @@ use windows::{
     Win32::{
         Foundation::{GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
         Graphics::Gdi::{
-            GetDC, InvalidateRect, RedrawWindow, ReleaseDC, SetDIBitsToDevice, UpdateWindow,
-            ValidateRect, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HDC, RDW_UPDATENOW,
-            RGBQUAD,
+            GetDC, InvalidateRect, RedrawWindow, ReleaseDC, SetDIBitsToDevice, StretchDIBits,
+            UpdateWindow, ValidateRect, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, BLACKNESS,
+            DIB_RGB_COLORS, HDC, RDW_UPDATENOW, RGBQUAD, SRCCOPY, SRCERASE, SRCINVERT, WHITENESS,
         },
         System::LibraryLoader::GetModuleHandleA,
         UI::WindowsAndMessaging::{
@@ -70,6 +70,14 @@ impl Window {
     }
 
     pub fn next_event(&mut self) -> Event {
+        let event = self.wait_next_event();
+        if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
+            self.screen_size = *size;
+        }
+        event
+    }
+
+    fn wait_next_event(&mut self) -> Event {
         for event in self.handle.event_rx.try_iter() {
             if matches!(event, Event::Window(WindowEvent::RedrawNeeded { .. })) {
                 self.queued_redraw_event_count += 1;
@@ -78,8 +86,7 @@ impl Window {
         }
 
         while let Some(event) = self.event_queue.pop_front() {
-            if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
-                self.screen_size = *size;
+            if matches!(event, Event::Window(WindowEvent::RedrawNeeded { .. })) {
                 self.queued_redraw_event_count -= 1;
                 if self.queued_redraw_event_count > 0 {
                     continue;
@@ -120,45 +127,60 @@ impl<'a> DeviceContext<'a> {
 
         let frame_size = frame.spec().resolution;
         let stride = frame.spec().stride;
-        if screen_size != frame_size {
-            // TODO: StretchDIBits
-            return Ok(());
-        }
 
-        let mut bmi: BITMAPINFO = std::mem::zeroed();
-        bmi.bmiHeader = BITMAPINFOHEADER {
-            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-            biWidth: stride as i32,
-            biHeight: -(frame_size.height as i32),
-            biPlanes: 1,
-            biBitCount: 24,
-            biCompression: BI_RGB,
-            biSizeImage: 0,
-            biXPelsPerMeter: 0,
-            biYPelsPerMeter: 0,
-            biClrUsed: 0,
-            biClrImportant: 0,
+        let bmi = BITMAPINFO {
+            bmiHeader: BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: stride as i32,
+                biHeight: -(frame_size.height as i32),
+                biPlanes: 1,
+                biBitCount: 24,
+                biCompression: BI_RGB,
+                biSizeImage: 0,
+                biXPelsPerMeter: 0,
+                biYPelsPerMeter: 0,
+                biClrUsed: 0,
+                biClrImportant: 0,
+            },
+            bmiColors: [RGBQUAD {
+                rgbBlue: 255,
+                rgbGreen: 255,
+                rgbRed: 255,
+                rgbReserved: 0,
+            }],
         };
-        bmi.bmiColors[0] = RGBQUAD {
-            rgbBlue: 255,
-            rgbGreen: 255,
-            rgbRed: 255,
-            rgbReserved: 0,
-        };
-        SetDIBitsToDevice(
-            self.hdc,
-            0, // xDest,
-            0, // yDest,
-            screen_size.width,
-            screen_size.height,
-            0,                 // xSrc,
-            0,                 // ySrc,
-            0,                 // StartScan,
-            frame_size.height, // cLines,
-            frame.data().as_ptr() as _,
-            &bmi,
-            DIB_RGB_COLORS,
-        );
+        if frame_size == screen_size {
+            SetDIBitsToDevice(
+                self.hdc,
+                0, // xDest,
+                0, // yDest,
+                screen_size.width,
+                screen_size.height,
+                0,                 // xSrc,
+                0,                 // ySrc,
+                0,                 // StartScan,
+                frame_size.height, // cLines,
+                frame.data().as_ptr() as _,
+                &bmi,
+                DIB_RGB_COLORS,
+            );
+        } else {
+            StretchDIBits(
+                self.hdc,
+                0, // xDest,
+                0, // yDest,
+                screen_size.width as i32,
+                screen_size.height as i32,
+                0, // xSrc,
+                0, // ySrc,
+                frame_size.width as i32,
+                frame_size.height as i32,
+                Some(frame.data().as_ptr() as _),
+                &bmi,
+                DIB_RGB_COLORS,
+                SRCCOPY,
+            );
+        }
 
         Ok(())
     }
