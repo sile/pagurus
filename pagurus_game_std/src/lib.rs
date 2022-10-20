@@ -1,8 +1,9 @@
+#[cfg(feature = "audio")]
 pub mod audio;
 pub mod color;
 pub mod image;
 pub mod logger;
-#[cfg(feature = "ogg")]
+#[cfg(feature = "audio")]
 pub mod ogg;
 pub mod png;
 pub mod random;

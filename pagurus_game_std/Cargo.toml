@@ -1,6 +1,6 @@
 [package]
 name = "pagurus_game_std"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -10,9 +10,9 @@ repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
 [features]
-default = ["wasm", "ogg"]
+default = ["wasm", "audio"]
 wasm = []
-ogg = ["lewton"]
+audio = ["lewton"]
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"] }

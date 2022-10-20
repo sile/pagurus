@@ -1,6 +1,13 @@
 main
 ====
 
+
+game_std
+--------
+
+- [CHANGE] Change feature name from `ogg` to `audio`
+
+
 v0.4.0
 ======
 
