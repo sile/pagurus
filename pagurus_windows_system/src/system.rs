@@ -97,8 +97,11 @@ impl System for WindowsSystem {
     }
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
-        // todo!()
-        data.samples().count()
+        let samples = data.samples().count();
+        self.audio_player
+            .play(data)
+            .unwrap_or_else(|e| panic!("{e}"));
+        samples
     }
 
     fn console_log(&mut self, message: &str) {

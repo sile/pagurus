@@ -197,7 +197,7 @@ impl<'a> Drop for DeviceContext<'a> {
 #[derive(Debug)]
 struct MainWindowThreadHandle {
     hwnd: HWND,
-    event_tx: mpsc::Sender<Event>,
+    _event_tx: mpsc::Sender<Event>,
     event_rx: mpsc::Receiver<Event>,
 }
 
@@ -206,9 +206,7 @@ std::thread_local! {
 }
 
 #[derive(Debug)]
-struct MainWindowThread {
-    event_tx: mpsc::Sender<Event>,
-}
+struct MainWindowThread {}
 
 impl MainWindowThread {
     fn spawn(options: WindowBuilder) -> Result<MainWindowThreadHandle> {
@@ -237,7 +235,7 @@ impl MainWindowThread {
         let hwnd = hwnd_rx.recv().or_fail()?.or_fail()?;
         Ok(MainWindowThreadHandle {
             hwnd,
-            event_tx: event_tx_for_handle,
+            _event_tx: event_tx_for_handle,
             event_rx,
         })
     }
