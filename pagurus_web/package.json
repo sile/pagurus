@@ -14,7 +14,7 @@
   "types": "dist/pagurus.ts",
   "type": "module",
   "scripts": {
-    "build": "rollup -c ./rollup.config.js && tsc --emitDeclarationOnly",
+    "build": "rollup -c ./rollup.config.mjs --bundleConfigAsCjs && tsc --emitDeclarationOnly",
     "lint": "eslint --ext .ts ./src",
     "fmt": "prettier --write src",
     "example": "npx serve -S -l 8888 .."
@@ -23,15 +23,15 @@
     "dist"
   ],
   "devDependencies": {
-    "@rollup/plugin-typescript": "^8.3.3",
+    "@rollup/plugin-typescript": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "prettier": "^2.7.0",
-    "rollup": "^2.75.6",
-    "serve": "^13.0.2",
+    "rollup": "^3.0.0",
+    "serve": "^14.0.1",
     "typescript": "^4.7.3"
   }
 }
