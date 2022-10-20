@@ -41,7 +41,7 @@ impl AudioPlayer {
                 .CreateMasteringVoice(
                     &mut mastering_voice,
                     AudioData::CHANNELS as u32,
-                    AudioData::SAMPLE_RATE as u32,
+                    AudioData::SAMPLE_RATE,
                     0,    // Flags,
                     None, // szDeviceId
                     None, // pEffectChain
