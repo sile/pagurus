@@ -20,6 +20,7 @@ use std::{
 #[derive(Debug)]
 pub struct WindowsSystemBuilder {
     data_dir: PathBuf,
+    enable_audio: bool,
     window: WindowBuilder,
 }
 
@@ -27,6 +28,7 @@ impl WindowsSystemBuilder {
     pub fn new(title: &str) -> Self {
         Self {
             data_dir: PathBuf::from(WindowsSystem::DEFAULT_DATA_DIR),
+            enable_audio: true,
             window: WindowBuilder::new(title),
         }
     }
@@ -36,11 +38,20 @@ impl WindowsSystemBuilder {
         self
     }
 
+    pub fn enable_audio(mut self, enable: bool) -> Self {
+        self.enable_audio = enable;
+        self
+    }
+
     pub fn build(self) -> Result<WindowsSystem> {
         let window = self.window.build().or_fail()?;
         Ok(WindowsSystem {
             window,
-            audio_player: AudioPlayer::new().or_fail()?,
+            audio_player: if self.enable_audio {
+                Some(AudioPlayer::new().or_fail()?)
+            } else {
+                None
+            },
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::new(0),
@@ -51,7 +62,7 @@ impl WindowsSystemBuilder {
 #[derive(Debug)]
 pub struct WindowsSystem {
     window: Window,
-    audio_player: AudioPlayer,
+    audio_player: Option<AudioPlayer>,
     start: Instant,
     timeout_queue: BinaryHeap<Reverse<(Instant, ActionId)>>,
     next_action_id: ActionId,
@@ -98,9 +109,9 @@ impl System for WindowsSystem {
 
     fn audio_enqueue(&mut self, data: AudioData) -> usize {
         let samples = data.samples().count();
-        self.audio_player
-            .play(data)
-            .unwrap_or_else(|e| panic!("{e}"));
+        if let Some(player) = &mut self.audio_player {
+            player.play(data).unwrap_or_else(|e| panic!("{e}"));
+        }
         samples
     }
 
