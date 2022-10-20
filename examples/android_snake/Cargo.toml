@@ -11,9 +11,9 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 ndk-glue = "0.7"
-pagurus = { path = "../../", version = "0.3" }
-pagurus_android_system = { path = "../../pagurus_android_system/", version = "0.3" }
-pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.3" }
+pagurus = { path = "../../", version = "0.4" }
+pagurus_android_system = { path = "../../pagurus_android_system/", version = "0.4" }
+pagurus_wasmer = { path = "../../pagurus_wasmer/", version = "0.4" }
 
 [package.metadata.android]
 apk_name = "snake"
