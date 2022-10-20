@@ -37,7 +37,7 @@ $ cargo run --release -p sdl_snake
 Run the game on Android:
 ```console
 $ cargo install cargo-apk
-$ cargo apk run --release --lib -p android_snake
+$ cargo apk run --lib -p android_snake
 ```
 
 Run the game on Windows:

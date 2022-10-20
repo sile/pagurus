@@ -1,7 +1,7 @@
 use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
-use ndk::aaudio::{AAudioFormat, AAudioStream, AAudioStreamState};
+use ndk::audio::{AudioFormat, AudioStream, AudioStreamState};
 use pagurus::event::{Event, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
@@ -36,17 +36,17 @@ impl AndroidSystemBuilder {
 
         let (event_tx, event_rx) = mpsc::channel();
 
-        if let Some(window) = &*ndk_glue::native_window() {
+        if let Some(window) = &ndk_glue::native_window() {
             let size = Window::new(window).get_window_size();
             let _ = event_tx.send(Event::Window(WindowEvent::RedrawNeeded { size }));
         }
 
         let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
 
-        let audio = ndk::aaudio::AAudioStreamBuilder::new()
+        let audio = ndk::audio::AudioStreamBuilder::new()
             .or_fail()?
             .channel_count(AudioData::CHANNELS as i32)
-            .format(AAudioFormat::PCM_I16)
+            .format(AudioFormat::PCM_I16)
             .sample_rate(AudioData::SAMPLE_RATE as i32)
             .open_stream()
             .or_fail()?;
@@ -67,7 +67,7 @@ impl AndroidSystemBuilder {
 #[derive(Debug)]
 pub struct AndroidSystem {
     start: Instant,
-    audio: AAudioStream,
+    audio: AudioStream,
     next_action_id: ActionId,
     data_dir: PathBuf,
     event_poller: EventPoller,
@@ -117,7 +117,7 @@ impl AndroidSystem {
 impl System for AndroidSystem {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         let spec = frame.spec();
-        if let Some(window) = &*ndk_glue::native_window() {
+        if let Some(window) = &ndk_glue::native_window() {
             let window = Window::new(window);
             window.set_buffer_size(spec.resolution);
 
@@ -143,7 +143,7 @@ impl System for AndroidSystem {
         let pixel_format = PixelFormat::Rgb24;
 
         let mut stride = resolution.width;
-        if let Some(window) = &*ndk_glue::native_window() {
+        if let Some(window) = &ndk_glue::native_window() {
             let window = Window::new(window);
             window.set_buffer_size(resolution);
             if let Some(buffer) = window.acquire_buffer() {
@@ -169,7 +169,7 @@ impl System for AndroidSystem {
             let state = self.audio.get_state().unwrap_or_else(|e| panic!("{e}"));
             if !matches!(
                 state,
-                AAudioStreamState::Started | AAudioStreamState::Starting
+                AudioStreamState::Started | AudioStreamState::Starting
             ) {
                 self.audio
                     .request_start()

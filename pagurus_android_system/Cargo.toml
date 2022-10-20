@@ -10,8 +10,8 @@ repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
 [dependencies]
-ndk = { version = "0.6", features = ["aaudio"] }
-ndk-glue = "0.6"
-ndk-sys = "0.3"
+ndk = { version = "0.7", features = ["audio"] }
+ndk-glue = "0.7"
+ndk-sys = "0.4"
 pagurus = { path = "../", version = "0.3" }
 urlencoding = "2"

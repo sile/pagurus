@@ -61,7 +61,7 @@ impl EventPoller {
                 ndk_glue::NDK_GLUE_LOOPER_INPUT_QUEUE_IDENT => {
                     let input_queue = ndk_glue::input_queue();
                     let input_queue = input_queue.as_ref().or_fail()?;
-                    while let Some(input_event) = input_queue.get_event() {
+                    while let Some(input_event) = input_queue.get_event().or_fail()? {
                         if let Some(input_event) = input_queue.pre_dispatch(input_event) {
                             if let Some(event) = from_input_event(&input_event) {
                                 input_queue.finish_event(input_event, true);
@@ -94,7 +94,7 @@ fn from_ndk_glue_event(event: ndk_glue::Event) -> Option<Event> {
         ndk_glue::Event::WindowLostFocus => Some(WindowEvent::FocusLost),
         ndk_glue::Event::WindowHasFocus => Some(WindowEvent::FocusGained),
         ndk_glue::Event::WindowRedrawNeeded | ndk_glue::Event::WindowResized => {
-            if let Some(window) = &*ndk_glue::native_window() {
+            if let Some(window) = &ndk_glue::native_window() {
                 let size = Window::new(window).get_window_size();
                 Some(WindowEvent::RedrawNeeded { size })
             } else {

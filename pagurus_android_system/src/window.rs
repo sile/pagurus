@@ -31,7 +31,7 @@ impl<'a> Window<'a> {
                 self.inner.ptr().as_mut(),
                 size.width as i32,
                 size.height as i32,
-                ndk_sys::AHardwareBuffer_Format_AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM as i32,
+                ndk_sys::AHardwareBuffer_Format::AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM.0 as i32,
             );
             assert_eq!(ret, 0);
         }
