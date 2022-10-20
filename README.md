@@ -42,11 +42,13 @@ $ cargo apk run --release --lib -p android_snake
 
 Run the game on Windows:
 ```console
-TODO
+$ cargo run --release -p windows_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
 
-// If you use Ubunto on WSL2, TODO
+// or, if you use WSL2 (Ubuntu)
+
 $ sudo apt install gcc-mingw-w64-x86-64
 $ rustup target add x86_64-pc-windows-gnu
+$ cargo run --target=x86_64-pc-windows-gnu --release -p windows_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
 ```
 
 Run the game on a Web Browser:
