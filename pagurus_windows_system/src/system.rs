@@ -1,4 +1,7 @@
-use crate::window::{Window, WindowBuilder};
+use crate::{
+    audio::AudioPlayer,
+    window::{Window, WindowBuilder},
+};
 use pagurus::{
     audio::AudioData,
     event::{Event, TimeoutEvent},
@@ -37,6 +40,7 @@ impl WindowsSystemBuilder {
         let window = self.window.build().or_fail()?;
         Ok(WindowsSystem {
             window,
+            audio_player: AudioPlayer::new().or_fail()?,
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::new(0),
@@ -47,6 +51,7 @@ impl WindowsSystemBuilder {
 #[derive(Debug)]
 pub struct WindowsSystem {
     window: Window,
+    audio_player: AudioPlayer,
     start: Instant,
     timeout_queue: BinaryHeap<Reverse<(Instant, ActionId)>>,
     next_action_id: ActionId,
