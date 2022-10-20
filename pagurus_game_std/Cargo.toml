@@ -9,9 +9,14 @@ homepage = "https://github.com/sile/pagurus"
 repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
+[features]
+default = ["wasm", "ogg"]
+wasm = []
+ogg = ["lewton"]
+
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"] }
-lewton = "0.10"
+lewton = { version = "0.10", optional = true }
 log = { version = "0.4", features = ["std"] }
 pagurus = { version = "0.3", path = "../" }
 png = "0.17"

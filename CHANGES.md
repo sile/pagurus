@@ -11,6 +11,7 @@ pagurus
 pagurus_game_std
 ----------------
 
+- [UPDATE] Add `wasm` and `ogg` features
 - [FIX] Fix a bug discarding loaded state data
 - [FIX] Fix zero division bug during alpha blending where both src and dst alphas are zero
 
