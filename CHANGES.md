@@ -18,3 +18,8 @@ pagurus_android_system
 ----------------------
 
 - [CHANGE] Use R8G8B8 as the pixel format instead of R5G6B5
+
+pagurus_windows_system
+----------------------
+
+- Initial release
