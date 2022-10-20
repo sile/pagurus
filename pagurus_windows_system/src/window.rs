@@ -69,6 +69,10 @@ impl Window {
         }
     }
 
+    pub fn event_tx(&self) -> mpsc::Sender<Event> {
+        self.handle.event_tx.clone()
+    }
+
     pub fn next_event(&mut self, timeout: Option<Instant>) -> Option<Event> {
         if let Some(event) = self.wait_next_event(timeout) {
             if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
@@ -197,7 +201,7 @@ impl<'a> Drop for DeviceContext<'a> {
 #[derive(Debug)]
 struct MainWindowThreadHandle {
     hwnd: HWND,
-    _event_tx: mpsc::Sender<Event>,
+    event_tx: mpsc::Sender<Event>,
     event_rx: mpsc::Receiver<Event>,
 }
 
@@ -235,7 +239,7 @@ impl MainWindowThread {
         let hwnd = hwnd_rx.recv().or_fail()?.or_fail()?;
         Ok(MainWindowThreadHandle {
             hwnd,
-            _event_tx: event_tx_for_handle,
+            event_tx: event_tx_for_handle,
             event_rx,
         })
     }

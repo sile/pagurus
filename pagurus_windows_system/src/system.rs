@@ -4,8 +4,8 @@ use crate::{
 };
 use pagurus::{
     audio::AudioData,
-    event::{Event, TimeoutEvent},
-    failure::OrFail,
+    event::{Event, StateEvent, TimeoutEvent},
+    failure::{Failure, OrFail},
     spatial::Size,
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
     ActionId, Result, System,
@@ -13,7 +13,8 @@ use pagurus::{
 use std::{
     cmp::Reverse,
     collections::BinaryHeap,
-    path::PathBuf,
+    path::{Path, PathBuf},
+    sync::mpsc,
     time::{Duration, Instant, UNIX_EPOCH},
 };
 
@@ -43,8 +44,14 @@ impl WindowsSystemBuilder {
         self
     }
 
+    pub fn data_dir<P: AsRef<Path>>(mut self, path: P) -> Self {
+        self.data_dir = path.as_ref().to_path_buf();
+        self
+    }
+
     pub fn build(self) -> Result<WindowsSystem> {
         let window = self.window.build().or_fail()?;
+        let io_request_tx = IoThread::spawn(window.event_tx());
         Ok(WindowsSystem {
             window,
             audio_player: if self.enable_audio {
@@ -54,7 +61,9 @@ impl WindowsSystemBuilder {
             },
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
+            io_request_tx,
             next_action_id: ActionId::new(0),
+            data_dir: self.data_dir,
         })
     }
 }
@@ -65,7 +74,9 @@ pub struct WindowsSystem {
     audio_player: Option<AudioPlayer>,
     start: Instant,
     timeout_queue: BinaryHeap<Reverse<(Instant, ActionId)>>,
+    io_request_tx: mpsc::Sender<IoRequest>,
     next_action_id: ActionId,
+    data_dir: PathBuf,
 }
 
 impl WindowsSystem {
@@ -87,6 +98,10 @@ impl WindowsSystem {
                 return event;
             }
         }
+    }
+
+    fn state_file_path(&self, name: &str) -> PathBuf {
+        self.data_dir.join(urlencoding::encode(name).as_ref())
     }
 }
 
@@ -137,17 +152,113 @@ impl System for WindowsSystem {
     }
 
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
-        //todo!()
-        ActionId::new(0)
+        let id = self.next_action_id.get_and_increment();
+        let path = self.state_file_path(name);
+        let data = data.to_owned();
+        self.io_request_tx
+            .send(IoRequest::Write { id, path, data })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
+        id
     }
 
     fn state_load(&mut self, name: &str) -> ActionId {
-        //todo!()
-        ActionId::new(0)
+        let id = self.next_action_id.get_and_increment();
+        let path = self.state_file_path(name);
+        self.io_request_tx
+            .send(IoRequest::Read { id, path })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
+        id
     }
 
     fn state_delete(&mut self, name: &str) -> ActionId {
-        //todo!()
-        ActionId::new(0)
+        let id = self.next_action_id.get_and_increment();
+        let path = self.state_file_path(name);
+        self.io_request_tx
+            .send(IoRequest::Delete { id, path })
+            .unwrap_or_else(|_| panic!("I/O thread has terminated"));
+        id
     }
+}
+
+struct IoThread {
+    request_rx: mpsc::Receiver<IoRequest>,
+    event_tx: mpsc::Sender<Event>,
+}
+
+impl IoThread {
+    fn spawn(event_tx: mpsc::Sender<Event>) -> mpsc::Sender<IoRequest> {
+        let (request_tx, request_rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let mut this = Self {
+                request_rx,
+                event_tx,
+            };
+            while this.run_once() {}
+        });
+        request_tx
+    }
+
+    fn run_once(&mut self) -> bool {
+        match self.request_rx.recv() {
+            Ok(IoRequest::Write { id, path, data }) => {
+                self.handle_write(id, path, data);
+            }
+            Ok(IoRequest::Read { id, path }) => {
+                self.handle_read(id, path);
+            }
+            Ok(IoRequest::Delete { id, path }) => {
+                self.handle_delete(id, path);
+            }
+            Err(_) => return false,
+        }
+        true
+    }
+
+    fn handle_write(&mut self, id: ActionId, path: PathBuf, data: Vec<u8>) {
+        let failed = (|| {
+            if let Some(dir) = path.parent() {
+                std::fs::create_dir_all(dir).or_fail()?;
+            }
+            std::fs::write(path, &data).or_fail()?;
+            Ok(())
+        })()
+        .err();
+        let event = Event::State(StateEvent::Saved { id, failed });
+        let _ = self.event_tx.send(event);
+    }
+
+    fn handle_read(&mut self, id: ActionId, path: PathBuf) {
+        let (data, failed) = match std::fs::read(path) {
+            Ok(data) => (Some(data), None),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
+            Err(e) => (None, Some(Failure::new(e.to_string()))),
+        };
+        let event = Event::State(StateEvent::Loaded { id, data, failed });
+        let _ = self.event_tx.send(event);
+    }
+
+    fn handle_delete(&mut self, id: ActionId, path: PathBuf) {
+        let failed = std::fs::remove_file(path).err().and_then(|e| {
+            (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
+        });
+        let event = Event::State(StateEvent::Deleted { id, failed });
+        let _ = self.event_tx.send(event);
+    }
+}
+
+#[derive(Debug)]
+enum IoRequest {
+    Write {
+        id: ActionId,
+        path: PathBuf,
+        data: Vec<u8>,
+    },
+    Read {
+        id: ActionId,
+        path: PathBuf,
+    },
+    Delete {
+        id: ActionId,
+        path: PathBuf,
+    },
 }
