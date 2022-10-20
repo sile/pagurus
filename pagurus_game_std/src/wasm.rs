@@ -41,7 +41,7 @@ where
         // TODO: return result
         panic!("failed to deserialize `Event`: {e}");
     });
-    if data_ptr.is_null() {
+    if !data_ptr.is_null() {
         if let Event::State(StateEvent::Loaded { data, .. }) = &mut event {
             *data = Some(*Box::from_raw(data_ptr));
         }
