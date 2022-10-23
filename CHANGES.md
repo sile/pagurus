@@ -10,6 +10,7 @@ game_std
 windows_system
 --------------
 
+- [UPDATE] Use the icon for exe file as the window icon
 - [UPDATE] Expose `Window` struct
 
 v0.4.0

@@ -257,12 +257,17 @@ unsafe fn create_window(options: WindowBuilder) -> Result<HWND> {
 
     let window_class = windows::s!("window");
 
+    let exe_icon_id: isize = 1;
+    let hicon =
+        LoadIconA(instance, std::mem::transmute::<_, PCSTR>(exe_icon_id)).unwrap_or_default();
+
     let wc = WNDCLASSA {
         hCursor: LoadCursorW(None, IDC_ARROW).or_fail()?,
         hInstance: instance,
         lpszClassName: window_class,
         style: CS_HREDRAW | CS_VREDRAW,
         lpfnWndProc: Some(wndproc),
+        hIcon: hicon,
         ..Default::default()
     };
     if RegisterClassA(&wc) == 0 {
