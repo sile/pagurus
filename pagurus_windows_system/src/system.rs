@@ -81,9 +81,7 @@ pub struct WindowsSystem {
 
 impl WindowsSystem {
     pub const DEFAULT_DATA_DIR: &'static str = "data/";
-}
 
-impl WindowsSystem {
     pub fn next_event(&mut self) -> Event {
         loop {
             if let Some(&Reverse((timeout, id))) = self.timeout_queue.peek() {
@@ -98,6 +96,10 @@ impl WindowsSystem {
                 return event;
             }
         }
+    }
+
+    pub fn window(&self) -> &Window {
+        &self.window
     }
 
     fn state_file_path(&self, name: &str) -> PathBuf {

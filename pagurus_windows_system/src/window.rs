@@ -69,11 +69,15 @@ impl Window {
         }
     }
 
-    pub fn event_tx(&self) -> mpsc::Sender<Event> {
+    pub fn hwnd(&self) -> HWND {
+        self.handle.hwnd
+    }
+
+    pub(crate) fn event_tx(&self) -> mpsc::Sender<Event> {
         self.handle.event_tx.clone()
     }
 
-    pub fn next_event(&mut self, timeout: Option<Instant>) -> Option<Event> {
+    pub(crate) fn next_event(&mut self, timeout: Option<Instant>) -> Option<Event> {
         if let Some(event) = self.wait_next_event(timeout) {
             if let Event::Window(WindowEvent::RedrawNeeded { size }) = &event {
                 self.screen_size = *size;

@@ -7,6 +7,10 @@ game_std
 
 - [CHANGE] Change feature name from `ogg` to `audio`
 
+windows_system
+--------------
+
+- [UPDATE] Expose `Window` struct
 
 v0.4.0
 ======
