@@ -133,6 +133,38 @@ impl Sprite {
         })
     }
 
+    pub fn from_grayscale8_bytes(bytes: &[u8], size: Size) -> Result<Self> {
+        (bytes.len() == size.len()).or_fail()?;
+
+        Ok(Self {
+            image_data: Arc::new(
+                bytes
+                    .iter()
+                    .copied()
+                    .map(|x| Rgba::new(x, x, x, 255))
+                    .collect(),
+            ),
+            image_size: size,
+            sprite_region: size.into(),
+        })
+    }
+
+    pub fn from_grayscale_alpha16_bytes(bytes: &[u8], size: Size) -> Result<Self> {
+        (bytes.len() % 2 == 0).or_fail()?;
+        (bytes.len() / 2 == size.len()).or_fail()?;
+
+        Ok(Self {
+            image_data: Arc::new(
+                bytes
+                    .chunks(2)
+                    .map(|x| Rgba::new(x[0], x[0], x[0], x[1]))
+                    .collect(),
+            ),
+            image_size: size,
+            sprite_region: size.into(),
+        })
+    }
+
     pub fn original(&self) -> Self {
         Self {
             image_data: Arc::clone(&self.image_data),

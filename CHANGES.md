@@ -5,6 +5,7 @@ main
 game_std
 --------
 
+- [UPDATE] Support to load grayscale PNG files
 - [CHANGE] Change feature name from `ogg` to `audio`
 
 windows_system

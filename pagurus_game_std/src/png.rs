@@ -16,6 +16,10 @@ pub fn decode_sprite(png: &[u8]) -> Result<Sprite> {
     match info.color_type {
         png::ColorType::Rgb => Sprite::from_rgb24_bytes(bytes, size).or_fail(),
         png::ColorType::Rgba => Sprite::from_rgba32_bytes(bytes, size).or_fail(),
+        png::ColorType::Grayscale => Sprite::from_grayscale8_bytes(bytes, size).or_fail(),
+        png::ColorType::GrayscaleAlpha => {
+            Sprite::from_grayscale_alpha16_bytes(bytes, size).or_fail()
+        }
         _ => Err(Failure::new(format!(
             "unsupported PNG color type: {:?}",
             info.color_type
