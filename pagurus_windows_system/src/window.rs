@@ -224,7 +224,7 @@ impl MainWindowThread {
         std::thread::spawn(move || unsafe {
             EVENT_TX.with(|tx| *tx.borrow_mut() = event_tx.clone());
 
-            let hwnd = match create_window(options).or_fail() {
+            let hwnd = match create_window(options).or_fail() as Result<_> {
                 Ok(hwnd) => hwnd,
                 Err(e) => {
                     let _ = hwnd_tx.send(Err(e));
@@ -252,7 +252,7 @@ impl MainWindowThread {
 unsafe fn create_window(options: WindowBuilder) -> Result<HWND> {
     let instance = GetModuleHandleA(None).or_fail()?;
     if instance.0 == 0 {
-        return Err(Failure::new("Failed to create a module handle".to_owned()));
+        return Err(Failure::new().message("Failed to create a module handle"));
     }
 
     let window_class = windows::s!("window");
@@ -271,9 +271,7 @@ unsafe fn create_window(options: WindowBuilder) -> Result<HWND> {
         ..Default::default()
     };
     if RegisterClassA(&wc) == 0 {
-        return Err(Failure::new(
-            "Failed to register an window class".to_owned(),
-        ));
+        return Err(Failure::new().message("Failed to register an window class"));
     }
 
     let (width, height) = if let Some(size) = options.window_size {
@@ -393,10 +391,7 @@ unsafe fn get_screen_size(hwnd: HWND) -> Result<Size> {
     if GetClientRect(hwnd, &mut rect).as_bool() {
         Ok(Size::from_wh(rect.right as u32, rect.bottom as u32))
     } else {
-        Err(Failure::new(format!(
-            "GetClientRect() error: code={}",
-            GetLastError().0
-        )))
+        Err(Failure::new().message(format!("GetClientRect() error: code={}", GetLastError().0)))
     }
 }
 
