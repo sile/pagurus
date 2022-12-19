@@ -306,7 +306,7 @@ class System {
       this.enqueueEvent({ state: { saved: { id: actionId } } });
     };
     request.onerror = () => {
-      this.enqueueEvent({ state: { saved: { id: actionId, failed: { reason: "PUT_FAILURE" } } } });
+      this.enqueueEvent({ state: { saved: { id: actionId, failed: { message: "PUT_FAILURE" } } } });
     };
 
     return actionId;
@@ -333,7 +333,7 @@ class System {
       }
     };
     request.onerror = () => {
-      this.enqueueEvent({ state: { loaded: { id: actionId, failed: { reason: "GET_FAILURE" } } } });
+      this.enqueueEvent({ state: { loaded: { id: actionId, failed: { message: "GET_FAILURE" } } } });
     };
 
     return actionId;
@@ -350,7 +350,7 @@ class System {
       this.enqueueEvent({ state: { deleted: { id: actionId } } });
     };
     request.onerror = () => {
-      this.enqueueEvent({ state: { deleted: { id: actionId, failed: { reason: "DELETE_FAILURE" } } } });
+      this.enqueueEvent({ state: { deleted: { id: actionId, failed: { message: "DELETE_FAILURE" } } } });
     };
 
     return actionId;

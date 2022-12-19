@@ -31,7 +31,7 @@ impl Stage {
 
     pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: Event) -> Result<bool> {
         let result = match self {
-            Stage::Uninitialized => Err(Failure::unreachable()),
+            Stage::Uninitialized => orfail::unreachable!(),
             Stage::Title(x) => x.handle_event(env, event).or_fail(),
             Stage::Play(x) => x.handle_event(env, event).or_fail(),
             Stage::GameOver(x) => x.handle_event(env, event).or_fail(),
@@ -49,7 +49,7 @@ impl Stage {
 
     pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         match self {
-            Stage::Uninitialized => Err(Failure::unreachable()),
+            Stage::Uninitialized => orfail::unreachable!(),
             Stage::Title(x) => x.render(env, canvas).or_fail(),
             Stage::Play(x) => x.render(env, canvas).or_fail(),
             Stage::GameOver(x) => x.render(env, canvas).or_fail(),

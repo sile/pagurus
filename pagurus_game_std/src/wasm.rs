@@ -65,9 +65,8 @@ where
     const ERR_BYTE: u8 = 1;
 
     let game = &mut *game;
-    let result = vec_into_string(name)
-        .or_fail()
-        .and_then(|name| game.query(&mut WasmSystem, &name).or_fail());
+    let result =
+        vec_into_string(name).and_then(|name| game.query(&mut WasmSystem, &name).or_fail());
     let vec = match result {
         Ok(mut v) => {
             v.push(OK_BYTE);
@@ -95,7 +94,6 @@ where
     let game = &mut *game;
     let command = *Box::from_raw(command);
     let result = vec_into_string(name)
-        .or_fail()
         .and_then(|name| game.command(&mut WasmSystem, &name, &command).or_fail());
     match result {
         Ok(()) => std::ptr::null_mut(),

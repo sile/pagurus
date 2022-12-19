@@ -10,6 +10,7 @@ repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
 [dependencies]
+orfail = { version = "0.1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 
 [workspace]

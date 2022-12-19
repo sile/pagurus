@@ -22,12 +22,18 @@ impl AudioDataStream {
 
         let channels = inner.ident_hdr.audio_channels;
         let sample_rate = inner.ident_hdr.audio_sample_rate;
-        (channels == AudioData::CHANNELS).or_fail_with_reason(|_| {
-            format!("only monaural audio is supported: channels={channels}")
+        (channels == AudioData::CHANNELS).or_fail().map_err(|e| {
+            e.message(format!(
+                "only monaural audio is supported: channels={channels}"
+            ))
         })?;
-        (sample_rate == AudioData::SAMPLE_RATE).or_fail_with_reason(|_| {
-            format!("only 48KHz audio is supported: sample_rate={sample_rate}")
-        })?;
+        (sample_rate == AudioData::SAMPLE_RATE)
+            .or_fail()
+            .map_err(|e| {
+                e.message(format!(
+                    "only 48KHz audio is supported: sample_rate={sample_rate}"
+                ))
+            })?;
 
         Ok(Self {
             inner,

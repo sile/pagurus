@@ -47,7 +47,7 @@ impl PixelFormat {
             2 => Ok(Self::Rgb24),
             3 => Ok(Self::Rgb32),
             4 => Ok(Self::Bgr24),
-            _ => Err(Failure::new(format!("unknown pixel format: {x}"))),
+            _ => Err(Failure::new().message(format!("unknown pixel format: {x}"))),
         }
     }
 }

@@ -56,7 +56,7 @@ impl IoThread {
         let (data, failed) = match std::fs::read(path) {
             Ok(data) => (Some(data), None),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
-            Err(e) => (None, Some(Failure::new(e.to_string()))),
+            Err(e) => (None, Some(Failure::new().message(e.to_string()))),
         };
         let event = Event::State(StateEvent::Loaded { id, data, failed });
         let _ = self.event_tx.send(event);
@@ -64,7 +64,8 @@ impl IoThread {
 
     fn handle_delete(&mut self, id: ActionId, path: PathBuf) {
         let failed = std::fs::remove_file(path).err().and_then(|e| {
-            (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
+            (e.kind() != std::io::ErrorKind::NotFound)
+                .then(|| Failure::new().message(e.to_string()))
         });
         let event = Event::State(StateEvent::Deleted { id, failed });
         let _ = self.event_tx.send(event);

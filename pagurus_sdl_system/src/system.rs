@@ -53,10 +53,10 @@ impl SdlSystemBuilder {
     }
 
     pub fn build(self) -> Result<SdlSystem> {
-        let sdl_context = sdl2::init().map_err(Failure::new)?;
+        let sdl_context = sdl2::init().map_err(|e| Failure::new().message(e))?;
 
         // Video
-        let sdl_video = sdl_context.video().map_err(Failure::new)?;
+        let sdl_video = sdl_context.video().map_err(|e| Failure::new().message(e))?;
         let sdl_window = if let Some(f) = self.custom_window {
             f(sdl_video).or_fail()?
         } else {
@@ -74,7 +74,7 @@ impl SdlSystemBuilder {
         };
 
         // Audio
-        let sdl_audio = sdl_context.audio().map_err(Failure::new)?;
+        let sdl_audio = sdl_context.audio().map_err(|e| Failure::new().message(e))?;
         let audio_spec = AudioSpecDesired {
             freq: Some(AudioData::SAMPLE_RATE as i32),
             channels: Some(AudioData::CHANNELS),
@@ -82,15 +82,17 @@ impl SdlSystemBuilder {
         };
         let sdl_audio_queue = sdl_audio
             .open_queue(None, &audio_spec)
-            .map_err(Failure::new)?;
+            .map_err(|e| Failure::new().message(e))?;
         sdl_audio_queue.resume();
 
         // Event
-        let sdl_event = sdl_context.event().map_err(Failure::new)?;
+        let sdl_event = sdl_context.event().map_err(|e| Failure::new().message(e))?;
         sdl_event
             .register_custom_event::<Event>()
-            .map_err(Failure::new)?;
-        let sdl_event_pump = sdl_context.event_pump().map_err(Failure::new)?;
+            .map_err(|e| Failure::new().message(e))?;
+        let sdl_event_pump = sdl_context
+            .event_pump()
+            .map_err(|e| Failure::new().message(e))?;
 
         let (width, height) = sdl_canvas.window().size();
         sdl_event
@@ -98,7 +100,7 @@ impl SdlSystemBuilder {
             .push_custom_event(Event::Window(WindowEvent::RedrawNeeded {
                 size: Size::from_wh(width, height),
             }))
-            .map_err(Failure::new)?;
+            .map_err(|e| Failure::new().message(e))?;
 
         // I/O Thread
         let io_request_tx = IoThread::spawn(sdl_event.event_sender());
@@ -325,7 +327,7 @@ impl IoThread {
         let (data, failed) = match std::fs::read(path) {
             Ok(data) => (Some(data), None),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => (None, None),
-            Err(e) => (None, Some(Failure::new(e.to_string()))),
+            Err(e) => (None, Some(Failure::new().message(e.to_string()))),
         };
         let event = Event::State(StateEvent::Loaded { id, data, failed });
         self.event_tx
@@ -335,7 +337,8 @@ impl IoThread {
 
     fn handle_delete(&mut self, id: ActionId, path: PathBuf) {
         let failed = std::fs::remove_file(path).err().and_then(|e| {
-            (e.kind() != std::io::ErrorKind::NotFound).then(|| Failure::new(e.to_string()))
+            (e.kind() != std::io::ErrorKind::NotFound)
+                .then(|| Failure::new().message(e.to_string()))
         });
         let event = Event::State(StateEvent::Deleted { id, failed });
         self.event_tx

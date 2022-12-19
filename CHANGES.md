@@ -2,14 +2,19 @@ main
 ====
 
 
-game_std
---------
+pagurus
+-------
+
+- [CHANGE] Use `orfail` crate for error handling
+
+pagurus_game_std
+----------------
 
 - [UPDATE] Support to load grayscale PNG files
 - [CHANGE] Change feature name from `ogg` to `audio`
 
-windows_system
---------------
+pagurus_windows_system
+----------------------
 
 - [UPDATE] Use the icon for exe file as the window icon
 - [UPDATE] Expose `Window` struct

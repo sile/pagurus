@@ -1,18 +1,20 @@
 use crate::audio::AudioData;
 use crate::event::Event;
-use crate::failure::Failure;
 use crate::spatial::Size;
 use crate::video::{VideoFrame, VideoFrameSpec};
 use std::time::Duration;
 
+pub mod failure {
+    pub use orfail::{Failure, OrFail};
+}
+
 pub mod audio;
 pub mod event;
-pub mod failure;
 pub mod input;
 pub mod spatial;
 pub mod video;
 
-pub type Result<T, E = Failure> = std::result::Result<T, E>;
+pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 
 pub trait System {
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
@@ -33,16 +35,12 @@ pub trait Game<S: System> {
 
     #[allow(unused_variables)]
     fn query(&mut self, system: &mut S, name: &str) -> Result<Vec<u8>> {
-        Err(crate::failure::Failure::new(format!(
-            "unknown query: {name:?}"
-        )))
+        Err(crate::failure::Failure::new().message(format!("unknown query: {name:?}")))
     }
 
     #[allow(unused_variables)]
     fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
-        Err(crate::failure::Failure::new(format!(
-            "unknown command: {name:?}"
-        )))
+        Err(crate::failure::Failure::new().message(format!("unknown command: {name:?}")))
     }
 }
 

@@ -11,7 +11,8 @@ pub fn decode_sprite(png: &[u8]) -> Result<Sprite> {
     let bytes = &buf[..info.buffer_size()];
     let size = Size::from_wh(info.width, info.height);
     (info.bit_depth == png::BitDepth::Eight)
-        .or_fail_with_reason(|_| format!("unsupported PNG bit depth: {:?}", info.bit_depth))?;
+        .or_fail()
+        .map_err(|e| e.message(format!("unsupported PNG bit depth: {:?}", info.bit_depth)))?;
 
     match info.color_type {
         png::ColorType::Rgb => Sprite::from_rgb24_bytes(bytes, size).or_fail(),
@@ -20,9 +21,9 @@ pub fn decode_sprite(png: &[u8]) -> Result<Sprite> {
         png::ColorType::GrayscaleAlpha => {
             Sprite::from_grayscale_alpha16_bytes(bytes, size).or_fail()
         }
-        _ => Err(Failure::new(format!(
-            "unsupported PNG color type: {:?}",
-            info.color_type
-        ))),
+        _ => {
+            Err(Failure::new()
+                .message(format!("unsupported PNG color type: {:?}", info.color_type)))
+        }
     }
 }

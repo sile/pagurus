@@ -73,9 +73,9 @@ impl EventPoller {
                     }
                 }
                 _ => {
-                    return Err(Failure::new(format!(
-                        "unexpected event identifier: {ident}"
-                    )))
+                    return Err(
+                        Failure::new().message(format!("unexpected event identifier: {ident}"))
+                    )
                 }
             },
         }
