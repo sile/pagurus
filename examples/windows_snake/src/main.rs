@@ -2,14 +2,10 @@ use clap::Parser;
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
 use pagurus::{Game, Result};
-use pagurus_wasmer::WasmGame;
-use pagurus_windows_system::{WindowsSystem, WindowsSystemBuilder};
-use std::path::PathBuf;
+use pagurus_windows_system::WindowsSystemBuilder;
 
 #[derive(Debug, Parser)]
 struct Args {
-    game_wasm_path: PathBuf,
-
     #[clap(long, default_value_t = 800)]
     width: u32,
 
@@ -21,11 +17,10 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     // Game
-    let wasm_bytes = std::fs::read(&args.game_wasm_path).or_fail()?;
-    let mut game = WasmGame::<WindowsSystem>::new(&wasm_bytes).or_fail()?;
+    let mut game = snake_game::game::SnakeGame::default();
 
     // System
-    let mut system = WindowsSystemBuilder::new("Pagurus Windows Runtime")
+    let mut system = WindowsSystemBuilder::new("Snake")
         .window_size(Some(Size::from_wh(args.width, args.height)))
         .build()
         .or_fail()?;

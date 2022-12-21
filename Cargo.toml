@@ -21,6 +21,6 @@ members = [
     "pagurus_windows_system",
     "examples/android_snake",
     "examples/sdl_snake",
-    "examples/windows_runtime",
+    "examples/windows_snake",
     "examples/snake_game",
 ]

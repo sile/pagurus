@@ -1,15 +1,10 @@
 use pagurus::failure::OrFail;
 use pagurus::Game;
 use pagurus_android_system::{AndroidSystem, AndroidSystemBuilder};
-use pagurus_wasmer::WasmGame;
-
-pub const GAME_WASM_BYTES: &[u8] =
-    include_bytes!("../../../target/wasm32-unknown-unknown/release/snake_game.wasm");
 
 #[ndk_glue::main(backtrace = "on")]
 pub fn main() {
-    let mut game =
-        WasmGame::<AndroidSystem>::new(GAME_WASM_BYTES).unwrap_or_else(|e| panic!("{e}"));
+    let mut game = snake_game::game::SnakeGame::default();
     let mut system = AndroidSystemBuilder::new()
         .build()
         .or_fail()

@@ -1,15 +1,11 @@
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
 use pagurus::{Game, Result};
-use pagurus_sdl_system::{SdlSystem, SdlSystemBuilder};
-use pagurus_wasmer::WasmGame;
-
-pub const GAME_WASM_BYTES: &[u8] =
-    include_bytes!("../../../target/wasm32-unknown-unknown/release/snake_game.wasm");
+use pagurus_sdl_system::SdlSystemBuilder;
 
 fn main() -> Result<()> {
     // Game
-    let mut game = WasmGame::<SdlSystem>::new(&GAME_WASM_BYTES).or_fail()?;
+    let mut game = snake_game::game::SnakeGame::default();
 
     // System
     let mut system = SdlSystemBuilder::new()
