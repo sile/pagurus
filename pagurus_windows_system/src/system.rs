@@ -132,7 +132,7 @@ impl System for WindowsSystem {
         samples
     }
 
-    fn console_log(&mut self, message: &str) {
+    fn console_log(message: &str) {
         eprintln!("{message}");
     }
 

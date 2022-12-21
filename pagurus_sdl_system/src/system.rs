@@ -218,7 +218,7 @@ impl System for SdlSystem {
         samples.len()
     }
 
-    fn console_log(&mut self, message: &str) {
+    fn console_log(message: &str) {
         eprintln!("{message}");
     }
 

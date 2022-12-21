@@ -4,6 +4,11 @@ main
 - [CHANGE] Remove `pagurus_wasmer`
 - [CHANGE] Remove `pagurus_tui_system`
 
+core
+----
+
+- Make `System::console_log()` static method
+
 v0.5.0
 ======
 

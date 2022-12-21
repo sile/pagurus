@@ -180,7 +180,7 @@ impl System for AndroidSystem {
         }
     }
 
-    fn console_log(&mut self, message: &str) {
+    fn console_log(message: &str) {
         println!("{message}");
     }
 

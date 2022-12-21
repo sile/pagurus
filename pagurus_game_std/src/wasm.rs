@@ -256,7 +256,7 @@ impl System for WasmSystem {
         unsafe { systemAudioEnqueue(data.bytes().as_ptr(), data.bytes().len() as i32) as usize }
     }
 
-    fn console_log(&mut self, message: &str) {
+    fn console_log(message: &str) {
         extern "C" {
             fn systemConsoleLog(msg: *const u8, msg_len: i32);
         }

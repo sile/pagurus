@@ -20,7 +20,6 @@ pub const STATE_HIGH_SCORE: &str = "high_score";
 
 #[derive(Debug, Default)]
 pub struct SnakeGame {
-    logger: Logger,
     rng: StdRng,
     assets: Option<Assets>,
     audio_player: AudioPlayer,
@@ -30,10 +29,10 @@ pub struct SnakeGame {
     logical_window: LogicalWindow,
 }
 
-impl<S: System> Game<S> for SnakeGame {
+impl<S: System + 'static> Game<S> for SnakeGame {
     fn initialize(&mut self, system: &mut S) -> Result<()> {
         // Logger.
-        self.logger = Logger::init(LOG_LEVEL).or_fail()?;
+        Logger::<S>::init(LOG_LEVEL).or_fail()?;
 
         // Rng.
         self.rng = StdRng::from_clock_seed(system.clock_unix_time());
@@ -67,44 +66,6 @@ impl<S: System> Game<S> for SnakeGame {
     }
 
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool> {
-        let result = self.handle_event_without_log_flush(system, event);
-        self.logger.flush(system);
-        result
-    }
-}
-
-impl SnakeGame {
-    fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
-        let assets = self.assets.as_ref().or_fail()?;
-
-        if self.video_frame.spec().resolution != self.logical_window.size() {
-            self.video_frame = VideoFrame::new(system.video_frame_spec(self.logical_window.size()));
-        }
-        let mut canvas = Canvas::new(&mut self.video_frame);
-        canvas.fill_color(Color::BLACK);
-
-        let mut canvas = canvas.subregion(self.logical_window.canvas_region());
-        canvas.draw_sprite(&assets.sprites.background);
-
-        let mut env = Env::new(
-            system,
-            &mut self.rng,
-            &mut self.audio_player,
-            &mut self.high_score,
-            assets,
-        );
-        self.stage.render(&mut env, &mut canvas).or_fail()?;
-
-        system.video_draw(self.video_frame.as_ref());
-
-        Ok(())
-    }
-
-    fn handle_event_without_log_flush<S: System>(
-        &mut self,
-        system: &mut S,
-        event: Event,
-    ) -> Result<bool> {
         let event = self.logical_window.handle_event(event);
 
         let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
@@ -144,5 +105,33 @@ impl SnakeGame {
             self.render(system).or_fail()?;
         }
         Ok(do_continue)
+    }
+}
+
+impl SnakeGame {
+    fn render<S: System>(&mut self, system: &mut S) -> Result<()> {
+        let assets = self.assets.as_ref().or_fail()?;
+
+        if self.video_frame.spec().resolution != self.logical_window.size() {
+            self.video_frame = VideoFrame::new(system.video_frame_spec(self.logical_window.size()));
+        }
+        let mut canvas = Canvas::new(&mut self.video_frame);
+        canvas.fill_color(Color::BLACK);
+
+        let mut canvas = canvas.subregion(self.logical_window.canvas_region());
+        canvas.draw_sprite(&assets.sprites.background);
+
+        let mut env = Env::new(
+            system,
+            &mut self.rng,
+            &mut self.audio_player,
+            &mut self.high_score,
+            assets,
+        );
+        self.stage.render(&mut env, &mut canvas).or_fail()?;
+
+        system.video_draw(self.video_frame.as_ref());
+
+        Ok(())
     }
 }
