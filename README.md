@@ -27,10 +27,6 @@ $ ls target/wasm32-unknown-unknown/release/snake_game.wasm
 
 Run the game using SDL:
 ```console
-$ cargo run --release -p sdl_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
-
-// or
-
 $ cargo run --release -p sdl_snake
 ```
 
@@ -42,13 +38,13 @@ $ cargo apk run --lib -p android_snake
 
 Run the game on Windows:
 ```console
-$ cargo run --release -p windows_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
+$ cargo run --release -p windows_snake
 
 // or, if you use WSL2 (Ubuntu)
 
 $ sudo apt install gcc-mingw-w64-x86-64
 $ rustup target add x86_64-pc-windows-gnu
-$ cargo run --target=x86_64-pc-windows-gnu --release -p windows_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
+$ cargo run --target=x86_64-pc-windows-gnu --release -p windows_snake
 ```
 
 Run the game on a Web Browser:
@@ -59,11 +55,6 @@ $ npm run build
 $ npm run example  // A HTTP server listening on 8888 port will start
 
 $ open http://localhost:8888/examples/web_snake/
-```
-
-Run the game on a terminal (audio is disabled):
-```console
-$ cargo run --release -p tui_runtime -- target/wasm32-unknown-unknown/release/snake_game.wasm
 ```
 
 Projects that use Pagurus
