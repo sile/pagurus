@@ -136,11 +136,11 @@ impl System for WindowsSystem {
         eprintln!("{message}");
     }
 
-    fn clock_game_time(&mut self) -> Duration {
+    fn clock_game_time(&self) -> Duration {
         self.start.elapsed()
     }
 
-    fn clock_unix_time(&mut self) -> Duration {
+    fn clock_unix_time(&self) -> Duration {
         UNIX_EPOCH
             .elapsed()
             .unwrap_or_else(|e| panic!("failed to get UNIX timestamp: {e}"))

@@ -8,6 +8,7 @@ core
 ----
 
 - Make `System::console_log()` static method
+- Make `System::clock_{game,unix}_time()` immutable methods
 
 v0.5.0
 ======

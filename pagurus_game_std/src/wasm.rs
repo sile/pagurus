@@ -263,14 +263,14 @@ impl System for WasmSystem {
         unsafe { systemConsoleLog(message.as_ptr(), message.len() as i32) }
     }
 
-    fn clock_game_time(&mut self) -> Duration {
+    fn clock_game_time(&self) -> Duration {
         extern "C" {
             fn systemClockGameTime() -> f64;
         }
         unsafe { Duration::from_secs_f64(systemClockGameTime()) }
     }
 
-    fn clock_unix_time(&mut self) -> Duration {
+    fn clock_unix_time(&self) -> Duration {
         extern "C" {
             fn systemClockUnixTime() -> f64;
         }
