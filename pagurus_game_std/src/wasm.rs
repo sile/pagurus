@@ -137,6 +137,13 @@ where
     unsafe { serde_json::from_slice(&Box::from_raw(bytes)) }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+#[macro_export]
+macro_rules! export_wasm_functions {
+    ($game:ty) => {};
+}
+
+#[cfg(target_arch = "wasm32")]
 #[macro_export]
 macro_rules! export_wasm_functions {
     ($game:ty) => {
