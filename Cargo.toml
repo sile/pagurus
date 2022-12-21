@@ -16,15 +16,11 @@ serde = { version = "1", features = ["derive"] }
 [workspace]
 members = [
     "pagurus_game_std",
-    "pagurus_wasmer",
     "pagurus_sdl_system",
-    "pagurus_tui_system",
     "pagurus_android_system",
     "pagurus_windows_system",
     "examples/android_snake",
     "examples/sdl_snake",
-    "examples/sdl_runtime",
-    "examples/tui_runtime",
     "examples/windows_runtime",
     "examples/snake_game",
 ]

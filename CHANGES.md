@@ -1,6 +1,9 @@
 main
 ====
 
+- [CHANGE] Remove `pagurus_wasmer`
+- [CHANGE] Remove `pagurus_tui_system`
+
 v0.5.0
 ======
 
