@@ -242,6 +242,7 @@ class System {
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
+    // TODO: Use DataView
     const data = new Uint8Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
     for (let i = 0; i < audioDataLen; i += 2) {
       let n = (data[i] << 8) | data[i + 1];
@@ -252,14 +253,14 @@ class System {
     }
 
     if (this.audioContext === undefined) {
-      const audioContext = new AudioContext();
+      const audioContext = new AudioContext(); // TODO: sample_rate
       this.audioContext = audioContext;
       this.audioContext.audioWorklet
         .addModule("data:text/javascript," + encodeURI(AUDIO_WORKLET_PROCESSOR_CODE))
         .then(() => {
           this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
           this.audioInputNode.connect(audioContext.destination);
-          this.audioInputNode.port.postMessage(this.audioDataBuffer);
+          this.audioInputNode.port.postMessage(this.audioDataBuffer); // TODO: transfer
           this.audioDataBuffer = [];
         })
         .catch((error) => {
