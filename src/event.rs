@@ -8,7 +8,6 @@ use crate::{
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub enum Event {
     Terminating,
     Timeout(TimeoutEvent),
@@ -36,14 +35,12 @@ pub struct TimeoutEvent {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub enum WindowEvent {
     RedrawNeeded { size: Size },
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub enum StateEvent {
     Saved {
         id: ActionId,
@@ -66,7 +63,6 @@ pub enum StateEvent {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub enum KeyEvent {
     Down { key: Key },
     Up { key: Key },
@@ -74,7 +70,6 @@ pub enum KeyEvent {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub enum MouseEvent {
     Move {
         position: Position,
