@@ -9,7 +9,7 @@ type Event =
   | { window: WindowEvent }
   | { state: StateEvent };
 
-type TimeoutEvent = { id: ActionId };
+type TimeoutEvent = { id: ActionId; tag: number };
 
 type KeyEvent = { down: { key: Key } } | { up: { key: Key } };
 
@@ -18,14 +18,14 @@ type MouseEvent =
   | { down: { position: Position; button: MouseButton } }
   | { up: { position: Position; button: MouseButton } };
 
-type WindowEvent = "focusGained" | "focusLost" | { redrawNeeded: { size: Size } };
+type WindowEvent = { redrawNeeded: { size: Size } };
 
 type StateEvent =
   | { loaded: { id: ActionId; data?: Uint8Array; failed?: Failure } }
   | { saved: { id: ActionId; failed?: Failure } }
   | { deleted: { id: ActionId; failed?: Failure } };
 
-type ActionId = number;
+type ActionId = number; // TODO: Add TimeoutId
 
 type MouseButton = "left" | "middle" | "right";
 

@@ -91,8 +91,6 @@ fn from_ndk_glue_event(event: ndk_glue::Event) -> Option<Event> {
         line!()
     );
     match event {
-        ndk_glue::Event::WindowLostFocus => Some(WindowEvent::FocusLost),
-        ndk_glue::Event::WindowHasFocus => Some(WindowEvent::FocusGained),
         ndk_glue::Event::WindowRedrawNeeded | ndk_glue::Event::WindowResized => {
             if let Some(window) = &ndk_glue::native_window() {
                 let size = Window::new(window).get_window_size();

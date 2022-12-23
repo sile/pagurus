@@ -57,8 +57,6 @@ fn to_pagurus_window_event(sdl_event: SdlWindowEvent) -> Option<WindowEvent> {
         SdlWindowEvent::SizeChanged(width, height) => Some(WindowEvent::RedrawNeeded {
             size: Size::from_wh(width as u32, height as u32),
         }),
-        SdlWindowEvent::FocusGained => Some(WindowEvent::FocusGained),
-        SdlWindowEvent::FocusLost => Some(WindowEvent::FocusLost),
         _ => None,
     }
 }

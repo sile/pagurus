@@ -3,10 +3,11 @@ use crate::{
     window::{Window, WindowBuilder},
 };
 use pagurus::{
-    audio::AudioData,
+    audio::{AudioData, AudioSpec, SampleFormat},
     event::{Event, StateEvent, TimeoutEvent},
     failure::{Failure, OrFail},
     spatial::Size,
+    timeout::{TimeoutId, TimeoutTag},
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
     ActionId, Result, System,
 };
@@ -21,7 +22,6 @@ use std::{
 #[derive(Debug)]
 pub struct WindowsSystemBuilder {
     data_dir: PathBuf,
-    enable_audio: bool,
     window: WindowBuilder,
 }
 
@@ -29,18 +29,12 @@ impl WindowsSystemBuilder {
     pub fn new(title: &str) -> Self {
         Self {
             data_dir: PathBuf::from(WindowsSystem::DEFAULT_DATA_DIR),
-            enable_audio: true,
             window: WindowBuilder::new(title),
         }
     }
 
     pub fn window_size(mut self, size: Option<Size>) -> Self {
         self.window = self.window.window_size(size);
-        self
-    }
-
-    pub fn enable_audio(mut self, enable: bool) -> Self {
-        self.enable_audio = enable;
         self
     }
 
@@ -54,15 +48,12 @@ impl WindowsSystemBuilder {
         let io_request_tx = IoThread::spawn(window.event_tx());
         Ok(WindowsSystem {
             window,
-            audio_player: if self.enable_audio {
-                Some(AudioPlayer::new().or_fail()?)
-            } else {
-                None
-            },
+            audio_player: None,
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             io_request_tx,
             next_action_id: ActionId::new(0),
+            next_timeout_id: TimeoutId::new(),
             data_dir: self.data_dir,
         })
     }
@@ -73,9 +64,10 @@ pub struct WindowsSystem {
     window: Window,
     audio_player: Option<AudioPlayer>,
     start: Instant,
-    timeout_queue: BinaryHeap<Reverse<(Instant, ActionId)>>,
+    timeout_queue: BinaryHeap<Reverse<(Instant, TimeoutEvent)>>,
     io_request_tx: mpsc::Sender<IoRequest>,
     next_action_id: ActionId,
+    next_timeout_id: TimeoutId,
     data_dir: PathBuf,
 }
 
@@ -84,10 +76,10 @@ impl WindowsSystem {
 
     pub fn next_event(&mut self) -> Event {
         loop {
-            if let Some(&Reverse((timeout, id))) = self.timeout_queue.peek() {
+            if let Some(&Reverse((timeout, event))) = self.timeout_queue.peek() {
                 if timeout <= Instant::now() {
                     self.timeout_queue.pop();
-                    return Event::Timeout(TimeoutEvent { id });
+                    return Event::Timeout(event);
                 }
             }
 
@@ -108,13 +100,7 @@ impl WindowsSystem {
 }
 
 impl System for WindowsSystem {
-    fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
-        self.window
-            .draw_video_frame(frame)
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-
-    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
+    fn video_init(&mut self, resolution: Size) -> VideoFrameSpec {
         let w = resolution.width;
         let stride = w + (4 - (w % 4)) % 4;
         VideoFrameSpec {
@@ -124,12 +110,27 @@ impl System for WindowsSystem {
         }
     }
 
-    fn audio_enqueue(&mut self, data: AudioData) -> usize {
-        let samples = data.samples().count();
+    fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
+        self.window
+            .draw_video_frame(frame)
+            .unwrap_or_else(|e| panic!("{e}"));
+    }
+
+    fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec {
+        let player = AudioPlayer::new(sample_rate, data_samples)
+            .unwrap_or_else(|e| panic!("failed to initialize audio: {e}"));
+        self.audio_player = Some(player);
+        AudioSpec {
+            sample_format: SampleFormat::I16Be,
+            sample_rate,
+            data_samples,
+        }
+    }
+
+    fn audio_enqueue(&mut self, data: AudioData<&[u8]>) {
         if let Some(player) = &mut self.audio_player {
             player.play(data).unwrap_or_else(|e| panic!("{e}"));
         }
-        samples
     }
 
     fn console_log(message: &str) {
@@ -146,10 +147,12 @@ impl System for WindowsSystem {
             .unwrap_or_else(|e| panic!("failed to get UNIX timestamp: {e}"))
     }
 
-    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        let id = self.next_action_id.get_and_increment();
-        self.timeout_queue
-            .push(Reverse((Instant::now() + timeout, id)));
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId {
+        let id = self.next_timeout_id.increment();
+        self.timeout_queue.push(Reverse((
+            Instant::now() + timeout,
+            TimeoutEvent { tag, id },
+        )));
         id
     }
 

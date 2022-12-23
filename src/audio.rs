@@ -34,7 +34,7 @@ impl AudioData<Vec<u8>> {
         }
     }
 
-    pub fn data_mut(&mut self) -> &mut [u8] {
+    pub fn bytes_mut(&mut self) -> &mut [u8] {
         self.data.as_mut()
     }
 
@@ -51,11 +51,14 @@ impl<B: AsRef<[u8]>> AudioData<B> {
         self.spec
     }
 
-    pub fn samples(&self) -> usize {
-        self.data().len() / self.spec.sample_format.bytes()
+    pub fn samples(&self) -> Samples {
+        Samples {
+            spec: self.spec,
+            data: self.data.as_ref(),
+        }
     }
 
-    pub fn data(&self) -> &[u8] {
+    pub fn bytes(&self) -> &[u8] {
         self.data.as_ref()
     }
 }
@@ -74,6 +77,53 @@ pub struct AudioSpec {
 
 impl AudioSpec {
     pub const CHANNELS: u8 = 1;
+}
+
+#[derive(Debug)]
+pub struct Samples<'a> {
+    spec: AudioSpec,
+    data: &'a [u8],
+}
+
+impl<'a> Samples<'a> {
+    pub fn len(&self) -> usize {
+        self.spec.data_samples
+    }
+}
+
+impl<'a> Iterator for Samples<'a> {
+    type Item = Sample;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.data.is_empty() {
+            return None;
+        }
+
+        match self.spec.sample_format {
+            SampleFormat::I16Be => {
+                let v = i16::from_be_bytes([self.data[0], self.data[1]]);
+                self.data = &self.data[2..];
+                Some(Sample::I16(v))
+            }
+            SampleFormat::I16Le => {
+                let v = i16::from_le_bytes([self.data[0], self.data[1]]);
+                self.data = &self.data[2..];
+                Some(Sample::I16(v))
+            }
+            SampleFormat::F32Be => {
+                let v =
+                    f32::from_be_bytes([self.data[0], self.data[1], self.data[2], self.data[3]]);
+                self.data = &self.data[4..];
+                Some(Sample::F32(v))
+            }
+            SampleFormat::F32Le => {
+                let v =
+                    f32::from_le_bytes([self.data[0], self.data[1], self.data[2], self.data[3]]);
+                self.data = &self.data[4..];
+                Some(Sample::F32(v))
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

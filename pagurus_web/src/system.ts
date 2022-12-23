@@ -198,6 +198,11 @@ class System {
     this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
   }
 
+  videoInit(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {
+    new DataView(this.wasmMemory.buffer).setUint8(pixelFormatPtr, 1); // 1=RGB32
+    new DataView(this.wasmMemory.buffer).setUint32(stridePtr, width, true);
+  }
+
   videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, stride: number, format: number) {
     if (format != 3) {
       throw new Error(`expected RGB32(3) format, but got ${format}`);
@@ -233,36 +238,37 @@ class System {
     }
   }
 
-  videoFrameSpec(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {
-    new DataView(this.wasmMemory.buffer).setUint8(pixelFormatPtr, 1); // 1=RGB32
-    new DataView(this.wasmMemory.buffer).setUint32(stridePtr, width, true);
+  audioInit(sampleRate: number, _dataSamples: number, sampleFormatPtr: number) {
+    var littleEndian = (function () {
+      var buffer = new ArrayBuffer(2);
+      new DataView(buffer).setInt16(0, 256, true);
+      return new Int16Array(buffer)[0] === 256;
+    })();
+    if (littleEndian) {
+      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 4); // 4=F32Le
+    } else {
+      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 3); // 3=F32Be
+    }
+
+    const audioContext = new AudioContext({ sampleRate });
+    this.audioContext = audioContext;
+    this.audioContext.audioWorklet
+      .addModule("data:text/javascript," + encodeURI(AUDIO_WORKLET_PROCESSOR_CODE))
+      .then(() => {
+        this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
+        this.audioInputNode.connect(audioContext.destination);
+      })
+      .catch((error) => {
+        throw error;
+      });
   }
 
-  audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
-    const dataView = new DataView(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
-    const audioData = new Float32Array(audioDataLen / 2);
-    for (let i = 0; i < audioDataLen; i += 2) {
-      audioData[i / 2] = dataView.getInt16(i) / 0x7fff;
+  audioEnqueue(audioDataOffset: number, audioDataLen: number) {
+    if (this.audioInputNode === undefined) {
+      return;
     }
-
-    if (this.audioContext === undefined) {
-      const audioContext = new AudioContext({ sampleRate: 48000 });
-      this.audioContext = audioContext;
-      this.audioContext.audioWorklet
-        .addModule("data:text/javascript," + encodeURI(AUDIO_WORKLET_PROCESSOR_CODE))
-        .then(() => {
-          this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
-          this.audioInputNode.connect(audioContext.destination);
-          this.audioInputNode.port.postMessage(audioData, [audioData.buffer]);
-        })
-        .catch((error) => {
-          throw error;
-        });
-    } else if (this.audioInputNode !== undefined) {
-      this.audioInputNode.port.postMessage(audioData, [audioData.buffer]);
-    }
-
-    return audioDataLen / 2;
+    const data = new Float32Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen).slice();
+    this.audioInputNode.port.postMessage(data, [data.buffer]);
   }
 
   consoleLog(messageOffset: number, messageLen: number) {
@@ -278,10 +284,10 @@ class System {
     return new Date().getTime() / 1000;
   }
 
-  clockSetTimeout(timeout: number): ActionId {
+  clockSetTimeout(tag: number, timeout: number): ActionId {
     const actionId = this.getNextActionId();
     setTimeout(() => {
-      this.enqueueEvent({ timeout: { id: actionId } });
+      this.enqueueEvent({ timeout: { id: actionId, tag } });
     }, timeout * 1000);
     return actionId;
   }

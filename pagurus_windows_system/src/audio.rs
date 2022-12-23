@@ -1,4 +1,8 @@
-use pagurus::{audio::AudioData, failure::OrFail, Result};
+use pagurus::{
+    audio::{AudioData, AudioSpec, SampleFormat},
+    failure::OrFail,
+    Result,
+};
 use windows::Win32::{
     Media::Audio::{
         AudioCategory_GameMedia,
@@ -22,11 +26,11 @@ pub struct AudioPlayer {
     mastering_voice: IXAudio2MasteringVoice,
     source_voice: IXAudio2SourceVoice,
     buf: Vec<u8>,
-    buf_start: usize,
+    is_odd: bool,
 }
 
 impl AudioPlayer {
-    pub fn new() -> Result<Self> {
+    pub fn new(sample_rate: u16, data_samples: usize) -> Result<Self> {
         let audio = unsafe {
             CoInitializeEx(None, COINIT_MULTITHREADED).or_fail()?;
 
@@ -40,8 +44,8 @@ impl AudioPlayer {
             audio
                 .CreateMasteringVoice(
                     &mut mastering_voice,
-                    AudioData::CHANNELS as u32,
-                    AudioData::SAMPLE_RATE,
+                    u32::from(AudioSpec::CHANNELS),
+                    u32::from(sample_rate),
                     0,    // Flags,
                     None, // szDeviceId
                     None, // pEffectChain
@@ -51,16 +55,16 @@ impl AudioPlayer {
             mastering_voice.or_fail()?
         };
 
+        let format = SampleFormat::I16Le;
         let source_voice = unsafe {
             let mut source_voice = None;
-            let n_block_align: u16 = u16::from(AudioData::BIT_DEPTH / 8);
-            let w_bits_per_sample =
-                u16::from(AudioData::BIT_DEPTH) * u16::from(AudioData::CHANNELS);
+            let n_block_align = format.bytes() as u16;
+            let w_bits_per_sample = (n_block_align * 8) * u16::from(AudioSpec::CHANNELS);
             let source_format = WAVEFORMATEX {
                 wFormatTag: WAVE_FORMAT_PCM as u16,
-                nChannels: AudioData::CHANNELS as u16,
-                nSamplesPerSec: AudioData::SAMPLE_RATE,
-                nAvgBytesPerSec: AudioData::SAMPLE_RATE * u32::from(w_bits_per_sample) / 8,
+                nChannels: u16::from(AudioSpec::CHANNELS),
+                nSamplesPerSec: u32::from(sample_rate),
+                nAvgBytesPerSec: u32::from(sample_rate) * u32::from(w_bits_per_sample) / 8,
                 nBlockAlign: n_block_align,
                 wBitsPerSample: w_bits_per_sample,
                 cbSize: 0,
@@ -87,29 +91,26 @@ impl AudioPlayer {
             audio,
             mastering_voice,
             source_voice,
-            buf: vec![0; 1024 * 1024],
-            buf_start: 0,
+            buf: vec![0; data_samples * 2],
+            is_odd: false,
         })
     }
 
-    pub fn play(&mut self, data: AudioData) -> Result<()> {
-        (data.bytes().len() < self.buf.len()).or_fail()?;
-
-        if self.buf.len() <= self.buf_start + data.bytes().len() {
-            self.buf_start = 0;
-        }
-        let start = self.buf_start;
-        for (i, sample) in data.samples().enumerate() {
-            self.buf[self.buf_start + i * 2] = sample as u8;
-            self.buf[self.buf_start + i * 2 + 1] = (sample >> 8) as u8;
-        }
-        self.buf_start += data.bytes().len();
+    pub fn play(&mut self, data: AudioData<&[u8]>) -> Result<()> {
+        let offset = if self.is_odd {
+            self.is_odd = false;
+            0
+        } else {
+            self.is_odd = true;
+            data.bytes().len()
+        };
+        self.buf[offset..].copy_from_slice(data.bytes());
 
         unsafe {
             let buffer = XAUDIO2_BUFFER {
                 Flags: 0,
                 AudioBytes: data.bytes().len() as u32,
-                pAudioData: self.buf[start..].as_ptr(),
+                pAudioData: self.buf[offset..].as_ptr(),
                 PlayBegin: 0,
                 PlayLength: 0,
                 LoopBegin: 0,

@@ -30,7 +30,7 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(
     target_arch = "wasm32",
     derive(serde::Serialize, serde::Deserialize),

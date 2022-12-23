@@ -18,6 +18,9 @@ class Game {
     const systemRef = new SystemRef();
     const importObject = {
       env: {
+        systemVideoInit(width: number, height: number, pixelFormatPtr: number, stridePtr: number) {
+          systemRef.getSystem().videoInit(width, height, pixelFormatPtr, stridePtr);
+        },
         systemVideoDraw(
           videoFrameOffset: number,
           videoFrameLen: number,
@@ -27,11 +30,11 @@ class Game {
         ) {
           systemRef.getSystem().videoDraw(videoFrameOffset, videoFrameLen, width, stride, format);
         },
-        systemVideoFrameSpec(width: number, height: number, pixelFormatPtr: number, stridePtr: number) {
-          systemRef.getSystem().videoFrameSpec(width, height, pixelFormatPtr, stridePtr);
+        systemAudioInit(sampleRate: number, dataSamples: number, sampleFormatPtr: number) {
+          systemRef.getSystem().audioInit(sampleRate, dataSamples, sampleFormatPtr);
         },
-        systemAudioEnqueue(dataOffset: number, dataLen: number): number {
-          return systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
+        systemAudioEnqueue(dataOffset: number, dataLen: number) {
+          systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
         },
         systemConsoleLog(messageOffset: number, messageLen: number) {
           systemRef.getSystem().consoleLog(messageOffset, messageLen);
@@ -42,8 +45,8 @@ class Game {
         systemClockUnixTime(): number {
           return systemRef.getSystem().clockUnixTime();
         },
-        systemClockSetTimeout(timeout: number): bigint {
-          return BigInt(systemRef.getSystem().clockSetTimeout(timeout));
+        systemClockSetTimeout(tag: number, timeout: number): bigint {
+          return BigInt(systemRef.getSystem().clockSetTimeout(tag, timeout));
         },
         systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): bigint {
           return BigInt(systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen));

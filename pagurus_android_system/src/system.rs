@@ -2,9 +2,11 @@ use crate::event::EventPoller;
 use crate::io_thread::{IoRequest, IoThread};
 use crate::window::Window;
 use ndk::audio::{AudioFormat, AudioStream, AudioStreamState};
+use pagurus::audio::{AudioSpec, SampleFormat};
 use pagurus::event::{Event, TimeoutEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::spatial::Size;
+use pagurus::timeout::{TimeoutId, TimeoutTag};
 use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Result, System};
 use std::cmp::Reverse;
@@ -43,22 +45,15 @@ impl AndroidSystemBuilder {
 
         let io_request_tx = IoThread::spawn(event_tx.clone(), event_poller.notifier());
 
-        let audio = ndk::audio::AudioStreamBuilder::new()
-            .or_fail()?
-            .channel_count(AudioData::CHANNELS as i32)
-            .format(AudioFormat::PCM_I16)
-            .sample_rate(AudioData::SAMPLE_RATE as i32)
-            .open_stream()
-            .or_fail()?;
-
         Ok(AndroidSystem {
             start: Instant::now(),
-            audio,
+            audio: None,
             event_poller,
             event_rx,
             io_request_tx,
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
+            next_timeout_id: TimeoutId::new(),
             data_dir,
         })
     }
@@ -67,13 +62,14 @@ impl AndroidSystemBuilder {
 #[derive(Debug)]
 pub struct AndroidSystem {
     start: Instant,
-    audio: AudioStream,
+    audio: Option<AudioStream>,
     next_action_id: ActionId,
+    next_timeout_id: TimeoutId,
     data_dir: PathBuf,
     event_poller: EventPoller,
     event_rx: mpsc::Receiver<Event>,
     io_request_tx: mpsc::Sender<IoRequest>,
-    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    timeout_queue: BinaryHeap<(Reverse<Duration>, TimeoutEvent)>,
 }
 
 impl AndroidSystem {
@@ -84,12 +80,12 @@ impl AndroidSystem {
     pub fn wait_event(&mut self) -> Result<Event> {
         loop {
             let timeout =
-                if let Some((Reverse(expiry_time), id)) = self.timeout_queue.peek().copied() {
+                if let Some((Reverse(expiry_time), event)) = self.timeout_queue.peek().copied() {
                     if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
                         timeout
                     } else {
                         self.timeout_queue.pop();
-                        return Ok(Event::Timeout(TimeoutEvent { id }));
+                        return Ok(Event::Timeout(event));
                     }
                 } else {
                     Duration::from_secs(1) // Arbitrary large timeout value
@@ -115,6 +111,25 @@ impl AndroidSystem {
 }
 
 impl System for AndroidSystem {
+    fn video_init(&mut self, resolution: Size) -> VideoFrameSpec {
+        let pixel_format = PixelFormat::Rgb24;
+
+        let mut stride = resolution.width;
+        if let Some(window) = &ndk_glue::native_window() {
+            let window = Window::new(window);
+            window.set_buffer_size(resolution);
+            if let Some(buffer) = window.acquire_buffer() {
+                stride = buffer.stride() as u32;
+            }
+        }
+
+        VideoFrameSpec {
+            pixel_format,
+            resolution,
+            stride,
+        }
+    }
+
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         let spec = frame.spec();
         if let Some(window) = &ndk_glue::native_window() {
@@ -139,44 +154,43 @@ impl System for AndroidSystem {
         }
     }
 
-    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
-        let pixel_format = PixelFormat::Rgb24;
-
-        let mut stride = resolution.width;
-        if let Some(window) = &ndk_glue::native_window() {
-            let window = Window::new(window);
-            window.set_buffer_size(resolution);
-            if let Some(buffer) = window.acquire_buffer() {
-                stride = buffer.stride() as u32;
-            }
-        }
-
-        VideoFrameSpec {
-            pixel_format,
-            resolution,
-            stride,
+    fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec {
+        let audio = ndk::audio::AudioStreamBuilder::new()
+            .unwrap_or_else(|e| panic!("failed to initialize audio: {e}"))
+            .channel_count(i32::from(AudioSpec::CHANNELS))
+            .format(AudioFormat::PCM_I16)
+            .sample_rate(i32::from(sample_rate))
+            .open_stream()
+            .unwrap_or_else(|e| panic!("failed to initialize audio: {e}"));
+        self.audio = Some(audio);
+        AudioSpec {
+            sample_format: SampleFormat::I16Be,
+            sample_rate,
+            data_samples,
         }
     }
 
-    fn audio_enqueue(&mut self, data: AudioData) -> usize {
+    fn audio_enqueue(&mut self, data: AudioData<&[u8]>) {
+        let Some(audio) = self.audio.as_mut() else {
+            return;
+        };
+
         let samples = data.samples().collect::<Vec<_>>();
         unsafe {
-            let written = self
-                .audio
+            let written = audio
                 .write(samples.as_ptr() as *const _, samples.len() as i32, 0)
-                .unwrap_or_else(|e| panic!("{e}"));
+                .unwrap_or_else(|e| panic!("{e}")) as usize;
+            assert_eq!(written, samples.len());
 
-            let state = self.audio.get_state().unwrap_or_else(|e| panic!("{e}"));
+            let state = audio.get_state().unwrap_or_else(|e| panic!("{e}"));
             if !matches!(
                 state,
                 AudioStreamState::Started | AudioStreamState::Starting
             ) {
-                self.audio
+                audio
                     .request_start()
                     .unwrap_or_else(|e| panic!("{e} (current_state={state:?})"));
             }
-
-            written as usize
         }
     }
 
@@ -192,10 +206,11 @@ impl System for AndroidSystem {
         UNIX_EPOCH.elapsed().unwrap_or_else(|e| panic!("{e}"))
     }
 
-    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        let id = self.next_action_id.get_and_increment();
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId {
+        let id = self.next_timeout_id.increment();
         let time = self.start.elapsed() + timeout;
-        self.timeout_queue.push((Reverse(time), id));
+        self.timeout_queue
+            .push((Reverse(time), TimeoutEvent { tag, id }));
         id
     }
 

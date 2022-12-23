@@ -1,6 +1,8 @@
+use pagurus::audio::{AudioSpec, SampleFormat};
 use pagurus::event::{Event, StateEvent, TimeoutEvent, WindowEvent};
 use pagurus::failure::{Failure, OrFail};
 use pagurus::spatial::Size;
+use pagurus::timeout::{TimeoutId, TimeoutTag};
 use pagurus::video::{PixelFormat, VideoFrameSpec};
 use pagurus::{audio::AudioData, video::VideoFrame, ActionId, Result, System};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
@@ -8,7 +10,7 @@ use sdl2::event::EventSender;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::{EventPump, VideoSubsystem};
+use sdl2::{EventPump, Sdl, VideoSubsystem};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::{Path, PathBuf};
@@ -73,18 +75,6 @@ impl SdlSystemBuilder {
             sdl_window.into_canvas().build().or_fail()?
         };
 
-        // Audio
-        let sdl_audio = sdl_context.audio().map_err(|e| Failure::new().message(e))?;
-        let audio_spec = AudioSpecDesired {
-            freq: Some(AudioData::SAMPLE_RATE as i32),
-            channels: Some(AudioData::CHANNELS),
-            samples: Some((AudioData::SAMPLE_RATE / 100) as u16),
-        };
-        let sdl_audio_queue = sdl_audio
-            .open_queue(None, &audio_spec)
-            .map_err(|e| Failure::new().message(e))?;
-        sdl_audio_queue.resume();
-
         // Event
         let sdl_event = sdl_context.event().map_err(|e| Failure::new().message(e))?;
         sdl_event
@@ -106,13 +96,15 @@ impl SdlSystemBuilder {
         let io_request_tx = IoThread::spawn(sdl_event.event_sender());
 
         Ok(SdlSystem {
+            sdl_context,
             sdl_canvas,
             sdl_event_pump,
-            sdl_audio_queue,
+            sdl_audio_queue: None,
             io_request_tx,
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
+            next_timeout_id: TimeoutId::new(),
             data_dir: self.data_dir,
         })
     }
@@ -125,13 +117,15 @@ impl Default for SdlSystemBuilder {
 }
 
 pub struct SdlSystem {
+    sdl_context: Sdl,
     sdl_canvas: Canvas<Window>,
     sdl_event_pump: EventPump,
-    sdl_audio_queue: AudioQueue<i16>,
+    sdl_audio_queue: Option<AudioQueue<i16>>,
     io_request_tx: mpsc::Sender<IoRequest>,
     start: Instant,
-    timeout_queue: BinaryHeap<(Reverse<Duration>, ActionId)>,
+    timeout_queue: BinaryHeap<(Reverse<Duration>, TimeoutEvent)>,
     next_action_id: ActionId,
+    next_timeout_id: TimeoutId,
     data_dir: PathBuf,
 }
 
@@ -152,12 +146,12 @@ impl SdlSystem {
     pub fn wait_event(&mut self) -> Event {
         loop {
             let timeout =
-                if let Some((Reverse(expiry_time), id)) = self.timeout_queue.peek().copied() {
+                if let Some((Reverse(expiry_time), event)) = self.timeout_queue.peek().copied() {
                     if let Some(timeout) = expiry_time.checked_sub(self.start.elapsed()) {
                         timeout
                     } else {
                         self.timeout_queue.pop();
-                        return Event::Timeout(TimeoutEvent { id });
+                        return Event::Timeout(event);
                     }
                 } else {
                     Duration::from_secs(1) // Arbitrary large timeout value
@@ -179,6 +173,14 @@ impl SdlSystem {
 }
 
 impl System for SdlSystem {
+    fn video_init(&mut self, resolution: Size) -> VideoFrameSpec {
+        VideoFrameSpec {
+            pixel_format: PixelFormat::Rgb24,
+            resolution,
+            stride: resolution.width,
+        }
+    }
+
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>) {
         self.sdl_canvas.clear();
 
@@ -202,20 +204,36 @@ impl System for SdlSystem {
         self.sdl_canvas.present();
     }
 
-    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec {
-        VideoFrameSpec {
-            pixel_format: PixelFormat::Rgb24,
-            resolution,
-            stride: resolution.width,
+    fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec {
+        let data_samples = std::cmp::min(data_samples, u16::MAX as usize);
+        let sdl_audio = self
+            .sdl_context
+            .audio()
+            .unwrap_or_else(|e| panic!("failed to initialize audio: {e}"));
+        let audio_spec = AudioSpecDesired {
+            freq: Some(i32::from(sample_rate)),
+            channels: Some(AudioSpec::CHANNELS),
+            samples: Some(data_samples as u16),
+        };
+        let sdl_audio_queue = sdl_audio
+            .open_queue(None, &audio_spec)
+            .unwrap_or_else(|e| panic!("failed to initialize audio: {e}"));
+        sdl_audio_queue.resume();
+        self.sdl_audio_queue = Some(sdl_audio_queue);
+        AudioSpec {
+            sample_format: SampleFormat::F32Le,
+            sample_rate,
+            data_samples,
         }
     }
 
-    fn audio_enqueue(&mut self, data: AudioData) -> usize {
-        let samples = data.samples().collect::<Vec<_>>();
-        self.sdl_audio_queue
-            .queue_audio(&samples)
-            .unwrap_or_else(|e| panic!("failed to queue audio data: {e}"));
-        samples.len()
+    fn audio_enqueue(&mut self, data: AudioData<&[u8]>) {
+        if let Some(audio) = &mut self.sdl_audio_queue {
+            let samples = data.samples().map(|s| s.to_i16()).collect::<Vec<_>>();
+            audio
+                .queue_audio(&samples)
+                .unwrap_or_else(|e| panic!("failed to queue audio data: {e}"));
+        }
     }
 
     fn console_log(message: &str) {
@@ -232,10 +250,11 @@ impl System for SdlSystem {
             .unwrap_or_else(|e| panic!("failed to get UNIX timestamp: {e}"))
     }
 
-    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId {
-        let id = self.next_action_id.get_and_increment();
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId {
+        let id = self.next_timeout_id.increment();
         let time = self.start.elapsed() + timeout;
-        self.timeout_queue.push((Reverse(time), id));
+        self.timeout_queue
+            .push((Reverse(time), TimeoutEvent { tag, id }));
         id
     }
 
