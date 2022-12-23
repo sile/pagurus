@@ -7,6 +7,7 @@ main
 core
 ----
 
+- [CHANGE] Remove `WindowEvent::Focus{Lost,Gained}`
 - [UPDATE] Add `timeout` module
 - [CHANGE] Redesign `System:clock_set_timeout()`
 - [CHANGE] Redesign audio and video interface
