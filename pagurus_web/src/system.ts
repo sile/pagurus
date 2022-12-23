@@ -10,7 +10,6 @@ class System {
   private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
-  private audioDataBuffer: number[];
   private startTime: number;
   private nextActionId: ActionId;
   private eventQueue: Event[];
@@ -95,8 +94,6 @@ class System {
 
     const initialEvent = { window: { redrawNeeded: { size: this.canvasSize } } };
     this.eventQueue = [initialEvent];
-
-    this.audioDataBuffer = [];
   }
 
   nextEvent(): Promise<Event> {
@@ -242,33 +239,27 @@ class System {
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number): number {
-    // TODO: Use DataView
-    const data = new Uint8Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
+    const dataView = new DataView(this.wasmMemory.buffer, audioDataOffset, audioDataLen);
+    const audioData = new Float32Array(audioDataLen / 2);
     for (let i = 0; i < audioDataLen; i += 2) {
-      let n = (data[i] << 8) | data[i + 1];
-      if (n > 0x7fff) {
-        n -= 0x10000;
-      }
-      this.audioDataBuffer.push(n / 0x7fff);
+      audioData[i / 2] = dataView.getInt16(i) / 0x7fff;
     }
 
     if (this.audioContext === undefined) {
-      const audioContext = new AudioContext(); // TODO: sample_rate
+      const audioContext = new AudioContext({ sampleRate: 48000 });
       this.audioContext = audioContext;
       this.audioContext.audioWorklet
         .addModule("data:text/javascript," + encodeURI(AUDIO_WORKLET_PROCESSOR_CODE))
         .then(() => {
           this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
           this.audioInputNode.connect(audioContext.destination);
-          this.audioInputNode.port.postMessage(this.audioDataBuffer); // TODO: transfer
-          this.audioDataBuffer = [];
+          this.audioInputNode.port.postMessage(audioData, [audioData.buffer]);
         })
         .catch((error) => {
           throw error;
         });
     } else if (this.audioInputNode !== undefined) {
-      this.audioInputNode.port.postMessage(this.audioDataBuffer);
-      this.audioDataBuffer = [];
+      this.audioInputNode.port.postMessage(audioData, [audioData.buffer]);
     }
 
     return audioDataLen / 2;
