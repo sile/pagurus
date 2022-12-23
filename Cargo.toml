@@ -10,7 +10,12 @@ repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
 [dependencies]
-orfail = { version = "0.1", features = ["serde"] }
+orfail = "0.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.orfail]
+features = ["serde"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 serde = { version = "1", features = ["derive"] }
 
 [workspace]

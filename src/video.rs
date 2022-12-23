@@ -2,10 +2,12 @@ use crate::failure::{Failure, OrFail};
 use crate::spatial::{Position, Size};
 use crate::Result;
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
 )]
-#[serde(rename_all = "camelCase")]
 pub struct VideoFrameSpec {
     pub pixel_format: PixelFormat,
     pub resolution: Size,
@@ -18,17 +20,17 @@ impl VideoFrameSpec {
     }
 }
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "UPPERCASE")
 )]
-#[serde(rename_all = "UPPERCASE")]
 pub enum PixelFormat {
-    // Rgb16Be = 0,
-    // Rgb16Le = 1,
     #[default]
-    Rgb24 = 2,
-    Rgb32 = 3,
-    Bgr24 = 4,
+    Rgb24 = 0,
+    Rgb32 = 1,
+    Bgr24 = 2,
 }
 
 impl PixelFormat {

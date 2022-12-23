@@ -234,7 +234,7 @@ class System {
   }
 
   videoFrameSpec(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {
-    new DataView(this.wasmMemory.buffer).setUint8(pixelFormatPtr, 3);
+    new DataView(this.wasmMemory.buffer).setUint8(pixelFormatPtr, 1); // 1=RGB32
     new DataView(this.wasmMemory.buffer).setUint32(stridePtr, width, true);
   }
 

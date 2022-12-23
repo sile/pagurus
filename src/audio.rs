@@ -60,8 +60,12 @@ impl<B: AsRef<[u8]>> AudioData<B> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub struct AudioSpec {
     pub sample_format: SampleFormat,
     pub sample_rate: u16,
@@ -72,8 +76,12 @@ impl AudioSpec {
     pub const CHANNELS: u8 = 1;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "UPPERCASE")
+)]
 pub enum SampleFormat {
     I16Be = 0,
     I16Le = 1,

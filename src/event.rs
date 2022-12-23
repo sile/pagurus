@@ -6,8 +6,12 @@ use crate::{
     ActionId,
 };
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub enum Event {
     Terminating,
     Timeout(TimeoutEvent),
@@ -26,50 +30,70 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub struct TimeoutEvent {
     pub tag: TimeoutTag,
     pub id: TimeoutId,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub enum WindowEvent {
     RedrawNeeded { size: Size },
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub enum StateEvent {
     Saved {
         id: ActionId,
-        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(default))]
         failed: Option<Failure>,
     },
     Loaded {
         id: ActionId,
-        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(default))]
         data: Option<Vec<u8>>,
-        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(default))]
         failed: Option<Failure>,
     },
     Deleted {
         id: ActionId,
-        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(default))]
         failed: Option<Failure>,
     },
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub enum KeyEvent {
     Down { key: Key },
     Up { key: Key },
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub enum MouseEvent {
     Move {
         position: Position,

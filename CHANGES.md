@@ -7,6 +7,7 @@ main
 core
 ----
 
+- [CHANGE] Enable `serde` only if the target arch is "wasm32"
 - [CHANGE] Remove `#[non_exhaustive]` from event enums
 - [CHANGE] Remove `WindowEvent::Focus{Lost,Gained}`
 - [UPDATE] Add `timeout` module
