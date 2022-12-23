@@ -1,3 +1,5 @@
+use audio::AudioSpec;
+
 use crate::audio::AudioData;
 use crate::event::Event;
 use crate::spatial::Size;
@@ -7,6 +9,7 @@ use std::time::Duration;
 pub mod failure {
     pub use orfail::{Failure, OrFail};
 }
+pub use orfail::{todo, unreachable};
 
 pub mod audio;
 pub mod event;
@@ -17,9 +20,10 @@ pub mod video;
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 
 pub trait System {
+    fn video_init(&mut self, resolution: Size) -> VideoFrameSpec;
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
-    fn video_frame_spec(&mut self, resolution: Size) -> VideoFrameSpec;
-    fn audio_enqueue(&mut self, data: AudioData) -> usize;
+    fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec;
+    fn audio_enqueue(&mut self, data: AudioData<&[u8]>);
     fn console_log(message: &str);
     fn clock_game_time(&self) -> Duration;
     fn clock_unix_time(&self) -> Duration;

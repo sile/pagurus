@@ -7,6 +7,7 @@ main
 core
 ----
 
+- [CHANGE] Redesign audio and video interface
 - [CHANGE] Make `System::console_log()` static method
 - [CHANGE] Make `System::clock_{game,unix}_time()` immutable methods
 

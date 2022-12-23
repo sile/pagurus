@@ -2,7 +2,9 @@ use crate::failure::{Failure, OrFail};
 use crate::spatial::{Position, Size};
 use crate::Result;
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoFrameSpec {
     pub pixel_format: PixelFormat,
@@ -67,7 +69,7 @@ impl VideoFrame<Vec<u8>> {
 
     pub fn as_ref(&self) -> VideoFrame<&[u8]> {
         VideoFrame {
-            spec: self.spec.clone(),
+            spec: self.spec,
             data: &self.data,
         }
     }
@@ -102,8 +104,8 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
         Ok(Self { spec, data })
     }
 
-    pub fn spec(&self) -> &VideoFrameSpec {
-        &self.spec
+    pub fn spec(&self) -> VideoFrameSpec {
+        self.spec
     }
 
     pub fn data(&self) -> &[u8] {
