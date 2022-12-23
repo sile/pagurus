@@ -1,8 +1,8 @@
-use audio::AudioSpec;
-
 use crate::audio::AudioData;
+use crate::audio::AudioSpec;
 use crate::event::Event;
 use crate::spatial::Size;
+use crate::timeout::{TimeoutId, TimeoutTag};
 use crate::video::{VideoFrame, VideoFrameSpec};
 use std::time::Duration;
 
@@ -15,6 +15,7 @@ pub mod audio;
 pub mod event;
 pub mod input;
 pub mod spatial;
+pub mod timeout;
 pub mod video;
 
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
@@ -27,7 +28,7 @@ pub trait System {
     fn console_log(message: &str);
     fn clock_game_time(&self) -> Duration;
     fn clock_unix_time(&self) -> Duration;
-    fn clock_set_timeout(&mut self, timeout: Duration) -> ActionId;
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId;
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
     fn state_load(&mut self, name: &str) -> ActionId;
     fn state_delete(&mut self, name: &str) -> ActionId;

@@ -7,6 +7,8 @@ main
 core
 ----
 
+- [UPDATE] Add `timeout` module
+- [CHANGE] Redesign `System:clock_set_timeout()`
 - [CHANGE] Redesign audio and video interface
 - [CHANGE] Make `System::console_log()` static method
 - [CHANGE] Make `System::clock_{game,unix}_time()` immutable methods

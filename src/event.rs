@@ -2,6 +2,7 @@ use crate::{
     failure::Failure,
     input::{Key, MouseButton},
     spatial::{Position, Size},
+    timeout::{TimeoutId, TimeoutTag},
     ActionId,
 };
 
@@ -29,7 +30,8 @@ impl Event {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeoutEvent {
-    pub id: ActionId,
+    pub tag: TimeoutTag,
+    pub id: TimeoutId,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
