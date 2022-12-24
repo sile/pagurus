@@ -12,9 +12,8 @@ readme = "README.md"
 [features]
 fixed_window = []
 image = []
-logger = ["log"]
 random = ["getrandom", "rand_chacha", "rand_core"]
-wasm = ["orfail/serde", "serde", "serde_json"]
+wasm = ["log", "orfail/serde", "serde", "serde_json"]
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"], optional = true }

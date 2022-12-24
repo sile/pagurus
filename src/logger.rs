@@ -1,11 +1,6 @@
-use crate::failure::OrFail;
 use crate::{Result, System};
 use log::{Level, Log, Metadata, Record, SetLoggerError};
 use std::marker::PhantomData;
-
-pub fn init<S: 'static + System>(level: log::Level) -> Result<()> {
-    Logger::<S>::init(level).or_fail()
-}
 
 #[derive(Debug)]
 pub struct Logger<S> {
@@ -18,7 +13,8 @@ unsafe impl<S> Send for Logger<S> {}
 unsafe impl<S> Sync for Logger<S> {}
 
 impl<S: System + 'static> Logger<S> {
-    pub fn init(level: Level) -> Result<(), SetLoggerError> {
+    pub fn init() -> Result<(), SetLoggerError> {
+        let level = Level::Trace;
         let logger = Self {
             level,
             _system: PhantomData,

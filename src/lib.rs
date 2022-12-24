@@ -18,8 +18,6 @@ pub mod fixed_window;
 #[cfg(feature = "image")]
 pub mod image;
 pub mod input;
-#[cfg(feature = "log")]
-pub mod logger;
 #[cfg(feature = "random")]
 pub mod random;
 pub mod spatial;
@@ -27,6 +25,9 @@ pub mod timeout;
 pub mod video;
 #[cfg(feature = "wasm")]
 pub mod wasm;
+
+#[cfg(feature = "wasm")]
+mod logger;
 
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 

@@ -9,13 +9,11 @@ use pagurus::{event::Event, Game, Result, System};
 // TODO: use pagurus_game_std::audio::AudioPlayer;
 use pagurus::fixed_window::FixedWindow;
 use pagurus::image::{Canvas, Color};
-use pagurus::logger::Logger;
 use pagurus::random::StdRng;
 
 #[cfg(target_arch = "wasm32")]
 pagurus::export_wasm_functions!(SnakeGame);
 
-const LOG_LEVEL: log::Level = log::Level::Debug;
 pub const STATE_HIGH_SCORE: &str = "high_score";
 
 #[derive(Debug, Default)]
@@ -31,9 +29,6 @@ pub struct SnakeGame {
 
 impl<S: System + 'static> Game<S> for SnakeGame {
     fn initialize(&mut self, system: &mut S) -> Result<()> {
-        // Logger.
-        Logger::<S>::init(LOG_LEVEL).or_fail()?;
-
         // Rng.
         self.rng = StdRng::from_clock_seed(system.clock_unix_time());
 

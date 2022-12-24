@@ -1,6 +1,5 @@
-#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::missing_safety_doc)] // FIXME
 use crate::audio::{AudioSpec, SampleFormat};
-// FIXME
 use crate::event::{Event, StateEvent};
 use crate::failure::{Failure, OrFail};
 use crate::spatial::Size;
@@ -13,10 +12,6 @@ pub fn game_new<G>() -> *mut G
 where
     G: Game<WasmSystem> + Default,
 {
-    std::panic::set_hook(Box::new(|info| {
-        log::error!("{info}");
-    }));
-
     Box::into_raw(Box::default())
 }
 
@@ -24,6 +19,11 @@ pub unsafe fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
+    crate::logger::Logger::<WasmSystem>::init().expect("unreachable");
+    std::panic::set_hook(Box::new(|info| {
+        log::error!("{info}");
+    }));
+
     let game = &mut *game;
     if let Err(e) = game.initialize(&mut WasmSystem) {
         serialize(&e).unwrap_or_else(|e| {
