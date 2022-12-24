@@ -89,6 +89,10 @@ impl<'a> Samples<'a> {
     pub fn len(&self) -> usize {
         self.spec.data_samples
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<'a> Iterator for Samples<'a> {
