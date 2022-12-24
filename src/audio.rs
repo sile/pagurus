@@ -65,7 +65,7 @@ impl<B: AsRef<[u8]>> AudioData<B> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -128,7 +128,7 @@ impl<'a> Iterator for Samples<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "UPPERCASE")
 )]

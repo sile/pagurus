@@ -4,7 +4,7 @@ use std::{num::NonZeroU32, time::Duration};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]

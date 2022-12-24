@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize))]
 pub struct TimeoutTag(u32);
 
 impl TimeoutTag {
@@ -13,12 +13,12 @@ impl TimeoutTag {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize))]
 pub struct TimeoutId(u64);
 
 impl TimeoutId {
-    pub const fn new() -> Self {
-        Self(0)
+    pub const fn new(id: u64) -> Self {
+        Self(id)
     }
 
     pub const fn get(self) -> u64 {
@@ -29,5 +29,11 @@ impl TimeoutId {
         let id = *self;
         self.0 += 1;
         id
+    }
+}
+
+impl Default for TimeoutId {
+    fn default() -> Self {
+        Self(0)
     }
 }

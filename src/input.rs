@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -14,7 +14,7 @@ pub enum MouseButton {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]

@@ -5,7 +5,7 @@ use std::{
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -87,7 +87,7 @@ impl Div<u32> for Size {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -178,7 +178,7 @@ impl PartialOrd for Position {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    target_arch = "wasm32",
+    feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]

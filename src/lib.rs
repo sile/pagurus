@@ -21,6 +21,14 @@ pub mod random;
 pub mod spatial;
 pub mod timeout;
 pub mod video;
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
+#[cfg(not(feature = "wasm"))]
+#[macro_export]
+macro_rules! export_wasm_functions {
+    ($game:ty) => {};
+}
 
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 
@@ -54,7 +62,7 @@ pub trait Game<S: System> {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize))]
 pub struct ActionId(u64);
 
 impl ActionId {
