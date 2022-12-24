@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use crate::assets::Button;
 use crate::game::STATE_HIGH_SCORE;
-use crate::state::Direction;
+use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
@@ -9,6 +11,7 @@ use pagurus::failure::{Failure, OrFail};
 use pagurus::image::{Canvas, Color};
 use pagurus::input::Key;
 use pagurus::spatial::Position;
+use pagurus::timeout::TimeoutTag;
 use pagurus::{Result, System};
 
 #[derive(Debug, Default)]
@@ -112,23 +115,24 @@ impl TitleStage {
     }
 }
 
+const MOVE_TIMEOUT: TimeoutTag = TimeoutTag::new(0);
+
 #[derive(Debug)]
 pub struct PlayStage {
     game_state: GameState,
     prev_direction: Direction,
     curr_direction: Direction,
-    //move_timeout: ActionId,
     cursor: CursorWidget,
 }
 
 impl PlayStage {
     fn new<S: System>(env: &mut Env<S>) -> Self {
-        // let move_timeout = env.system.clock_set_timeout(Duration::from_secs(0));
+        env.system
+            .clock_set_timeout(MOVE_TIMEOUT, Duration::from_secs(0));
         Self {
             game_state: GameState::new(env.rng),
             prev_direction: Direction::Up,
             curr_direction: Direction::Up,
-            //move_timeout,
             cursor: CursorWidget::new(env.assets.sprites.cursor.clone()),
         }
     }
@@ -157,25 +161,26 @@ impl PlayStage {
 
     fn handle_timeout_event<S: System>(
         &mut self,
-        _env: &mut Env<S>,
-        _event: TimeoutEvent,
+        env: &mut Env<S>,
+        event: TimeoutEvent,
     ) -> Result<bool> {
-        // if event.id == self.move_timeout {
-        //     match self.game_state.move_snake(env.rng, self.curr_direction) {
-        //         MoveResult::Moved => {}
-        //         MoveResult::Ate => {
-        //             let audio = env.assets.audios.load_eat_audio().or_fail()?;
-        //             env.audio_player.play(env.system, audio).or_fail()?;
-        //         }
-        //         MoveResult::Crashed => {
-        //             return Ok(false);
-        //         }
-        //     }
+        if event.tag == MOVE_TIMEOUT {
+            match self.game_state.move_snake(env.rng, self.curr_direction) {
+                MoveResult::Moved => {}
+                MoveResult::Ate => {
+                    // let audio = env.assets.audios.load_eat_audio().or_fail()?;
+                    // env.audio_player.play(env.system, audio).or_fail()?;
+                }
+                MoveResult::Crashed => {
+                    return Ok(false);
+                }
+            }
 
-        //     self.prev_direction = self.curr_direction;
-        //     self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(200));
-        //     env.is_render_needed = true;
-        // }
+            self.prev_direction = self.curr_direction;
+            env.system
+                .clock_set_timeout(MOVE_TIMEOUT, Duration::from_millis(200));
+            env.is_render_needed = true;
+        }
         Ok(true)
     }
 
