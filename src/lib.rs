@@ -14,6 +14,8 @@ pub use orfail::{todo, unreachable};
 pub mod audio;
 pub mod event;
 pub mod input;
+#[cfg(feature = "log")]
+pub mod logger;
 pub mod spatial;
 pub mod timeout;
 pub mod video;
