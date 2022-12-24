@@ -10,6 +10,7 @@ repository = "https://github.com/sile/pagurus"
 readme = "README.md"
 
 [features]
+fixed_window = []
 logger = ["log"]
 randm = ["getrandom", "rand_chacha", "rand_core"]
 wasm = ["orfail/serde", "serde", "serde_json"]
