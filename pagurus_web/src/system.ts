@@ -10,6 +10,7 @@ class System {
   private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
+  private audioSampleRate?: number;
   private startTime: number;
   private nextActionId: ActionId;
   private eventQueue: Event[];
@@ -239,37 +240,43 @@ class System {
   }
 
   audioInit(sampleRate: number, _dataSamples: number, sampleFormatPtr: number) {
+    this.audioSampleRate = sampleRate;
     var littleEndian = (function () {
       var buffer = new ArrayBuffer(2);
       new DataView(buffer).setInt16(0, 256, true);
       return new Int16Array(buffer)[0] === 256;
     })();
     if (littleEndian) {
-      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 4); // 4=F32Le
+      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 3); // 3=F32Le
     } else {
-      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 3); // 3=F32Be
+      new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 2); // 2=F32Be
     }
-
-    // TODO: Postpone this creation until the user do any action on the page.
-    const audioContext = new AudioContext({ sampleRate });
-    this.audioContext = audioContext;
-    this.audioContext.audioWorklet
-      .addModule("data:text/javascript," + encodeURI(AUDIO_WORKLET_PROCESSOR_CODE))
-      .then(() => {
-        this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
-        this.audioInputNode.connect(audioContext.destination);
-      })
-      .catch((error) => {
-        throw error;
-      });
   }
 
   audioEnqueue(audioDataOffset: number, audioDataLen: number) {
-    if (this.audioInputNode === undefined) {
+    if (this.audioSampleRate === undefined) {
+      console.warn("audioInit() has not been called yet");
       return;
     }
-    const data = new Float32Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen).slice();
-    this.audioInputNode.port.postMessage(data, [data.buffer]);
+
+    const data = new Float32Array(this.wasmMemory.buffer, audioDataOffset, audioDataLen / 4).slice();
+    if (this.audioContext === undefined) {
+      const blob = new Blob([AUDIO_WORKLET_PROCESSOR_CODE], { type: "application/javascript" });
+      const audioContext = new AudioContext({ sampleRate: this.audioSampleRate });
+      this.audioContext = audioContext;
+      this.audioContext.audioWorklet
+        .addModule(URL.createObjectURL(blob))
+        .then(() => {
+          this.audioInputNode = new AudioWorkletNode(audioContext, AUDIO_WORKLET_PROCESSOR_NAME);
+          this.audioInputNode.connect(audioContext.destination);
+          this.audioInputNode.port.postMessage(data, [data.buffer]);
+        })
+        .catch((error) => {
+          throw error;
+        });
+    } else if (this.audioInputNode !== undefined) {
+      this.audioInputNode.port.postMessage(data, [data.buffer]);
+    }
   }
 
   consoleLog(messageOffset: number, messageLen: number) {

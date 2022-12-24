@@ -1,7 +1,7 @@
 use crate::Result;
 use orfail::Failure;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AudioData<B = Vec<u8>> {
     spec: AudioSpec,
     data: B,
@@ -20,16 +20,16 @@ impl AudioData<Vec<u8>> {
         let sample = sample.into();
         match self.spec.sample_format {
             SampleFormat::I16Be => {
-                self.data[i..].copy_from_slice(&sample.to_i16().to_be_bytes());
+                self.data[i * 2..][..2].copy_from_slice(&sample.to_i16().to_be_bytes());
             }
             SampleFormat::I16Le => {
-                self.data[i..].copy_from_slice(&sample.to_i16().to_le_bytes());
+                self.data[i * 2..][..2].copy_from_slice(&sample.to_i16().to_le_bytes());
             }
             SampleFormat::F32Be => {
-                self.data[i..].copy_from_slice(&sample.to_f32().to_be_bytes());
+                self.data[i * 4..][..4].copy_from_slice(&sample.to_f32().to_be_bytes());
             }
             SampleFormat::F32Le => {
-                self.data[i..].copy_from_slice(&sample.to_f32().to_le_bytes());
+                self.data[i * 4..][..4].copy_from_slice(&sample.to_f32().to_le_bytes());
             }
         }
     }
@@ -63,7 +63,7 @@ impl<B: AsRef<[u8]>> AudioData<B> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
@@ -130,13 +130,14 @@ impl<'a> Iterator for Samples<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "wasm",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "UPPERCASE")
 )]
 pub enum SampleFormat {
+    #[default]
     I16Be = 0,
     I16Le = 1,
     F32Be = 2,
