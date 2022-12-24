@@ -16,6 +16,8 @@ pub mod event;
 pub mod input;
 #[cfg(feature = "log")]
 pub mod logger;
+#[cfg(feature = "random")]
+pub mod random;
 pub mod spatial;
 pub mod timeout;
 pub mod video;
