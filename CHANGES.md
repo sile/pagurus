@@ -1,12 +1,17 @@
 main
 ====
 
+drop
+----
+
+- [CHANGE] Remove `pagurus_game_std`
 - [CHANGE] Remove `pagurus_wasmer`
 - [CHANGE] Remove `pagurus_tui_system`
 
 core
 ----
 
+- [CHANGE] Move modules in `pagurus_game_std` into `pagurus` as optional features
 - [CHANGE] Enable `serde` only if the target arch is "wasm32"
 - [CHANGE] Remove `#[non_exhaustive]` from event enums
 - [CHANGE] Remove `WindowEvent::Focus{Lost,Gained}`
