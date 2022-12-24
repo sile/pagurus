@@ -204,7 +204,7 @@ class System {
   }
 
   videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, stride: number, format: number) {
-    if (format != 3) {
+    if (format != 1) {
       throw new Error(`expected RGB32(3) format, but got ${format}`);
     }
     if (width != stride) {

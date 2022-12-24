@@ -48,9 +48,9 @@ impl PixelFormat {
 
     pub fn from_u8(x: u8) -> Result<Self> {
         match x {
-            2 => Ok(Self::Rgb24),
-            3 => Ok(Self::Rgb32),
-            4 => Ok(Self::Bgr24),
+            0 => Ok(Self::Rgb24),
+            1 => Ok(Self::Rgb32),
+            2 => Ok(Self::Bgr24),
             _ => Err(Failure::new().message(format!("unknown pixel format: {x}"))),
         }
     }
