@@ -53,7 +53,7 @@ impl AndroidSystemBuilder {
             io_request_tx,
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
-            next_timeout_id: TimeoutId::new(),
+            next_timeout_id: TimeoutId::default(),
             data_dir,
         })
     }

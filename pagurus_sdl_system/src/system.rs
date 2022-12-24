@@ -104,7 +104,7 @@ impl SdlSystemBuilder {
             start: Instant::now(),
             timeout_queue: BinaryHeap::new(),
             next_action_id: ActionId::default(),
-            next_timeout_id: TimeoutId::new(),
+            next_timeout_id: TimeoutId::default(),
             data_dir: self.data_dir,
         })
     }

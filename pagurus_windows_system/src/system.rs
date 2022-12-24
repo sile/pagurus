@@ -53,7 +53,7 @@ impl WindowsSystemBuilder {
             timeout_queue: BinaryHeap::new(),
             io_request_tx,
             next_action_id: ActionId::new(0),
-            next_timeout_id: TimeoutId::new(),
+            next_timeout_id: TimeoutId::default(),
             data_dir: self.data_dir,
         })
     }

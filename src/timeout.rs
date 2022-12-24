@@ -12,7 +12,7 @@ impl TimeoutTag {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize))]
 pub struct TimeoutId(u64);
 
@@ -29,11 +29,5 @@ impl TimeoutId {
         let id = *self;
         self.0 += 1;
         id
-    }
-}
-
-impl Default for TimeoutId {
-    fn default() -> Self {
-        Self(0)
     }
 }
