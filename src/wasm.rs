@@ -13,6 +13,10 @@ pub fn game_new<G>() -> *mut G
 where
     G: Game<WasmSystem> + Default,
 {
+    std::panic::set_hook(Box::new(|info| {
+        log::error!("{info}");
+    }));
+
     Box::into_raw(Box::default())
 }
 

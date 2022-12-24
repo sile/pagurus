@@ -11,6 +11,7 @@ drop
 core
 ----
 
+- [UPDATE] Set custom panic hook (wasm)
 - [CHANGE] Move modules in `pagurus_game_std` into `pagurus` as optional features
 - [CHANGE] Enable `serde` only if the target arch is "wasm32"
 - [CHANGE] Remove `#[non_exhaustive]` from event enums
