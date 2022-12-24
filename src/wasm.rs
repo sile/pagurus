@@ -44,7 +44,6 @@ where
 {
     let game = &mut *game;
     let mut event: Event = deserialize(event_bytes_ptr).unwrap_or_else(|e| {
-        // TODO: return result
         panic!("failed to deserialize `Event`: {e}");
     });
     if !data_ptr.is_null() {

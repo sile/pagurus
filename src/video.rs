@@ -114,11 +114,6 @@ impl<B: AsRef<[u8]>> VideoFrame<B> {
         self.data.as_ref()
     }
 
-    // TODO: remove
-    pub fn position_to_index(&self, pos: Position) -> usize {
-        pos.y as usize * self.spec.stride as usize + pos.x as usize
-    }
-
     #[inline]
     pub fn read_rgb(&self, pos: Position) -> (u8, u8, u8) {
         let d = self.data();
