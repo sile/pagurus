@@ -1,6 +1,11 @@
 main
 ====
 
+core
+----
+
+- [UPDATE] Derives `serde::{Serialize, Deserialize}` if `serde` feature is enabled
+
 v0.6.0
 ======
 

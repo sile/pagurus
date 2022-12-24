@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -32,7 +32,7 @@ impl Event {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -43,7 +43,7 @@ pub struct TimeoutEvent {
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -53,33 +53,33 @@ pub enum WindowEvent {
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
 pub enum StateEvent {
     Saved {
         id: ActionId,
-        #[cfg_attr(feature = "wasm", serde(default))]
+        #[cfg_attr(feature = "serde", serde(default))]
         failed: Option<Failure>,
     },
     Loaded {
         id: ActionId,
-        #[cfg_attr(feature = "wasm", serde(default))]
+        #[cfg_attr(feature = "serde", serde(default))]
         data: Option<Vec<u8>>,
-        #[cfg_attr(feature = "wasm", serde(default))]
+        #[cfg_attr(feature = "serde", serde(default))]
         failed: Option<Failure>,
     },
     Deleted {
         id: ActionId,
-        #[cfg_attr(feature = "wasm", serde(default))]
+        #[cfg_attr(feature = "serde", serde(default))]
         failed: Option<Failure>,
     },
 }
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
@@ -90,7 +90,7 @@ pub enum KeyEvent {
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
-    feature = "wasm",
+    feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]

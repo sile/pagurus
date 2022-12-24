@@ -32,6 +32,8 @@ mod logger;
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 
 pub trait System {
+    // TODO: type Event, Command, Query;
+
     fn video_init(&mut self, resolution: Size) -> VideoFrameSpec;
     fn video_draw(&mut self, frame: VideoFrame<&[u8]>);
     fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec;
@@ -61,7 +63,7 @@ pub trait Game<S: System> {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ActionId(u64);
 
 impl ActionId {
