@@ -11,6 +11,7 @@ readme = "README.md"
 
 [features]
 fixed_window = []
+image = []
 logger = ["log"]
 randm = ["getrandom", "rand_chacha", "rand_core"]
 wasm = ["orfail/serde", "serde", "serde_json"]

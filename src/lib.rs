@@ -15,6 +15,8 @@ pub mod audio;
 pub mod event;
 #[cfg(feature = "fixed_window")]
 pub mod fixed_window;
+#[cfg(feature = "image")]
+pub mod image;
 pub mod input;
 #[cfg(feature = "log")]
 pub mod logger;
