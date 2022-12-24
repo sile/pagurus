@@ -28,12 +28,6 @@ pub mod video;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-#[cfg(not(feature = "wasm"))]
-#[macro_export]
-macro_rules! export_wasm_functions {
-    ($game:ty) => {};
-}
-
 pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
 
 pub trait System {

@@ -6,14 +6,14 @@ use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
 use pagurus::video::VideoFrame;
 use pagurus::{event::Event, Game, Result, System};
-use pagurus_game_std::audio::AudioPlayer;
-use pagurus_game_std::color::Color;
-use pagurus_game_std::image::Canvas;
-use pagurus_game_std::logger::Logger;
-use pagurus_game_std::random::StdRng;
-use pagurus_game_std::window::LogicalWindow;
+// TODO: use pagurus_game_std::audio::AudioPlayer;
+use pagurus::fixed_window::FixedWindow;
+use pagurus::image::{Canvas, Color};
+use pagurus::logger::Logger;
+use pagurus::random::StdRng;
 
-pagurus_game_std::export_wasm_functions!(SnakeGame);
+#[cfg(target_arch = "wasm32")]
+pagurus::export_wasm_functions!(SnakeGame);
 
 const LOG_LEVEL: log::Level = log::Level::Debug;
 pub const STATE_HIGH_SCORE: &str = "high_score";
@@ -22,11 +22,11 @@ pub const STATE_HIGH_SCORE: &str = "high_score";
 pub struct SnakeGame {
     rng: StdRng,
     assets: Option<Assets>,
-    audio_player: AudioPlayer,
+    // TODO: audio_player: AudioPlayer,
     high_score: HighScore,
     video_frame: VideoFrame,
     stage: Stage,
-    logical_window: LogicalWindow,
+    logical_window: FixedWindow,
 }
 
 impl<S: System + 'static> Game<S> for SnakeGame {
@@ -46,14 +46,14 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         );
 
         // Canvas.
-        self.video_frame = VideoFrame::new(system.video_frame_spec(WINDOW_SIZE));
-        self.logical_window = LogicalWindow::new(WINDOW_SIZE);
+        self.video_frame = VideoFrame::new(system.video_init(WINDOW_SIZE));
+        self.logical_window = FixedWindow::new(WINDOW_SIZE);
 
         // Stage.
         let mut env = Env::new(
             system,
             &mut self.rng,
-            &mut self.audio_player,
+            //            &mut self.audio_player,
             &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
@@ -68,11 +68,12 @@ impl<S: System + 'static> Game<S> for SnakeGame {
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool> {
         let event = self.logical_window.handle_event(event);
 
-        let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
-            event
-        } else {
-            return Ok(true);
-        };
+        // TODO
+        // let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
+        //     event
+        // } else {
+        //     return Ok(true);
+        // };
 
         match event {
             Event::Terminating => {
@@ -96,7 +97,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         let mut env = Env::new(
             system,
             &mut self.rng,
-            &mut self.audio_player,
+            // &mut self.audio_player,
             &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
@@ -113,7 +114,7 @@ impl SnakeGame {
         let assets = self.assets.as_ref().or_fail()?;
 
         if self.video_frame.spec().resolution != self.logical_window.size() {
-            self.video_frame = VideoFrame::new(system.video_frame_spec(self.logical_window.size()));
+            self.video_frame = VideoFrame::new(system.video_init(self.logical_window.size()));
         }
         let mut canvas = Canvas::new(&mut self.video_frame);
         canvas.fill_color(Color::BLACK);
@@ -124,7 +125,7 @@ impl SnakeGame {
         let mut env = Env::new(
             system,
             &mut self.rng,
-            &mut self.audio_player,
+            //&mut self.audio_player,
             &mut self.high_score,
             assets,
         );

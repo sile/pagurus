@@ -11,6 +11,6 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 log = "0.4.17"
-pagurus = { path = "../../" }
-pagurus_game_std = { path = "../../pagurus_game_std/" }
+pagurus = {  path = "../../", features = ["fixed_window", "image", "logger", "random", "wasm"] }
+png = "0.17.7"
 rand = "0.8"

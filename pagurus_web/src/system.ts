@@ -250,6 +250,7 @@ class System {
       new DataView(this.wasmMemory.buffer).setUint8(sampleFormatPtr, 3); // 3=F32Be
     }
 
+    // TODO: Postpone this creation until the user do any action on the page.
     const audioContext = new AudioContext({ sampleRate });
     this.audioContext = audioContext;
     this.audioContext.audioWorklet

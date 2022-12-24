@@ -1,9 +1,7 @@
-use pagurus::failure::OrFail;
+use pagurus::failure::{Failure, OrFail};
+use pagurus::image::Sprite;
 use pagurus::spatial::{Position, Region, Size};
 use pagurus::Result;
-use pagurus_game_std::image::Sprite;
-use pagurus_game_std::ogg::AudioDataStream;
-use pagurus_game_std::png;
 
 const PNG_ITEMS: &[u8] = include_bytes!("../assets/items.png");
 const PNG_BUTTONS: &[u8] = include_bytes!("../assets/buttons.png");
@@ -12,21 +10,46 @@ const PNG_BACKGROUND: &[u8] = include_bytes!("../assets/background.png");
 const PNG_CHARS_SMALL: &[u8] = include_bytes!("../assets/chars-small.png");
 const PNG_CHARS_LARGE: &[u8] = include_bytes!("../assets/chars-large.png");
 
-const OGG_CLICK: &[u8] = include_bytes!("../assets/click.ogg");
-const OGG_EAT: &[u8] = include_bytes!("../assets/eat.ogg");
-const OGG_CRASH: &[u8] = include_bytes!("../assets/crash.ogg");
+// const OGG_CLICK: &[u8] = include_bytes!("../assets/click.ogg");
+// const OGG_EAT: &[u8] = include_bytes!("../assets/eat.ogg");
+// const OGG_CRASH: &[u8] = include_bytes!("../assets/crash.ogg");
+
+fn decode_sprite(png: &[u8]) -> Result<Sprite> {
+    let decoder = png::Decoder::new(png);
+    let mut reader = decoder.read_info().or_fail()?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).or_fail()?;
+    let bytes = &buf[..info.buffer_size()];
+    let size = Size::from_wh(info.width, info.height);
+    (info.bit_depth == png::BitDepth::Eight)
+        .or_fail()
+        .map_err(|e| e.message(format!("unsupported PNG bit depth: {:?}", info.bit_depth)))?;
+
+    match info.color_type {
+        png::ColorType::Rgb => Sprite::from_rgb24_bytes(bytes, size).or_fail(),
+        png::ColorType::Rgba => Sprite::from_rgba32_bytes(bytes, size).or_fail(),
+        png::ColorType::Grayscale => Sprite::from_grayscale8_bytes(bytes, size).or_fail(),
+        png::ColorType::GrayscaleAlpha => {
+            Sprite::from_grayscale_alpha16_bytes(bytes, size).or_fail()
+        }
+        _ => {
+            Err(Failure::new()
+                .message(format!("unsupported PNG color type: {:?}", info.color_type)))
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Assets {
     pub sprites: Sprites,
-    pub audios: Audios,
+    // TODO: pub audios: Audios,
 }
 
 impl Assets {
     pub fn load() -> Result<Self> {
         Ok(Self {
             sprites: Sprites::load().or_fail()?,
-            audios: Audios,
+            // audios: Audios,
         })
     }
 }
@@ -45,7 +68,7 @@ impl Sprites {
     fn load() -> Result<Self> {
         let numbers = Numbers::load().or_fail()?;
         Ok(Self {
-            background: png::decode_sprite(PNG_BACKGROUND).or_fail()?,
+            background: decode_sprite(PNG_BACKGROUND).or_fail()?,
             items: Items::load().or_fail()?,
             buttons: Buttons::load().or_fail()?,
             cursor: Cursor::load().or_fail()?,
@@ -64,7 +87,7 @@ pub struct Items {
 
 impl Items {
     fn load() -> Result<Self> {
-        let sprite = png::decode_sprite(PNG_ITEMS).or_fail()?;
+        let sprite = decode_sprite(PNG_ITEMS).or_fail()?;
         let region = Region::new(Position::ORIGIN, Size::square(32));
         Ok(Self {
             snake_head: sprite.clip(region).or_fail()?,
@@ -84,7 +107,7 @@ pub struct Buttons {
 
 impl Buttons {
     fn load() -> Result<Self> {
-        let sprite = png::decode_sprite(PNG_BUTTONS).or_fail()?;
+        let sprite = decode_sprite(PNG_BUTTONS).or_fail()?;
         let origin = Region::new(Position::ORIGIN, Button::SIZE);
         Ok(Self {
             play: Button::load(&sprite, origin.position).or_fail()?,
@@ -127,7 +150,7 @@ pub struct Cursor {
 
 impl Cursor {
     fn load() -> Result<Self> {
-        let sprite = png::decode_sprite(PNG_CURSORS).or_fail()?;
+        let sprite = decode_sprite(PNG_CURSORS).or_fail()?;
         let region = Region::new(Position::ORIGIN, Size::square(32));
         Ok(Self {
             normal: sprite.clip(region).or_fail()?,
@@ -148,7 +171,7 @@ pub struct Numbers {
 
 impl Numbers {
     fn load() -> Result<Self> {
-        let sprite = png::decode_sprite(PNG_CHARS_SMALL).or_fail()?;
+        let sprite = decode_sprite(PNG_CHARS_SMALL).or_fail()?;
         let small_region = Region::new(Position::from_xy(0, 16), Size::from_wh(10, 16));
         let large_region = Region::new(Position::from_xy(0, 32), Size::square(16));
         Ok(Self {
@@ -176,7 +199,7 @@ pub struct Strings {
 
 impl Strings {
     fn load(small_sprite: Sprite) -> Result<Self> {
-        let large_sprite = png::decode_sprite(PNG_CHARS_LARGE).or_fail()?;
+        let large_sprite = decode_sprite(PNG_CHARS_LARGE).or_fail()?;
         let large_region = Region::new(Position::ORIGIN, Size::from_wh(256, 64));
         Ok(Self {
             snake: large_sprite.clip(large_region).or_fail()?,
@@ -189,19 +212,20 @@ impl Strings {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Audios;
+// TODO
+// #[derive(Debug, Clone, Copy)]
+// pub struct Audios;
 
-impl Audios {
-    pub fn load_click_audio(self) -> Result<AudioDataStream> {
-        AudioDataStream::new(OGG_CLICK).or_fail()
-    }
+// impl Audios {
+//     pub fn load_click_audio(self) -> Result<AudioDataStream> {
+//         AudioDataStream::new(OGG_CLICK).or_fail()
+//     }
 
-    pub fn load_eat_audio(self) -> Result<AudioDataStream> {
-        AudioDataStream::new(OGG_EAT).or_fail()
-    }
+//     pub fn load_eat_audio(self) -> Result<AudioDataStream> {
+//         AudioDataStream::new(OGG_EAT).or_fail()
+//     }
 
-    pub fn load_crash_audio(self) -> Result<AudioDataStream> {
-        AudioDataStream::new(OGG_CRASH).or_fail()
-    }
-}
+//     pub fn load_crash_audio(self) -> Result<AudioDataStream> {
+//         AudioDataStream::new(OGG_CRASH).or_fail()
+//     }
+// }

@@ -13,11 +13,8 @@ readme = "README.md"
 fixed_window = []
 image = []
 logger = ["log"]
-randm = ["getrandom", "rand_chacha", "rand_core"]
+random = ["getrandom", "rand_chacha", "rand_core"]
 wasm = ["orfail/serde", "serde", "serde_json"]
-
-[target.'cfg(target_arch = "wasm32")'.features]
-default = ["wasm"]
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"], optional = true }

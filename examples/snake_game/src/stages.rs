@@ -1,17 +1,15 @@
 use crate::assets::Button;
 use crate::game::STATE_HIGH_SCORE;
-use crate::state::{Direction, MoveResult};
+use crate::state::Direction;
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
 use pagurus::event::{Event, KeyEvent, MouseEvent, TimeoutEvent};
 use pagurus::failure::{Failure, OrFail};
+use pagurus::image::{Canvas, Color};
 use pagurus::input::Key;
 use pagurus::spatial::Position;
-use pagurus::{ActionId, Result, System};
-use pagurus_game_std::color::Color;
-use pagurus_game_std::image::Canvas;
-use std::time::Duration;
+use pagurus::{Result, System};
 
 #[derive(Debug, Default)]
 pub enum Stage {
@@ -31,7 +29,7 @@ impl Stage {
 
     pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: Event) -> Result<bool> {
         let result = match self {
-            Stage::Uninitialized => orfail::unreachable!(),
+            Stage::Uninitialized => pagurus::unreachable!(),
             Stage::Title(x) => x.handle_event(env, event).or_fail(),
             Stage::Play(x) => x.handle_event(env, event).or_fail(),
             Stage::GameOver(x) => x.handle_event(env, event).or_fail(),
@@ -49,7 +47,7 @@ impl Stage {
 
     pub fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
         match self {
-            Stage::Uninitialized => orfail::unreachable!(),
+            Stage::Uninitialized => pagurus::unreachable!(),
             Stage::Title(x) => x.render(env, canvas).or_fail(),
             Stage::Play(x) => x.render(env, canvas).or_fail(),
             Stage::GameOver(x) => x.render(env, canvas).or_fail(),
@@ -89,8 +87,8 @@ impl TitleStage {
             .or_fail()?;
 
         if self.play_button.is_clicked() {
-            let audio = env.assets.audios.load_click_audio().or_fail()?;
-            env.audio_player.play(env.system, audio).or_fail()?;
+            // let audio = env.assets.audios.load_click_audio().or_fail()?;
+            // env.audio_player.play(env.system, audio).or_fail()?;
 
             let stage = PlayStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Play(stage)))
@@ -119,18 +117,18 @@ pub struct PlayStage {
     game_state: GameState,
     prev_direction: Direction,
     curr_direction: Direction,
-    move_timeout: ActionId,
+    //move_timeout: ActionId,
     cursor: CursorWidget,
 }
 
 impl PlayStage {
     fn new<S: System>(env: &mut Env<S>) -> Self {
-        let move_timeout = env.system.clock_set_timeout(Duration::from_secs(0));
+        // let move_timeout = env.system.clock_set_timeout(Duration::from_secs(0));
         Self {
             game_state: GameState::new(env.rng),
             prev_direction: Direction::Up,
             curr_direction: Direction::Up,
-            move_timeout,
+            //move_timeout,
             cursor: CursorWidget::new(env.assets.sprites.cursor.clone()),
         }
     }
@@ -145,8 +143,8 @@ impl PlayStage {
             Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail()?,
             Event::Timeout(event) => {
                 if !self.handle_timeout_event(env, event).or_fail()? {
-                    let audio = env.assets.audios.load_crash_audio().or_fail()?;
-                    env.audio_player.play(env.system, audio).or_fail()?;
+                    // let audio = env.assets.audios.load_crash_audio().or_fail()?;
+                    // env.audio_player.play(env.system, audio).or_fail()?;
 
                     let stage = GameOverStage::new(self.game_state.clone(), env);
                     return Ok(HandleEventResult::NextStage(Stage::GameOver(stage)));
@@ -159,25 +157,25 @@ impl PlayStage {
 
     fn handle_timeout_event<S: System>(
         &mut self,
-        env: &mut Env<S>,
-        event: TimeoutEvent,
+        _env: &mut Env<S>,
+        _event: TimeoutEvent,
     ) -> Result<bool> {
-        if event.id == self.move_timeout {
-            match self.game_state.move_snake(env.rng, self.curr_direction) {
-                MoveResult::Moved => {}
-                MoveResult::Ate => {
-                    let audio = env.assets.audios.load_eat_audio().or_fail()?;
-                    env.audio_player.play(env.system, audio).or_fail()?;
-                }
-                MoveResult::Crashed => {
-                    return Ok(false);
-                }
-            }
+        // if event.id == self.move_timeout {
+        //     match self.game_state.move_snake(env.rng, self.curr_direction) {
+        //         MoveResult::Moved => {}
+        //         MoveResult::Ate => {
+        //             let audio = env.assets.audios.load_eat_audio().or_fail()?;
+        //             env.audio_player.play(env.system, audio).or_fail()?;
+        //         }
+        //         MoveResult::Crashed => {
+        //             return Ok(false);
+        //         }
+        //     }
 
-            self.prev_direction = self.curr_direction;
-            self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(200));
-            env.is_render_needed = true;
-        }
+        //     self.prev_direction = self.curr_direction;
+        //     self.move_timeout = env.system.clock_set_timeout(Duration::from_millis(200));
+        //     env.is_render_needed = true;
+        // }
         Ok(true)
     }
 
@@ -296,14 +294,14 @@ impl GameOverStage {
             .or_fail()?;
 
         if self.retry_button.is_clicked() {
-            let audio = env.assets.audios.load_click_audio().or_fail()?;
-            env.audio_player.play(env.system, audio).or_fail()?;
+            // let audio = env.assets.audios.load_click_audio().or_fail()?;
+            // env.audio_player.play(env.system, audio).or_fail()?;
 
             let stage = PlayStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Play(stage)))
         } else if self.title_button.is_clicked() {
-            let audio = env.assets.audios.load_click_audio().or_fail()?;
-            env.audio_player.play(env.system, audio).or_fail()?;
+            // let audio = env.assets.audios.load_click_audio().or_fail()?;
+            // env.audio_player.play(env.system, audio).or_fail()?;
 
             let stage = TitleStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Title(stage)))

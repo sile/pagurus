@@ -1,5 +1,5 @@
+use pagurus::random::StdRng;
 use pagurus::spatial::{Contains, Position, Size};
-use pagurus_game_std::random::StdRng;
 use rand::Rng;
 use std::collections::VecDeque;
 use std::time::Duration;
