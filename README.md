@@ -60,4 +60,5 @@ $ open http://localhost:8888/examples/web_snake/
 Projects that use Pagurus
 -------------------------
 
-- [sile/pixcil](https://github.com/sile/pixcil): Pixel art editor
+- [sile/pixcil](https://github.com/sile/pixcil): Pixel Art Editor
+- [sile/ffmml](https://github.com/sile/ffmml): An MML(Music Macro Language) Implementation
