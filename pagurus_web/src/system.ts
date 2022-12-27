@@ -6,7 +6,6 @@ class System {
   private wasmMemory: WebAssembly.Memory;
   private db: IDBDatabase;
   private canvas: HTMLCanvasElement;
-  private canvasCtx: CanvasRenderingContext2D;
   private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
@@ -44,11 +43,6 @@ class System {
     this.db = db;
 
     this.canvas = canvas;
-    const canvasCtx = this.canvas.getContext("2d");
-    if (!canvasCtx) {
-      throw Error("failed to get canvas 2D context");
-    }
-    this.canvasCtx = canvasCtx;
     this.canvasSize = { width: canvas.width, height: canvas.height };
 
     this.startTime = performance.now();
@@ -222,16 +216,21 @@ class System {
       return;
     }
 
+    const canvasCtx = this.canvas.getContext("2d");
+    if (!canvasCtx) {
+      throw Error("failed to get canvas 2D context");
+    }
+
     const height = videoFrameLen / 4 / width;
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
     if (width == this.canvas.width && height == this.canvas.height) {
       const image = new ImageData(videoFrame, width, height);
-      this.canvasCtx.putImageData(image, 0, 0);
+      canvasCtx.putImageData(image, 0, 0);
     } else {
       const image = new ImageData(videoFrame.slice(), width, height);
       createImageBitmap(image)
         .then((bitmap) => {
-          this.canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
+          canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
         })
         .catch((error) => {
           throw error;
