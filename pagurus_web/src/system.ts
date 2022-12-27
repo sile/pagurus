@@ -2,10 +2,15 @@ import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./au
 import { ActionId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
 import { Position, Size } from "./spatial";
 
+interface SystemOptions {
+  canvas?: HTMLCanvasElement;
+  databaseName?: string;
+}
+
 class System {
   private wasmMemory: WebAssembly.Memory;
   private db: IDBDatabase;
-  private canvas: HTMLCanvasElement;
+  private canvas?: HTMLCanvasElement;
   private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
@@ -15,12 +20,9 @@ class System {
   private eventQueue: Event[];
   private resolveNextEvent?: (event: Event) => void;
 
-  static async create(
-    wasmMemory: WebAssembly.Memory,
-    canvas: HTMLCanvasElement,
-    databaseName = "PAGURUS_STATE_DB"
-  ): Promise<System> {
-    const openRequest = indexedDB.open(databaseName);
+  static async create(wasmMemory: WebAssembly.Memory, options: SystemOptions = {}): Promise<System> {
+    // FIXME(sile): Make DB optional
+    const openRequest = indexedDB.open(options.databaseName || "PAGURUS_STATE_DB");
     return new Promise((resolve, reject) => {
       openRequest.onupgradeneeded = (event) => {
         // @ts-ignore
@@ -30,7 +32,7 @@ class System {
       openRequest.onsuccess = (event) => {
         // @ts-ignore
         const db: IDBDatabase = event.target.result as IDBDatabase;
-        resolve(new System(wasmMemory, canvas, db));
+        resolve(new System(wasmMemory, options.canvas, db));
       };
       openRequest.onerror = () => {
         reject(new Error(`failed to open database (indexedDB)`));
@@ -38,54 +40,60 @@ class System {
     });
   }
 
-  private constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement, db: IDBDatabase) {
+  private constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement | undefined, db: IDBDatabase) {
     this.wasmMemory = wasmMemory;
     this.db = db;
 
     this.canvas = canvas;
-    this.canvasSize = { width: canvas.width, height: canvas.height };
+    if (this.canvas !== undefined) {
+      this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
+    } else {
+      this.canvasSize = { width: 0, height: 0 };
+    }
 
     this.startTime = performance.now();
     this.nextActionId = 0;
 
-    document.addEventListener("keyup", (event) => {
-      if (this.handleKeyup(event)) {
+    if (this.canvas !== undefined) {
+      document.addEventListener("keyup", (event) => {
+        if (this.handleKeyup(event)) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (this.handleKeydown(event)) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      });
+
+      this.canvas.addEventListener("mousemove", (event) => {
+        this.handleMousemove(event);
+      });
+      this.canvas.addEventListener("mousedown", (event) => {
+        this.handleMousedown(event);
+      });
+      this.canvas.addEventListener("mouseup", (event) => {
+        this.handleMouseup(event);
+      });
+
+      this.canvas.addEventListener("touchmove", (event) => {
+        this.handleTouchmove(event);
         event.stopPropagation();
         event.preventDefault();
-      }
-    });
-    document.addEventListener("keydown", (event) => {
-      if (this.handleKeydown(event)) {
+      });
+      this.canvas.addEventListener("touchstart", (event) => {
+        this.handleTouchstart(event);
         event.stopPropagation();
         event.preventDefault();
-      }
-    });
-
-    this.canvas.addEventListener("mousemove", (event) => {
-      this.handleMousemove(event);
-    });
-    this.canvas.addEventListener("mousedown", (event) => {
-      this.handleMousedown(event);
-    });
-    this.canvas.addEventListener("mouseup", (event) => {
-      this.handleMouseup(event);
-    });
-
-    this.canvas.addEventListener("touchmove", (event) => {
-      this.handleTouchmove(event);
-      event.stopPropagation();
-      event.preventDefault();
-    });
-    this.canvas.addEventListener("touchstart", (event) => {
-      this.handleTouchstart(event);
-      event.stopPropagation();
-      event.preventDefault();
-    });
-    this.canvas.addEventListener("touchend", (event) => {
-      this.handleTouchend(event);
-      event.stopPropagation();
-      event.preventDefault();
-    });
+      });
+      this.canvas.addEventListener("touchend", (event) => {
+        this.handleTouchend(event);
+        event.stopPropagation();
+        event.preventDefault();
+      });
+    }
 
     const initialEvent = { window: { redrawNeeded: { size: this.canvasSize } } };
     this.eventQueue = [initialEvent];
@@ -119,6 +127,9 @@ class System {
   }
 
   private touchPosition(touch: Touch): Position {
+    if (this.canvas === undefined) {
+      throw new Error("bug");
+    }
     const rect = this.canvas.getBoundingClientRect();
     return { x: Math.round(touch.clientX - rect.left), y: Math.round(touch.clientY - rect.top) };
   }
@@ -189,6 +200,9 @@ class System {
   }
 
   notifyRedrawNeeded() {
+    if (this.canvas === undefined) {
+      return;
+    }
     this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
     this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
   }
@@ -199,6 +213,9 @@ class System {
   }
 
   videoDraw(videoFrameOffset: number, videoFrameLen: number, width: number, stride: number, format: number) {
+    if (this.canvas === undefined) {
+      return;
+    }
     if (format != 1) {
       throw new Error(`expected RGB32(3) format, but got ${format}`);
     }
@@ -230,6 +247,9 @@ class System {
       const image = new ImageData(videoFrame.slice(), width, height);
       createImageBitmap(image)
         .then((bitmap) => {
+          if (this.canvas === undefined) {
+            throw new Error("bug");
+          }
           canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
         })
         .catch((error) => {
@@ -373,4 +393,4 @@ class System {
   }
 }
 
-export { System };
+export { System, SystemOptions };

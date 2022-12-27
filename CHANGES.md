@@ -6,6 +6,11 @@ core
 
 - [UPDATE] Derives `serde::{Serialize, Deserialize}` if `serde` feature is enabled
 
+web
+---
+
+- [CHANGE] Add `SystemOptions` and make it possible to create no canvas system
+
 v0.6.0
 ======
 
