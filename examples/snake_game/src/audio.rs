@@ -27,17 +27,17 @@ impl AudioMixer {
     }
 
     pub fn play_click_sound(&mut self) {
-        let mml = "A aaa"; // TODO
+        let mml = "@v0 = { 10 9 8 7 6 5 4 3 2 1 0 } A @01 @v0 f";
         self.play(&mml.parse().expect("unreachable"));
     }
 
     pub fn play_crash_sound(&mut self) {
-        let mml = "A ccc";
+        let mml = "@v0 = { 14 15 15 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 } D @v0 g";
         self.play(&mml.parse().expect("unreachable"));
     }
 
     pub fn play_eat_sound(&mut self) {
-        let mml = "A eee";
+        let mml = "@v0 = { 10 9 8 7 6 5 4 3 2 1 0 } A @02 @v0 c";
         self.play(&mml.parse().expect("unreachable"));
     }
 
