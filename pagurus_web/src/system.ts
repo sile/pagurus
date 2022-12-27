@@ -260,8 +260,8 @@ class System {
 
   audioInit(sampleRate: number, _dataSamples: number, sampleFormatPtr: number) {
     this.audioSampleRate = sampleRate;
-    var littleEndian = (function () {
-      var buffer = new ArrayBuffer(2);
+    const littleEndian = (function () {
+      const buffer = new ArrayBuffer(2);
       new DataView(buffer).setInt16(0, 256, true);
       return new Int16Array(buffer)[0] === 256;
     })();
