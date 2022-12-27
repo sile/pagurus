@@ -10,6 +10,7 @@ publish = false
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
+ffmml = "0.1"
 log = "0.4.17"
 pagurus = {  path = "../../", features = ["fixed_window", "image", "random", "wasm"] }
 png = "0.17.7"

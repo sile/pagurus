@@ -90,8 +90,7 @@ impl TitleStage {
             .or_fail()?;
 
         if self.play_button.is_clicked() {
-            // let audio = env.assets.audios.load_click_audio().or_fail()?;
-            // env.audio_player.play(env.system, audio).or_fail()?;
+            env.mixer.play_click_sound();
 
             let stage = PlayStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Play(stage)))
@@ -147,8 +146,7 @@ impl PlayStage {
             Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail()?,
             Event::Timeout(event) => {
                 if !self.handle_timeout_event(env, event).or_fail()? {
-                    // let audio = env.assets.audios.load_crash_audio().or_fail()?;
-                    // env.audio_player.play(env.system, audio).or_fail()?;
+                    env.mixer.play_crash_sound();
 
                     let stage = GameOverStage::new(self.game_state.clone(), env);
                     return Ok(HandleEventResult::NextStage(Stage::GameOver(stage)));
@@ -168,8 +166,7 @@ impl PlayStage {
             match self.game_state.move_snake(env.rng, self.curr_direction) {
                 MoveResult::Moved => {}
                 MoveResult::Ate => {
-                    // let audio = env.assets.audios.load_eat_audio().or_fail()?;
-                    // env.audio_player.play(env.system, audio).or_fail()?;
+                    env.mixer.play_eat_sound();
                 }
                 MoveResult::Crashed => {
                     return Ok(false);
@@ -299,14 +296,12 @@ impl GameOverStage {
             .or_fail()?;
 
         if self.retry_button.is_clicked() {
-            // let audio = env.assets.audios.load_click_audio().or_fail()?;
-            // env.audio_player.play(env.system, audio).or_fail()?;
+            env.mixer.play_click_sound();
 
             let stage = PlayStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Play(stage)))
         } else if self.title_button.is_clicked() {
-            // let audio = env.assets.audios.load_click_audio().or_fail()?;
-            // env.audio_player.play(env.system, audio).or_fail()?;
+            env.mixer.play_click_sound();
 
             let stage = TitleStage::new(env);
             Ok(HandleEventResult::NextStage(Stage::Title(stage)))

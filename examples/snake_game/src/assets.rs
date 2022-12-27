@@ -42,14 +42,12 @@ fn decode_sprite(png: &[u8]) -> Result<Sprite> {
 #[derive(Debug)]
 pub struct Assets {
     pub sprites: Sprites,
-    // TODO: pub audios: Audios,
 }
 
 impl Assets {
     pub fn load() -> Result<Self> {
         Ok(Self {
             sprites: Sprites::load().or_fail()?,
-            // audios: Audios,
         })
     }
 }
@@ -211,21 +209,3 @@ impl Strings {
         })
     }
 }
-
-// TODO
-// #[derive(Debug, Clone, Copy)]
-// pub struct Audios;
-
-// impl Audios {
-//     pub fn load_click_audio(self) -> Result<AudioDataStream> {
-//         AudioDataStream::new(OGG_CLICK).or_fail()
-//     }
-
-//     pub fn load_eat_audio(self) -> Result<AudioDataStream> {
-//         AudioDataStream::new(OGG_EAT).or_fail()
-//     }
-
-//     pub fn load_crash_audio(self) -> Result<AudioDataStream> {
-//         AudioDataStream::new(OGG_CRASH).or_fail()
-//     }
-// }

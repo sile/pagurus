@@ -1,15 +1,15 @@
 use crate::assets::Assets;
+use crate::audio::AudioMixer;
 use crate::stages::Stage;
 use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
 use pagurus::event::{StateEvent, WindowEvent};
 use pagurus::failure::OrFail;
-use pagurus::video::VideoFrame;
-use pagurus::{event::Event, Game, Result, System};
-// TODO: use pagurus_game_std::audio::AudioPlayer;
 use pagurus::fixed_window::FixedWindow;
 use pagurus::image::{Canvas, Color};
 use pagurus::random::StdRng;
+use pagurus::video::VideoFrame;
+use pagurus::{event::Event, Game, Result, System};
 
 #[cfg(target_arch = "wasm32")]
 pagurus::export_wasm_functions!(SnakeGame);
@@ -20,7 +20,7 @@ pub const STATE_HIGH_SCORE: &str = "high_score";
 pub struct SnakeGame {
     rng: StdRng,
     assets: Option<Assets>,
-    // TODO: audio_player: AudioPlayer,
+    mixer: AudioMixer,
     high_score: HighScore,
     video_frame: VideoFrame,
     stage: Stage,
@@ -31,6 +31,9 @@ impl<S: System + 'static> Game<S> for SnakeGame {
     fn initialize(&mut self, system: &mut S) -> Result<()> {
         // Rng.
         self.rng = StdRng::from_clock_seed(system.clock_unix_time());
+
+        // Audio.
+        self.mixer.init(system);
 
         // Assets.
         let start = system.clock_game_time();
@@ -48,7 +51,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         let mut env = Env::new(
             system,
             &mut self.rng,
-            //            &mut self.audio_player,
+            &mut self.mixer,
             &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
@@ -62,13 +65,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
 
     fn handle_event(&mut self, system: &mut S, event: Event) -> Result<bool> {
         let event = self.logical_window.handle_event(event);
-
-        // TODO
-        // let event = if let Some(event) = self.audio_player.handle_event(system, event).or_fail()? {
-        //     event
-        // } else {
-        //     return Ok(true);
-        // };
+        self.mixer.handle_event(system, &event);
 
         match event {
             Event::Terminating => {
@@ -92,7 +89,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         let mut env = Env::new(
             system,
             &mut self.rng,
-            // &mut self.audio_player,
+            &mut self.mixer,
             &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
@@ -120,7 +117,7 @@ impl SnakeGame {
         let mut env = Env::new(
             system,
             &mut self.rng,
-            //&mut self.audio_player,
+            &mut self.mixer,
             &mut self.high_score,
             assets,
         );
