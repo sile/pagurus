@@ -26,7 +26,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --workspace --exclude '*android*' --exclude sdl_snake
+          args: --workspace --exclude sdl_snake
 
   # test:
   #   name: Test Suite
@@ -49,7 +49,7 @@ jobs:
   #       uses: actions-rs/cargo@v1
   #       with:
   #         command: test
-  #         args: --workspace --exclude '*android*'
+  #         args: --workspace
 
   lints:
     name: Lints
@@ -79,4 +79,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --exclude '*android*' --exclude sdl_snake -- -D warnings
+          args: --workspace --exclude sdl_snake -- -D warnings
