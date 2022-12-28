@@ -1,6 +1,11 @@
 main
 ====
 
+drop
+----
+
+- [CHANGE] Drop `pagurus_android_system` in favor of PWA
+
 core
 ----
 
