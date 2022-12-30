@@ -11,7 +11,7 @@
   "homepage": "https://github.com/sile/pagurus",
   "main": "dist/pagurus.js",
   "module": "dist/pagurus.mjs",
-  "types": "dist/pagurus.ts",
+  "types": "dist/pagurus.d.ts",
   "type": "module",
   "scripts": {
     "build": "rollup -c ./rollup.config.mjs --bundleConfigAsCjs && tsc --emitDeclarationOnly",
