@@ -1,6 +1,6 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
 import { ActionId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
-import { Position, Size } from "./spatial";
+import { Position } from "./spatial";
 
 interface SystemOptions {
   canvas?: HTMLCanvasElement;
@@ -11,7 +11,6 @@ class System {
   private wasmMemory: WebAssembly.Memory;
   private db: IDBDatabase;
   private canvas?: HTMLCanvasElement;
-  private canvasSize: Size;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
   private audioSampleRate?: number;
@@ -44,11 +43,12 @@ class System {
     this.wasmMemory = wasmMemory;
     this.db = db;
 
+    let canvasSize = { width: 0, height: 0 };
     this.canvas = canvas;
     if (this.canvas !== undefined) {
-      this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
-    } else {
-      this.canvasSize = { width: 0, height: 0 };
+      canvasSize = { width: this.canvas.width, height: this.canvas.height };
+      this.canvas.style.width = `${canvasSize.width}px`;
+      this.canvas.style.height = `${canvasSize.height}px`;
     }
 
     this.startTime = performance.now();
@@ -95,7 +95,7 @@ class System {
       });
     }
 
-    const initialEvent = { window: { redrawNeeded: { size: this.canvasSize } } };
+    const initialEvent = { window: { redrawNeeded: { size: canvasSize } } };
     this.eventQueue = [initialEvent];
   }
 
@@ -203,8 +203,10 @@ class System {
     if (this.canvas === undefined) {
       return;
     }
-    this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
-    this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
+    const canvasSize = { width: this.canvas.width, height: this.canvas.height };
+    this.canvas.style.width = `${canvasSize.width}px`;
+    this.canvas.style.height = `${canvasSize.height}px`;
+    this.enqueueEvent({ window: { redrawNeeded: { size: canvasSize } } });
   }
 
   videoInit(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {
@@ -223,12 +225,6 @@ class System {
       throw new Error(`width ${width} differs from stride ${stride}`);
     }
 
-    if (this.canvasSize.width != this.canvas.width || this.canvasSize.height != this.canvas.height) {
-      this.canvasSize = { width: this.canvas.width, height: this.canvas.height };
-      this.enqueueEvent({ window: { redrawNeeded: { size: this.canvasSize } } });
-      return;
-    }
-
     if (width === 0 || videoFrameLen === 0) {
       return;
     }
@@ -240,22 +236,16 @@ class System {
 
     const height = videoFrameLen / 4 / width;
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
-    if (width == this.canvas.width && height == this.canvas.height) {
-      const image = new ImageData(videoFrame, width, height);
-      canvasCtx.putImageData(image, 0, 0);
-    } else {
-      const image = new ImageData(videoFrame.slice(), width, height);
-      createImageBitmap(image)
-        .then((bitmap) => {
-          if (this.canvas === undefined) {
-            throw new Error("bug");
-          }
-          canvasCtx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
-        })
-        .catch((error) => {
-          throw error;
-        });
+    if (width != this.canvas.width || height != this.canvas.height) {
+      const xScale = width / this.canvas.width;
+      const yScale = height / this.canvas.height;
+      this.canvas.width = width;
+      this.canvas.height = height;
+      canvasCtx.scale(xScale, yScale);
     }
+
+    const image = new ImageData(videoFrame, width, height);
+    canvasCtx.putImageData(image, 0, 0);
   }
 
   audioInit(sampleRate: number, _dataSamples: number, sampleFormatPtr: number) {
