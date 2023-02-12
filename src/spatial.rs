@@ -276,6 +276,7 @@ impl Region {
         self.size.width == 0 || self.size.height == 0
     }
 
+    // TODO: remove
     pub fn in_contact_with(self, other: Self) -> bool {
         Region::new(self.position, self.size + 1)
             .contains(&Region::new(other.position, other.size + 1))
