@@ -7,7 +7,7 @@ use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
 use pagurus::event::{Event, KeyEvent, MouseEvent, TimeoutEvent};
-use pagurus::failure::{Failure, OrFail};
+use pagurus::failure::OrFail;
 use pagurus::image::{Canvas, Color};
 use pagurus::input::Key;
 use pagurus::spatial::Position;
