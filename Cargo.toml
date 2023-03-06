@@ -13,7 +13,7 @@ readme = "README.md"
 fixed_window = []
 image = []
 random = ["getrandom", "rand_chacha", "rand_core"]
-serde = ["dep:serde", "orfail/serde"]
+serde = ["dep:serde", "orfail/serde", "rand_chacha/serde1"]
 wasm = ["log", "serde", "serde_json"]
 
 [dependencies]

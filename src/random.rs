@@ -14,26 +14,29 @@ pub struct StdRngState {
 }
 
 #[derive(Debug)]
-pub struct StdRng {
-    inner: ChaChaRng,
-}
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
+pub struct StdRng(ChaChaRng);
 
 impl StdRng {
     pub fn from_clock_seed(now: Duration) -> Self {
         let inner = ChaChaRng::seed_from_u64(now.as_micros() as u64);
-        Self { inner }
+        Self(inner)
     }
 
     pub fn from_state(state: StdRngState) -> Self {
         let mut inner = ChaChaRng::from_seed(state.seed);
         inner.set_word_pos(state.word_pos);
-        Self { inner }
+        Self(inner)
     }
 
     pub fn state(&self) -> StdRngState {
         StdRngState {
-            seed: self.inner.get_seed(),
-            word_pos: self.inner.get_word_pos(),
+            seed: self.0.get_seed(),
+            word_pos: self.0.get_word_pos(),
         }
     }
 }
@@ -52,19 +55,19 @@ impl Clone for StdRng {
 
 impl RngCore for StdRng {
     fn next_u32(&mut self) -> u32 {
-        self.inner.next_u32()
+        self.0.next_u32()
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.inner.next_u64()
+        self.0.next_u64()
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.inner.fill_bytes(dest);
+        self.0.fill_bytes(dest);
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.inner.try_fill_bytes(dest)
+        self.0.try_fill_bytes(dest)
     }
 }
 
