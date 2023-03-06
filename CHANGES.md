@@ -9,6 +9,7 @@ drop
 core
 ----
 
+- [UPDATE] Implement `Clone` for `pagurus::random::StdRng`
 - [UPDATE] Derives `serde::{Serialize, Deserialize}` if `serde` feature is enabled
 
 web

@@ -44,6 +44,12 @@ impl Default for StdRng {
     }
 }
 
+impl Clone for StdRng {
+    fn clone(&self) -> Self {
+        Self::from_state(self.state())
+    }
+}
+
 impl RngCore for StdRng {
     fn next_u32(&mut self) -> u32 {
         self.inner.next_u32()
@@ -68,3 +74,18 @@ fn always_fail(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
 }
 
 getrandom::register_custom_getrandom!(always_fail);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clone_std_rng_works() {
+        let mut rng = StdRng::default();
+
+        for _ in 0..100 {
+            let mut cloned = rng.clone();
+            assert_eq!(rng.next_u32(), cloned.next_u32());
+        }
+    }
+}
