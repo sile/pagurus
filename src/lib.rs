@@ -39,8 +39,8 @@ pub trait System {
     fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec;
     fn audio_enqueue(&mut self, data: AudioData<&[u8]>);
     fn console_log(message: &str);
-    fn clock_game_time(&self) -> Duration;
-    fn clock_unix_time(&self) -> Duration;
+    fn clock_game_time(&self) -> Duration; // TODO: static
+    fn clock_unix_time(&self) -> Duration; // TODO: static
     fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId;
     fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
     fn state_load(&mut self, name: &str) -> ActionId;
