@@ -66,4 +66,6 @@ pub enum Key {
     Shift,
     Ctrl,
     Alt,
+    Tab,
+    Escape,
 }
