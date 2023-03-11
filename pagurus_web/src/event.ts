@@ -78,7 +78,7 @@ type Key =
   | "ctrl"
   | "alt"
   | "tab"
-  | "esc";
+  | "escape";
 
 function toPagurusKey(key: string): Key | undefined {
   switch (key) {
