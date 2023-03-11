@@ -5,6 +5,7 @@ import { Position } from "./spatial";
 interface SystemOptions {
   canvas?: HTMLCanvasElement;
   databaseName?: string;
+  propagateControlKey?: boolean;
 }
 
 class System {
@@ -18,6 +19,7 @@ class System {
   private nextActionId: ActionId;
   private eventQueue: Event[];
   private resolveNextEvent?: (event: Event) => void;
+  private propagateControlKey: boolean;
 
   static async create(wasmMemory: WebAssembly.Memory, options: SystemOptions = {}): Promise<System> {
     // FIXME(sile): Make DB optional
@@ -31,7 +33,7 @@ class System {
       openRequest.onsuccess = (event) => {
         // @ts-ignore
         const db: IDBDatabase = event.target.result as IDBDatabase;
-        resolve(new System(wasmMemory, options.canvas, db));
+        resolve(new System(wasmMemory, options.canvas, db, options));
       };
       openRequest.onerror = () => {
         reject(new Error(`failed to open database (indexedDB)`));
@@ -39,9 +41,15 @@ class System {
     });
   }
 
-  private constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement | undefined, db: IDBDatabase) {
+  private constructor(
+    wasmMemory: WebAssembly.Memory,
+    canvas: HTMLCanvasElement | undefined,
+    db: IDBDatabase,
+    options: SystemOptions
+  ) {
     this.wasmMemory = wasmMemory;
     this.db = db;
+    this.propagateControlKey = !(options.propagateControlKey === false);
 
     let canvasSize = { width: 0, height: 0 };
     this.canvas = canvas;
@@ -57,14 +65,12 @@ class System {
     if (this.canvas !== undefined) {
       document.addEventListener("keyup", (event) => {
         if (this.handleKeyup(event)) {
-          event.stopPropagation();
-          event.preventDefault();
+          this.preventKeyEventDefaultIfNeed(event);
         }
       });
       document.addEventListener("keydown", (event) => {
         if (this.handleKeydown(event)) {
-          event.stopPropagation();
-          event.preventDefault();
+          this.preventKeyEventDefaultIfNeed(event);
         }
       });
 
@@ -108,6 +114,17 @@ class System {
         this.resolveNextEvent = resolve;
       });
     }
+  }
+
+  private preventKeyEventDefaultIfNeed(event: KeyboardEvent): void {
+    if (this.propagateControlKey) {
+      if (event.ctrlKey || event.key == "Control") {
+        return;
+      }
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
   }
 
   private handleKeyup(event: KeyboardEvent): boolean {

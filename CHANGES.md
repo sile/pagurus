@@ -17,6 +17,7 @@ core
 web
 ---
 
+- [UPDATE] Add `SystemOptions.propagateControlKey`
 - [UPDATE] Update key code mapping
 - [UPDATE] Use `CanvasRenderingContext2D.scale()` method to resize video frames
 - [FIX] Fix typo in package.json (`s/pagurus.ts/pagurus.d.ts/`)
