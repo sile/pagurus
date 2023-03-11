@@ -82,77 +82,77 @@ type Key =
 
 function toPagurusKey(key: string): Key | undefined {
   switch (key) {
-    case "KeyA":
+    case "a":
       return "a";
-    case "KeyB":
+    case "b":
       return "b";
-    case "KeyC":
+    case "c":
       return "c";
-    case "KeyD":
+    case "d":
       return "d";
-    case "KeyE":
+    case "e":
       return "e";
-    case "KeyF":
+    case "f":
       return "f";
-    case "KeyG":
+    case "g":
       return "g";
-    case "KeyH":
+    case "h":
       return "h";
-    case "KeyI":
+    case "i":
       return "i";
-    case "KeyJ":
+    case "j":
       return "j";
-    case "KeyK":
+    case "k":
       return "k";
-    case "KeyL":
+    case "l":
       return "l";
-    case "KeyM":
+    case "m":
       return "m";
-    case "KeyN":
+    case "n":
       return "n";
-    case "KeyO":
+    case "o":
       return "o";
-    case "KeyP":
+    case "p":
       return "p";
-    case "KeyQ":
+    case "q":
       return "q";
-    case "KeyR":
+    case "r":
       return "r";
-    case "KeyS":
+    case "s":
       return "s";
-    case "KeyT":
+    case "t":
       return "t";
-    case "KeyU":
+    case "u":
       return "u";
-    case "KeyV":
+    case "v":
       return "v";
-    case "KeyW":
+    case "w":
       return "w";
-    case "KeyX":
+    case "x":
       return "x";
-    case "KeyY":
+    case "y":
       return "y";
-    case "KeyZ":
+    case "z":
       return "z";
-    case "Digit0":
+    case "0":
       return "num0";
-    case "Digit1":
+    case "1":
       return "num1";
-    case "Digit2":
+    case "2":
       return "num2";
-    case "Digit3":
+    case "3":
       return "num3";
-    case "Digit4":
+    case "4":
       return "num4";
-    case "Digit5":
+    case "5":
       return "num5";
-    case "Digit6":
+    case "6":
       return "num6";
-    case "Digit7":
+    case "7":
       return "num7";
-    case "Digit8":
+    case "8":
       return "num8";
-    case "Digit9":
+    case "9":
       return "num9";
     case "ArrowUp":
       return "up";
@@ -162,7 +162,7 @@ function toPagurusKey(key: string): Key | undefined {
       return "left";
     case "ArrowRight":
       return "right";
-    case "Space":
+    case " ":
       return "space";
     case "Enter":
       return "return";
@@ -170,14 +170,11 @@ function toPagurusKey(key: string): Key | undefined {
       return "backspace";
     case "Delete":
       return "delete";
-    case "ShiftLeft":
-    case "ShiftRight":
+    case "Shift":
       return "shift";
-    case "ControlLeft":
-    case "ControlRight":
+    case "Control":
       return "ctrl";
-    case "AltLeft":
-    case "AltRight":
+    case "Alt":
       return "alt";
     case "Tab":
       return "tab";
