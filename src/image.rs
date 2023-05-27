@@ -231,7 +231,7 @@ impl<'a> Canvas<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Sprite {
     image_data: Arc<Vec<Rgba>>,
     image_size: Size,

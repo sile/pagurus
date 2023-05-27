@@ -9,6 +9,7 @@ drop
 core
 ----
 
+- [UPDATE] Implement `Default` for `Sprite`
 - [UPDATE] Add `Key::{Tab, Escape}`
 - [UPDATE] Implement `serde::{Serialize, Deserialize}` for `pagurus::random::StdRng`
 - [UPDATE] Implement `Clone` for `pagurus::random::StdRng`
