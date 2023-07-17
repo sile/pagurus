@@ -1,6 +1,6 @@
 {
   "name": "pagurus",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "author": "Takeru Ohta",
   "description": "Library to run Pagurus games on Web Browsers",
   "license": "(MIT OR Apache-2.0)",
@@ -32,6 +32,6 @@
     "prettier": "^2.7.0",
     "rollup": "^3.0.0",
     "serve": "^14.0.1",
-    "typescript": "^4.7.3"
+    "typescript": "^5.1.0"
   }
 }
