@@ -6,6 +6,7 @@ interface SystemOptions {
   canvas?: HTMLCanvasElement;
   databaseName?: string;
   propagateControlKey?: boolean;
+  disableTouchEvents?: boolean;
 }
 
 class System {
@@ -84,21 +85,23 @@ class System {
         this.handleMouseup(event);
       });
 
-      this.canvas.addEventListener("touchmove", (event) => {
-        this.handleTouchmove(event);
-        event.stopPropagation();
-        event.preventDefault();
-      });
-      this.canvas.addEventListener("touchstart", (event) => {
-        this.handleTouchstart(event);
-        event.stopPropagation();
-        event.preventDefault();
-      });
-      this.canvas.addEventListener("touchend", (event) => {
-        this.handleTouchend(event);
-        event.stopPropagation();
-        event.preventDefault();
-      });
+      if (options.disableTouchEvents !== false) {
+        this.canvas.addEventListener("touchmove", (event) => {
+          this.handleTouchmove(event);
+          event.stopPropagation();
+          event.preventDefault();
+        });
+        this.canvas.addEventListener("touchstart", (event) => {
+          this.handleTouchstart(event);
+          event.stopPropagation();
+          event.preventDefault();
+        });
+        this.canvas.addEventListener("touchend", (event) => {
+          this.handleTouchend(event);
+          event.stopPropagation();
+          event.preventDefault();
+        });
+      }
     }
 
     const initialEvent = { window: { redrawNeeded: { size: canvasSize } } };
