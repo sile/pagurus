@@ -11,6 +11,7 @@ drop
 core
 ----
 
+- [CHANGE] Remove `Event::Terminating`
 - [CHANGE] Remove `System::state_XXX()` methods in favor of `Game::command()` and `Game::query()`
 - [UPDATE] Implement `Default` for `Sprite`
 - [UPDATE] Add `Key::{Tab, Escape}`

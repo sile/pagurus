@@ -68,9 +68,6 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         self.mixer.handle_event(system, &event);
 
         match event {
-            Event::Terminating => {
-                return Ok(false);
-            }
             Event::Window(WindowEvent::RedrawNeeded { .. }) => {
                 self.render(system).or_fail()?;
                 return Ok(true);

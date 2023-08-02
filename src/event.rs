@@ -11,7 +11,6 @@ use crate::{
     serde(rename_all = "camelCase")
 )]
 pub enum Event {
-    Terminating,
     Timeout(TimeoutEvent),
     Key(KeyEvent),
     Mouse(MouseEvent),

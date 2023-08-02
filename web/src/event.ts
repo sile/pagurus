@@ -2,7 +2,6 @@ import { Failure } from "./failure";
 import { Size, Position } from "./spatial";
 
 type Event =
-  | "terminating"
   | { timeout: TimeoutEvent }
   | { key: KeyEvent }
   | { mouse: MouseEvent }
