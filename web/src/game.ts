@@ -48,15 +48,6 @@ class Game {
         systemClockSetTimeout(tag: number, timeout: number): bigint {
           return BigInt(systemRef.getSystem().clockSetTimeout(tag, timeout));
         },
-        systemStateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): bigint {
-          return BigInt(systemRef.getSystem().stateSave(nameOffset, nameLen, dataOffset, dataLen));
-        },
-        systemStateLoad(nameOffset: number, nameLen: number): bigint {
-          return BigInt(systemRef.getSystem().stateLoad(nameOffset, nameLen));
-        },
-        systemStateDelete(nameOffset: number, nameLen: number): bigint {
-          return BigInt(systemRef.getSystem().stateDelete(nameOffset, nameLen));
-        },
       },
     };
     const results = await WebAssembly.instantiateStreaming(fetch(gameWasmPath), importObject);
@@ -80,23 +71,11 @@ class Game {
   handleEvent(system: System, event: Event): boolean {
     this.systemRef.setSystem(system);
 
-    let data;
     try {
-      if (event instanceof Object && "state" in event && "loaded" in event.state) {
-        data = event.state.loaded.data;
-        event.state.loaded.data = undefined;
-      }
-
       const eventBytesPtr = this.createWasmBytes(new TextEncoder().encode(JSON.stringify(event)));
-      let dataBytesPtr = 0;
-      if (data !== undefined) {
-        dataBytesPtr = this.createWasmBytes(data);
-      }
-
       const result = (this.wasmInstance.exports.gameHandleEvent as CallableFunction)(
         this.gameInstance,
-        eventBytesPtr,
-        dataBytesPtr
+        eventBytesPtr
       ) as number;
       if (result === 0) {
         return true;

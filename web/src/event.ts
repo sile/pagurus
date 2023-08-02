@@ -6,10 +6,9 @@ type Event =
   | { timeout: TimeoutEvent }
   | { key: KeyEvent }
   | { mouse: MouseEvent }
-  | { window: WindowEvent }
-  | { state: StateEvent };
+  | { window: WindowEvent };
 
-type TimeoutEvent = { id: ActionId; tag: number };
+type TimeoutEvent = { id: TimeoutId; tag: number };
 
 type KeyEvent = { down: { key: Key } } | { up: { key: Key } };
 
@@ -20,12 +19,7 @@ type MouseEvent =
 
 type WindowEvent = { redrawNeeded: { size: Size } };
 
-type StateEvent =
-  | { loaded: { id: ActionId; data?: Uint8Array; failed?: Failure } }
-  | { saved: { id: ActionId; failed?: Failure } }
-  | { deleted: { id: ActionId; failed?: Failure } };
-
-type ActionId = number; // TODO: Add TimeoutId
+type TimeoutId = number;
 
 type MouseButton = "left" | "middle" | "right";
 
@@ -204,8 +198,7 @@ export {
   KeyEvent,
   MouseEvent,
   WindowEvent,
-  StateEvent,
-  ActionId,
+  TimeoutId,
   MouseButton,
   Key,
   toPagurusKey,

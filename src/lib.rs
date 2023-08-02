@@ -42,9 +42,6 @@ pub trait System {
     fn clock_game_time(&self) -> Duration; // TODO: static
     fn clock_unix_time(&self) -> Duration; // TODO: static
     fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId;
-    fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId;
-    fn state_load(&mut self, name: &str) -> ActionId;
-    fn state_delete(&mut self, name: &str) -> ActionId;
 }
 
 pub trait Game<S: System> {
@@ -59,29 +56,5 @@ pub trait Game<S: System> {
     #[allow(unused_variables)]
     fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
         Err(crate::failure::Failure::new().message(format!("unknown command: {name:?}")))
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ActionId(u64);
-
-impl ActionId {
-    pub const fn new(id: u64) -> Self {
-        Self(id)
-    }
-
-    pub const fn get(self) -> u64 {
-        self.0
-    }
-
-    pub fn increment(&mut self) {
-        self.0 += 1;
-    }
-
-    pub fn get_and_increment(&mut self) -> Self {
-        let id = *self;
-        self.increment();
-        id
     }
 }

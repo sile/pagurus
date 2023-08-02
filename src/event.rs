@@ -1,9 +1,7 @@
 use crate::{
-    failure::Failure,
     input::{Key, MouseButton},
     spatial::{Position, Size},
     timeout::{TimeoutId, TimeoutTag},
-    ActionId,
 };
 
 #[derive(Debug, Clone)]
@@ -18,7 +16,6 @@ pub enum Event {
     Key(KeyEvent),
     Mouse(MouseEvent),
     Window(WindowEvent),
-    State(StateEvent),
 }
 
 impl Event {
@@ -49,32 +46,6 @@ pub struct TimeoutEvent {
 )]
 pub enum WindowEvent {
     RedrawNeeded { size: Size },
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
-)]
-pub enum StateEvent {
-    Saved {
-        id: ActionId,
-        #[cfg_attr(feature = "serde", serde(default))]
-        failed: Option<Failure>,
-    },
-    Loaded {
-        id: ActionId,
-        #[cfg_attr(feature = "serde", serde(default))]
-        data: Option<Vec<u8>>,
-        #[cfg_attr(feature = "serde", serde(default))]
-        failed: Option<Failure>,
-    },
-    Deleted {
-        id: ActionId,
-        #[cfg_attr(feature = "serde", serde(default))]
-        failed: Option<Failure>,
-    },
 }
 
 #[derive(Debug, Clone)]

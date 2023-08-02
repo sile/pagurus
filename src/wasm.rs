@@ -1,11 +1,11 @@
 #![allow(clippy::missing_safety_doc)] // FIXME
 use crate::audio::{AudioSpec, SampleFormat};
-use crate::event::{Event, StateEvent};
+use crate::event::Event;
 use crate::failure::{Failure, OrFail};
 use crate::spatial::Size;
 use crate::timeout::{TimeoutId, TimeoutTag};
 use crate::video::{PixelFormat, VideoFrameSpec};
-use crate::{audio::AudioData, video::VideoFrame, ActionId, Game, System};
+use crate::{audio::AudioData, video::VideoFrame, Game, System};
 use std::time::Duration;
 
 pub fn game_new<G>() -> *mut G
@@ -34,23 +34,14 @@ where
     }
 }
 
-pub unsafe fn game_handle_event<G>(
-    game: *mut G,
-    event_bytes_ptr: *mut Vec<u8>,
-    data_ptr: *mut Vec<u8>,
-) -> *mut Vec<u8>
+pub unsafe fn game_handle_event<G>(game: *mut G, event_bytes_ptr: *mut Vec<u8>) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
     let game = &mut *game;
-    let mut event: Event = deserialize(event_bytes_ptr).unwrap_or_else(|e| {
+    let event: Event = deserialize(event_bytes_ptr).unwrap_or_else(|e| {
         panic!("failed to deserialize `Event`: {e}");
     });
-    if !data_ptr.is_null() {
-        if let Event::State(StateEvent::Loaded { data, .. }) = &mut event {
-            *data = Some(*Box::from_raw(data_ptr));
-        }
-    }
     match game.handle_event(&mut WasmSystem, event) {
         Err(e) => serialize(&Some(e)).unwrap_or_else(|e| {
             panic!("failed to serialize `Some(Failure)`: {e}");
@@ -298,46 +289,6 @@ impl System for WasmSystem {
         unsafe {
             let id = systemClockSetTimeout(tag.get(), timeout.as_secs_f64());
             TimeoutId::new(id as u64)
-        }
-    }
-
-    fn state_save(&mut self, name: &str, data: &[u8]) -> ActionId {
-        extern "C" {
-            fn systemStateSave(
-                name: *const u8,
-                name_len: i32,
-                data: *const u8,
-                data_len: i32,
-            ) -> i64;
-        }
-        unsafe {
-            let id = systemStateSave(
-                name.as_ptr(),
-                name.len() as i32,
-                data.as_ptr(),
-                data.len() as i32,
-            );
-            ActionId::new(id as u64)
-        }
-    }
-
-    fn state_load(&mut self, name: &str) -> ActionId {
-        extern "C" {
-            fn systemStateLoad(name: *const u8, name_len: i32) -> i64;
-        }
-        unsafe {
-            let id = systemStateLoad(name.as_ptr(), name.len() as i32);
-            ActionId::new(id as u64)
-        }
-    }
-
-    fn state_delete(&mut self, name: &str) -> ActionId {
-        extern "C" {
-            fn systemStateDelete(name: *const u8, name: i32) -> i64;
-        }
-        unsafe {
-            let id = systemStateDelete(name.as_ptr(), name.len() as i32);
-            ActionId::new(id as u64)
         }
     }
 }

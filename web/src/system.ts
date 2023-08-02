@@ -1,55 +1,35 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
-import { ActionId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
+import { TimeoutId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
 import { Position } from "./spatial";
 
 interface SystemOptions {
   canvas?: HTMLCanvasElement;
-  databaseName?: string;
   propagateControlKey?: boolean;
   disableTouchEvents?: boolean;
 }
 
 class System {
   private wasmMemory: WebAssembly.Memory;
-  private db: IDBDatabase;
   private canvas?: HTMLCanvasElement;
   private audioContext?: AudioContext;
   private audioInputNode?: AudioWorkletNode;
   private audioSampleRate?: number;
   private startTime: number;
-  private nextActionId: ActionId;
   private eventQueue: Event[];
   private resolveNextEvent?: (event: Event) => void;
   private propagateControlKey: boolean;
+  private nextTimeoutId: TimeoutId;
 
-  static async create(wasmMemory: WebAssembly.Memory, options: SystemOptions = {}): Promise<System> {
-    // FIXME(sile): Make DB optional
-    const openRequest = indexedDB.open(options.databaseName || "PAGURUS_STATE_DB");
-    return new Promise((resolve, reject) => {
-      openRequest.onupgradeneeded = (event) => {
-        // @ts-ignore
-        const db: IDBDatabase = event.target.result as IDBDatabase;
-        db.createObjectStore("states", { keyPath: "name" });
-      };
-      openRequest.onsuccess = (event) => {
-        // @ts-ignore
-        const db: IDBDatabase = event.target.result as IDBDatabase;
-        resolve(new System(wasmMemory, options.canvas, db, options));
-      };
-      openRequest.onerror = () => {
-        reject(new Error(`failed to open database (indexedDB)`));
-      };
-    });
+  static create(wasmMemory: WebAssembly.Memory, options: SystemOptions = {}): System {
+    return new System(wasmMemory, options.canvas, options);
   }
 
   private constructor(
     wasmMemory: WebAssembly.Memory,
     canvas: HTMLCanvasElement | undefined,
-    db: IDBDatabase,
     options: SystemOptions
   ) {
     this.wasmMemory = wasmMemory;
-    this.db = db;
     this.propagateControlKey = !(options.propagateControlKey === false);
 
     let canvasSize = { width: 0, height: 0 };
@@ -61,7 +41,7 @@ class System {
     }
 
     this.startTime = performance.now();
-    this.nextActionId = 0;
+    this.nextTimeoutId = 0;
 
     if (this.canvas !== undefined) {
       document.addEventListener("keyup", (event) => {
@@ -321,74 +301,12 @@ class System {
     return new Date().getTime() / 1000;
   }
 
-  clockSetTimeout(tag: number, timeout: number): ActionId {
-    const actionId = this.getNextActionId();
+  clockSetTimeout(tag: number, timeout: number): TimeoutId {
+    const timeoutId = this.getNextTimeoutId();
     setTimeout(() => {
-      this.enqueueEvent({ timeout: { id: actionId, tag } });
+      this.enqueueEvent({ timeout: { id: timeoutId, tag } });
     }, timeout * 1000);
-    return actionId;
-  }
-
-  stateSave(nameOffset: number, nameLen: number, dataOffset: number, dataLen: number): ActionId {
-    const actionId = this.getNextActionId();
-    const name = this.getWasmString(nameOffset, nameLen);
-    const data = new Uint8Array(this.wasmMemory.buffer, dataOffset, dataLen).slice();
-
-    const transaction = this.db.transaction(["states"], "readwrite");
-    const objectStore = transaction.objectStore("states");
-    const request = objectStore.put({ name, data });
-    request.onsuccess = () => {
-      this.enqueueEvent({ state: { saved: { id: actionId } } });
-    };
-    request.onerror = () => {
-      this.enqueueEvent({ state: { saved: { id: actionId, failed: { message: "PUT_FAILURE" } } } });
-    };
-
-    return actionId;
-  }
-
-  stateLoad(nameOffset: number, nameLen: number): ActionId {
-    const actionId = this.getNextActionId();
-    const name = this.getWasmString(nameOffset, nameLen);
-
-    const transaction = this.db.transaction(["states"], "readwrite");
-    const objectStore = transaction.objectStore("states");
-    const request = objectStore.get(name);
-    request.onsuccess = (event) => {
-      // @ts-ignore
-      if (event.target.result === undefined) {
-        this.enqueueEvent({ state: { loaded: { id: actionId } } });
-      } else {
-        // @ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-        const data = event.target.result.data;
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        this.enqueueEvent({ state: { loaded: { id: actionId, data } } });
-      }
-    };
-    request.onerror = () => {
-      this.enqueueEvent({ state: { loaded: { id: actionId, failed: { message: "GET_FAILURE" } } } });
-    };
-
-    return actionId;
-  }
-
-  stateDelete(nameOffset: number, nameLen: number): ActionId {
-    const actionId = this.getNextActionId();
-    const name = this.getWasmString(nameOffset, nameLen);
-
-    const transaction = this.db.transaction(["states"], "readwrite");
-    const objectStore = transaction.objectStore("states");
-    const request = objectStore.delete(name);
-    request.onsuccess = () => {
-      this.enqueueEvent({ state: { deleted: { id: actionId } } });
-    };
-    request.onerror = () => {
-      this.enqueueEvent({ state: { deleted: { id: actionId, failed: { message: "DELETE_FAILURE" } } } });
-    };
-
-    return actionId;
+    return timeoutId;
   }
 
   private getWasmString(offset: number, len: number): string {
@@ -396,10 +314,10 @@ class System {
     return new TextDecoder("utf-8").decode(buffer);
   }
 
-  private getNextActionId(): ActionId {
-    const actionId = this.nextActionId;
-    this.nextActionId = this.nextActionId + 1;
-    return actionId;
+  private getNextTimeoutId(): TimeoutId {
+    const timeoutId = this.nextTimeoutId;
+    this.nextTimeoutId = this.nextTimeoutId + 1;
+    return timeoutId;
   }
 }
 
