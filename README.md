@@ -25,7 +25,7 @@ $ ls target/wasm32-unknown-unknown/release/snake_game.wasm
 
 Run the game on a Web Browser:
 ```console
-$ cd pagurus_web/
+$ cd web/
 $ npm install
 $ npm run build
 $ npm run example  // A HTTP server listening on 8888 port will start
