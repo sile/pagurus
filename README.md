@@ -15,30 +15,12 @@ Examples
 
 Traditional snake game: [examples/snake_game](examples/snake_game)
 
-You can play this game on [itch.io](https://reduls.itch.io/snake).
-
 #### How to build and run locally
 
 Build the game:
 ```console
 $ cargo build --release -p snake_game --target wasm32-unknown-unknown
 $ ls target/wasm32-unknown-unknown/release/snake_game.wasm
-```
-
-Run the game using SDL:
-```console
-$ cargo run --release -p sdl_snake
-```
-
-Run the game on Windows:
-```console
-$ cargo run --release -p windows_snake
-
-// or, if you use WSL2 (Ubuntu)
-
-$ sudo apt install gcc-mingw-w64-x86-64
-$ rustup target add x86_64-pc-windows-gnu
-$ cargo run --target=x86_64-pc-windows-gnu --release -p windows_snake
 ```
 
 Run the game on a Web Browser:
@@ -56,3 +38,4 @@ Projects that use Pagurus
 
 - [sile/pixcil](https://github.com/sile/pixcil): Pixel Art Editor
 - [sile/ffmml](https://github.com/sile/ffmml): An MML(Music Macro Language) Implementation
+- [sile/mineplacer](https://github.com/sile/mineplacer): A variant of Minesweeper game

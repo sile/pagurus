@@ -5,6 +5,8 @@ drop
 ----
 
 - [CHANGE] Drop `pagurus_android_system` in favor of PWA
+- [CHANGE] Drop `pagurus_sdl_system`
+- [CHANGE] Drop `pagurus_window_system`
 
 core
 ----

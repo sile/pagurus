@@ -27,9 +27,5 @@ serde_json = { version = "1", optional = true }
 
 [workspace]
 members = [
-    "pagurus_sdl_system",
-    "pagurus_windows_system",
-    "examples/sdl_snake",
-    "examples/windows_snake",
     "examples/snake_game",
 ]
