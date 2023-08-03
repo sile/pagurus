@@ -2,7 +2,7 @@ use crate::audio::AudioData;
 use crate::audio::AudioSpec;
 use crate::event::Event;
 use crate::spatial::Size;
-use crate::timeout::{TimeoutId, TimeoutTag};
+use crate::timeout::TimeoutTag;
 use crate::video::{VideoFrame, VideoFrameSpec};
 use std::time::Duration;
 
@@ -34,7 +34,7 @@ pub trait System {
     fn audio_enqueue(&mut self, data: AudioData<&[u8]>);
     fn clock_game_time(&self) -> Duration;
     fn clock_unix_time(&self) -> Duration;
-    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId;
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration);
 }
 
 pub trait Game<S: System> {

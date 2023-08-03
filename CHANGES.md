@@ -11,6 +11,7 @@ drop
 core
 ----
 
+- [CHANGE] Remove `TimeoutId`
 - [CHANGE] Merge `input` module into `event` module
 - [ADD] Add `println!()`, `eprintln!()` and `dbg!()` for WebAssembly build
 - [CHANGE] Remove `log` crate from dependencies

@@ -1,5 +1,5 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
-import { TimeoutId, Event, toPagurusKey, toPagurusMouseButton } from "./event";
+import { Event, toPagurusKey, toPagurusMouseButton } from "./event";
 import { Position } from "./spatial";
 
 interface SystemOptions {
@@ -18,7 +18,6 @@ class System {
   private eventQueue: Event[];
   private resolveNextEvent?: (event: Event) => void;
   private propagateControlKey: boolean;
-  private nextTimeoutId: TimeoutId;
 
   static create(wasmMemory: WebAssembly.Memory, options: SystemOptions = {}): System {
     return new System(wasmMemory, options.canvas, options);
@@ -41,7 +40,6 @@ class System {
     }
 
     this.startTime = performance.now();
-    this.nextTimeoutId = 0;
 
     if (this.canvas !== undefined) {
       document.addEventListener("keyup", (event) => {
@@ -301,23 +299,15 @@ class System {
     return new Date().getTime() / 1000;
   }
 
-  clockSetTimeout(tag: number, timeout: number): TimeoutId {
-    const timeoutId = this.getNextTimeoutId();
+  clockSetTimeout(tag: number, timeout: number) {
     setTimeout(() => {
-      this.enqueueEvent({ timeout: { id: timeoutId, tag } });
+      this.enqueueEvent({ timeout: { tag } });
     }, timeout * 1000);
-    return timeoutId;
   }
 
   private getWasmString(offset: number, len: number): string {
     const buffer = new Uint8Array(this.wasmMemory.buffer, offset, len);
     return new TextDecoder("utf-8").decode(buffer);
-  }
-
-  private getNextTimeoutId(): TimeoutId {
-    const timeoutId = this.nextTimeoutId;
-    this.nextTimeoutId = this.nextTimeoutId + 1;
-    return timeoutId;
   }
 }
 

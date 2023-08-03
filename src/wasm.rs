@@ -3,7 +3,7 @@ use crate::audio::{AudioSpec, SampleFormat};
 use crate::event::Event;
 use crate::failure::{Failure, OrFail};
 use crate::spatial::Size;
-use crate::timeout::{TimeoutId, TimeoutTag};
+use crate::timeout::TimeoutTag;
 use crate::video::{PixelFormat, VideoFrameSpec};
 use crate::{audio::AudioData, video::VideoFrame, Game, System};
 use std::time::Duration;
@@ -315,13 +315,12 @@ impl System for WasmSystem {
         unsafe { Duration::from_secs_f64(systemClockUnixTime()) }
     }
 
-    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) -> TimeoutId {
+    fn clock_set_timeout(&mut self, tag: TimeoutTag, timeout: Duration) {
         extern "C" {
-            fn systemClockSetTimeout(tag: u32, timeout: f64) -> i64;
+            fn systemClockSetTimeout(tag: u32, timeout: f64);
         }
         unsafe {
-            let id = systemClockSetTimeout(tag.get(), timeout.as_secs_f64());
-            TimeoutId::new(id as u64)
+            systemClockSetTimeout(tag.get(), timeout.as_secs_f64());
         }
     }
 }

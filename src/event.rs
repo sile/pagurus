@@ -1,6 +1,6 @@
 use crate::{
     spatial::{Position, Size},
-    timeout::{TimeoutId, TimeoutTag},
+    timeout::TimeoutTag,
 };
 
 #[derive(Debug, Clone)]
@@ -33,7 +33,6 @@ impl Event {
 )]
 pub struct TimeoutEvent {
     pub tag: TimeoutTag,
-    pub id: TimeoutId,
 }
 
 #[derive(Debug, Clone)]

@@ -45,8 +45,8 @@ class Game {
         systemClockUnixTime(): number {
           return systemRef.getSystem().clockUnixTime();
         },
-        systemClockSetTimeout(tag: number, timeout: number): bigint {
-          return BigInt(systemRef.getSystem().clockSetTimeout(tag, timeout));
+        systemClockSetTimeout(tag: number, timeout: number) {
+          systemRef.getSystem().clockSetTimeout(tag, timeout);
         },
       },
     };
