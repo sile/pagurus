@@ -5,11 +5,10 @@ use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
-use pagurus::event::{Event, Key, KeyEvent, MouseEvent, TimeoutEvent};
+use pagurus::event::{Event, Key, KeyEvent, MouseEvent, TimeoutEvent, TimeoutTag};
 use pagurus::failure::OrFail;
 use pagurus::image::{Canvas, Color};
 use pagurus::spatial::Position;
-use pagurus::timeout::TimeoutTag;
 use pagurus::{Result, System};
 
 #[derive(Debug, Default)]

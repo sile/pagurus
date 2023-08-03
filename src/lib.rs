@@ -1,8 +1,8 @@
 use crate::audio::AudioData;
 use crate::audio::AudioSpec;
 use crate::event::Event;
+use crate::event::TimeoutTag;
 use crate::spatial::Size;
-use crate::timeout::TimeoutTag;
 use crate::video::{VideoFrame, VideoFrameSpec};
 use std::time::Duration;
 
@@ -20,7 +20,6 @@ pub mod image;
 #[cfg(feature = "random")]
 pub mod random;
 pub mod spatial;
-pub mod timeout;
 pub mod video;
 #[cfg(feature = "wasm")]
 pub mod wasm;

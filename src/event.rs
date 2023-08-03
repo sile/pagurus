@@ -1,7 +1,4 @@
-use crate::{
-    spatial::{Position, Size},
-    timeout::TimeoutTag,
-};
+use crate::spatial::{Position, Size};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
@@ -138,4 +135,18 @@ pub enum Key {
     Char(char),
     #[cfg_attr(feature = "serde", serde(other))]
     Other,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TimeoutTag(u32);
+
+impl TimeoutTag {
+    pub const fn new(tag: u32) -> Self {
+        Self(tag)
+    }
+
+    pub const fn get(self) -> u32 {
+        self.0
+    }
 }

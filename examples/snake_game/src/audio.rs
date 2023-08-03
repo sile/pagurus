@@ -1,8 +1,7 @@
 use ffmml::{Music, MusicPlayer};
 use pagurus::{
     audio::{AudioData, Sample},
-    event::{Event, TimeoutEvent},
-    timeout::TimeoutTag,
+    event::{Event, TimeoutEvent, TimeoutTag},
     System,
 };
 use std::time::Duration;
