@@ -18,6 +18,9 @@ class Game {
     const systemRef = new SystemRef();
     const importObject = {
       env: {
+        consoleLog(messageOffset: number, messageLen: number) {
+          systemRef.getSystem().consoleLog(messageOffset, messageLen);
+        },
         systemVideoInit(width: number, height: number, pixelFormatPtr: number, stridePtr: number) {
           systemRef.getSystem().videoInit(width, height, pixelFormatPtr, stridePtr);
         },
@@ -35,9 +38,6 @@ class Game {
         },
         systemAudioEnqueue(dataOffset: number, dataLen: number) {
           systemRef.getSystem().audioEnqueue(dataOffset, dataLen);
-        },
-        systemConsoleLog(messageOffset: number, messageLen: number) {
-          systemRef.getSystem().consoleLog(messageOffset, messageLen);
         },
         systemClockGameTime(): number {
           return systemRef.getSystem().clockGameTime();

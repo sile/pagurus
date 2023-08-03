@@ -14,11 +14,10 @@ fixed_window = []
 image = []
 random = ["getrandom", "rand_chacha", "rand_core"]
 serde = ["dep:serde", "orfail/serde", "rand_chacha/serde1"]
-wasm = ["log", "serde", "serde_json"]
+wasm = ["serde", "serde_json"]
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"], optional = true }
-log = { version = "0.4", features = ["std"], optional = true }
 orfail = "0.1"
 rand_chacha = { version = "0.3", optional = true }
 rand_core = { version = "0.6", optional = true }

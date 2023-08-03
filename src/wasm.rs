@@ -8,6 +8,48 @@ use crate::video::{PixelFormat, VideoFrameSpec};
 use crate::{audio::AudioData, video::VideoFrame, Game, System};
 use std::time::Duration;
 
+extern "C" {
+    fn consoleLog(msg: *const u8, msg_len: i32);
+}
+
+#[macro_export]
+macro_rules! println {
+    ($($arg:tt)*) => ({
+        let s = format!($($arg)*);
+        unsafe {
+            consoleLog(s.as_ptr(), s.len() as i32);
+        }
+    })
+}
+
+#[macro_export]
+macro_rules! eprintln {
+    ($($arg:tt)*) => ({
+        let s = format!($($arg)*);
+        unsafe {
+            consoleLog(s.as_ptr(), s.len() as i32);
+        }
+    })
+}
+
+#[macro_export]
+macro_rules! dbg {
+    () => {
+        $crate::eprintln!("[{}:{}]", file!(), line!())
+    };
+    ($val:expr $(,)?) => {
+        match $val {
+            tmp => {
+                $crate::eprintln!("[{}:{}] {} = {:#?}", file!(), line!(), stringify!($val), &tmp);
+                tmp
+            }
+        }
+    };
+    ($($val:expr),+ $(,)?) => {
+        ($($crate::dbg!($val)),+,)
+    };
+}
+
 pub fn game_new<G>() -> *mut G
 where
     G: Game<WasmSystem> + Default,
@@ -19,9 +61,8 @@ pub unsafe fn game_initialize<G>(game: *mut G) -> *mut Vec<u8>
 where
     G: Game<WasmSystem>,
 {
-    crate::logger::Logger::<WasmSystem>::init().expect("unreachable");
     std::panic::set_hook(Box::new(|info| {
-        log::error!("{info}");
+        eprintln!("{info}");
     }));
 
     let game = &mut *game;
@@ -259,13 +300,6 @@ impl System for WasmSystem {
         unsafe {
             systemAudioEnqueue(data.bytes().as_ptr(), data.bytes().len() as i32);
         }
-    }
-
-    fn console_log(message: &str) {
-        extern "C" {
-            fn systemConsoleLog(msg: *const u8, msg_len: i32);
-        }
-        unsafe { systemConsoleLog(message.as_ptr(), message.len() as i32) }
     }
 
     fn clock_game_time(&self) -> Duration {
