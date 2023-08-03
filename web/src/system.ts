@@ -43,14 +43,12 @@ class System {
 
     if (this.canvas !== undefined) {
       document.addEventListener("keyup", (event) => {
-        if (this.handleKeyup(event)) {
-          this.preventKeyEventDefaultIfNeed(event);
-        }
+        this.handleKeyup(event);
+        this.preventKeyEventDefaultIfNeed(event);
       });
       document.addEventListener("keydown", (event) => {
-        if (this.handleKeydown(event)) {
-          this.preventKeyEventDefaultIfNeed(event);
-        }
+        this.handleKeydown(event);
+        this.preventKeyEventDefaultIfNeed(event);
       });
 
       this.canvas.addEventListener("mousemove", (event) => {
@@ -82,7 +80,7 @@ class System {
       }
     }
 
-    const initialEvent = { windowResized: canvasSize } };
+    const initialEvent = { windowResized: canvasSize };
     this.eventQueue = [initialEvent];
   }
 
@@ -108,20 +106,14 @@ class System {
     event.preventDefault();
   }
 
-  private handleKeyup(event: KeyboardEvent): boolean {
+  private handleKeyup(event: KeyboardEvent) {
     const key = toPagurusKey(event.key);
-    if (key !== undefined) {
-      this.enqueueEvent({ key: { up: { key } } });
-    }
-    return key !== undefined;
+    this.enqueueEvent({ key: { up: { key } } });
   }
 
-  private handleKeydown(event: KeyboardEvent): boolean {
+  private handleKeydown(event: KeyboardEvent) {
     const key = toPagurusKey(event.key);
-    if (key !== undefined) {
-      this.enqueueEvent({ key: { down: { key } } });
-    }
-    return key !== undefined;
+    this.enqueueEvent({ key: { down: { key } } });
   }
 
   private touchPosition(touch: Touch): Position {

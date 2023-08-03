@@ -20,6 +20,7 @@ type MouseButton = "left" | "middle" | "right";
 
 type Key =
   | { char: string }
+  | "left"
   | "right"
   | "down"
   | "up"
@@ -33,7 +34,7 @@ type Key =
   | "tab"
   | "esc";
 
-function toPagurusKey(key: string): Key | undefined {
+function toPagurusKey(key: string): Key {
   switch (key) {
     case "ArrowUp":
       return "up";
