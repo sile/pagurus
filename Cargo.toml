@@ -26,5 +26,6 @@ serde_json = { version = "1", optional = true }
 
 [workspace]
 members = [
+    "tui",
     "examples/snake_game",
 ]
