@@ -1,7 +1,7 @@
 use ffmml::{Music, MusicPlayer};
 use pagurus::{
     audio::{AudioData, Sample},
-    event::{Event, TimeoutEvent, TimeoutTag},
+    event::{Event, TimeoutTag},
     System,
 };
 use std::time::Duration;
@@ -45,13 +45,7 @@ impl AudioMixer {
     }
 
     pub fn handle_event<S: System>(&mut self, system: &mut S, event: &Event) {
-        if !matches!(
-            event,
-            Event::Timeout(TimeoutEvent {
-                tag: TIMEOUT_TAG,
-                ..
-            })
-        ) {
+        if !matches!(event, Event::Timeout(TIMEOUT_TAG)) {
             return;
         }
 

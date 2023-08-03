@@ -7,7 +7,7 @@ use crate::spatial::{Position, Size};
     serde(rename_all = "camelCase")
 )]
 pub enum Event {
-    Timeout(TimeoutEvent),
+    Timeout(TimeoutTag),
     Key(KeyEvent),
     Mouse(MouseEvent),
     Window(WindowEvent),
@@ -20,16 +20,6 @@ impl Event {
             _ => None,
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
-)]
-pub struct TimeoutEvent {
-    pub tag: TimeoutTag,
 }
 
 #[derive(Debug, Clone)]

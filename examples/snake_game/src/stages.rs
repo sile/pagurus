@@ -5,7 +5,7 @@ use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
-use pagurus::event::{Event, Key, KeyEvent, MouseEvent, TimeoutEvent, TimeoutTag};
+use pagurus::event::{Event, Key, KeyEvent, MouseEvent, TimeoutTag};
 use pagurus::failure::OrFail;
 use pagurus::image::{Canvas, Color};
 use pagurus::spatial::Position;
@@ -157,9 +157,9 @@ impl PlayStage {
     fn handle_timeout_event<S: System>(
         &mut self,
         env: &mut Env<S>,
-        event: TimeoutEvent,
+        tag: TimeoutTag,
     ) -> Result<bool> {
-        if event.tag == MOVE_TIMEOUT {
+        if tag == MOVE_TIMEOUT {
             match self.game_state.move_snake(env.rng, self.curr_direction) {
                 MoveResult::Moved => {}
                 MoveResult::Ate => {

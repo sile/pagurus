@@ -11,6 +11,7 @@ drop
 core
 ----
 
+- [CHANGE] Remove `TimeoutEvent` struct
 - [CHANGE] Remove `timeout` module
 - [CHANGE] Remove `TimeoutId`
 - [CHANGE] Merge `input` module into `event` module

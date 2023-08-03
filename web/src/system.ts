@@ -1,5 +1,5 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
-import { Event, toPagurusKey, toPagurusMouseButton } from "./event";
+import { Event, TimeoutTag, toPagurusKey, toPagurusMouseButton } from "./event";
 import { Position } from "./spatial";
 
 interface SystemOptions {
@@ -299,9 +299,9 @@ class System {
     return new Date().getTime() / 1000;
   }
 
-  clockSetTimeout(tag: number, timeout: number) {
+  clockSetTimeout(tag: TimeoutTag, timeout: number) {
     setTimeout(() => {
-      this.enqueueEvent({ timeout: { tag } });
+      this.enqueueEvent({ timeout: tag });
     }, timeout * 1000);
   }
 

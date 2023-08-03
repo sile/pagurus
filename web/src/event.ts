@@ -2,12 +2,12 @@ import { Failure } from "./failure";
 import { Size, Position } from "./spatial";
 
 type Event =
-  | { timeout: TimeoutEvent }
+  | { timeout: TimeoutTag }
   | { key: KeyEvent }
   | { mouse: MouseEvent }
   | { window: WindowEvent };
 
-type TimeoutEvent = { tag: number };
+type TimeoutTag = number;
 
 type KeyEvent = { down: { key: Key } } | { up: { key: Key } };
 
@@ -83,7 +83,7 @@ function toPagurusMouseButton(button: number): MouseButton | undefined {
 
 export {
   Event,
-  TimeoutEvent,
+  TimeoutTag,
   KeyEvent,
   MouseEvent,
   WindowEvent,
