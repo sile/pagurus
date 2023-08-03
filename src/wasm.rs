@@ -9,7 +9,7 @@ use crate::{audio::AudioData, video::VideoFrame, Game, System};
 use std::time::Duration;
 
 extern "C" {
-    fn consoleLog(msg: *const u8, msg_len: i32);
+    pub fn consoleLog(msg: *const u8, msg_len: i32);
 }
 
 #[macro_export]
@@ -17,7 +17,7 @@ macro_rules! println {
     ($($arg:tt)*) => ({
         let s = format!($($arg)*);
         unsafe {
-            consoleLog(s.as_ptr(), s.len() as i32);
+            $crate::wasm::consoleLog(s.as_ptr(), s.len() as i32);
         }
     })
 }
@@ -27,7 +27,7 @@ macro_rules! eprintln {
     ($($arg:tt)*) => ({
         let s = format!($($arg)*);
         unsafe {
-            consoleLog(s.as_ptr(), s.len() as i32);
+            $crate::wasm::consoleLog(s.as_ptr(), s.len() as i32);
         }
     })
 }
@@ -191,9 +191,8 @@ macro_rules! export_wasm_functions {
         pub unsafe fn gameHandleEvent(
             game: *mut $game,
             event_bytes_ptr: *mut Vec<u8>,
-            data_ptr: *mut Vec<u8>,
         ) -> *mut Vec<u8> {
-            $crate::wasm::game_handle_event(game, event_bytes_ptr, data_ptr)
+            $crate::wasm::game_handle_event(game, event_bytes_ptr)
         }
 
         #[no_mangle]

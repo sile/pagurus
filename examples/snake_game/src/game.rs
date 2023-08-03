@@ -3,7 +3,7 @@ use crate::audio::AudioMixer;
 use crate::stages::Stage;
 use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
-use pagurus::event::{StateEvent, WindowEvent};
+use pagurus::event::WindowEvent;
 use pagurus::failure::OrFail;
 use pagurus::fixed_window::FixedWindow;
 use pagurus::image::{Canvas, Color};
@@ -14,7 +14,8 @@ use pagurus::{event::Event, Game, Result, System};
 #[cfg(target_arch = "wasm32")]
 pagurus::export_wasm_functions!(SnakeGame);
 
-pub const STATE_HIGH_SCORE: &str = "high_score";
+#[cfg(target_arch = "wasm32")]
+use pagurus::println;
 
 #[derive(Debug, Default)]
 pub struct SnakeGame {
@@ -38,7 +39,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         // Assets.
         let start = system.clock_game_time();
         self.assets = Some(Assets::load().or_fail()?);
-        log::debug!(
+        println!(
             "assets were loaded (took {} seconds)",
             (system.clock_game_time() - start).as_secs_f64()
         );
@@ -57,9 +58,6 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         );
         self.stage.initialize(&mut env).or_fail()?;
 
-        // High Score.
-        system.state_load(STATE_HIGH_SCORE);
-
         Ok(())
     }
 
@@ -69,14 +67,6 @@ impl<S: System + 'static> Game<S> for SnakeGame {
 
         match event {
             Event::Window(WindowEvent::RedrawNeeded { .. }) => {
-                self.render(system).or_fail()?;
-                return Ok(true);
-            }
-            Event::State(StateEvent::Loaded {
-                data: Some(data), ..
-            }) => {
-                (data.len() == 1).or_fail()?;
-                self.high_score.0 = data[0];
                 self.render(system).or_fail()?;
                 return Ok(true);
             }

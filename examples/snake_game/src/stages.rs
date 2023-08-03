@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use crate::assets::Button;
-use crate::game::STATE_HIGH_SCORE;
 use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
@@ -261,14 +260,12 @@ pub struct GameOverStage {
 impl GameOverStage {
     fn new<S: System>(game_state: GameState, env: &mut Env<S>) -> Self {
         if game_state.score() > env.high_score.0 {
-            log::debug!(
+            println!(
                 "high score was updated: {} => {}",
                 env.high_score.0,
                 game_state.score()
             );
             env.high_score.0 = game_state.score();
-            env.system
-                .state_save(STATE_HIGH_SCORE, &[game_state.score()]);
         }
 
         let x = (WINDOW_SIZE.width / 2 - Button::SIZE.width / 2) as i32;
