@@ -23,7 +23,7 @@ pub enum Stage {
 }
 
 impl Stage {
-    pub fn initialize<S: System>(&mut self, env: &mut Env<S>) -> Result<()> {
+    pub fn initialize<S: System>(&mut self, env: &Env<S>) -> Result<()> {
         matches!(self, Self::Uninitialized).or_fail()?;
         *self = Self::Title(TitleStage::new(env));
         Ok(())
@@ -64,7 +64,7 @@ pub struct TitleStage {
 }
 
 impl TitleStage {
-    fn new<S: System>(env: &mut Env<S>) -> Self {
+    fn new<S: System>(env: &Env<S>) -> Self {
         let x = (WINDOW_SIZE.width / 2 - Button::SIZE.width / 2) as i32;
         let y = (WINDOW_SIZE.height / 2 + 14) as i32;
         Self {
@@ -205,14 +205,14 @@ impl PlayStage {
         Ok(())
     }
 
-    fn render<S: System>(&mut self, env: &mut Env<S>, canvas: &mut Canvas) -> Result<()> {
+    fn render<S: System>(&mut self, env: &Env<S>, canvas: &mut Canvas) -> Result<()> {
         render_game_state(env, canvas, &self.game_state);
         self.cursor.render(canvas);
         Ok(())
     }
 }
 
-fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
+fn render_high_score<S: System>(env: &Env<S>, canvas: &mut Canvas) {
     let score = env.high_score.0;
     canvas
         .offset(Position::from_xy(180, 160))
@@ -225,7 +225,7 @@ fn render_high_score<S: System>(env: &mut Env<S>, canvas: &mut Canvas) {
         .draw_sprite(&env.assets.sprites.numbers.small[score as usize % 10]);
 }
 
-fn render_game_state<S: System>(env: &mut Env<S>, canvas: &mut Canvas, game_state: &GameState) {
+fn render_game_state<S: System>(env: &Env<S>, canvas: &mut Canvas, game_state: &GameState) {
     let offset = Position::from_xy(1, 1);
     let scale = CELL_SIZE;
 

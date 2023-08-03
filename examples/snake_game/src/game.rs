@@ -49,14 +49,14 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         self.logical_window = FixedWindow::new(WINDOW_SIZE);
 
         // Stage.
-        let mut env = Env::new(
+        let env = Env::new(
             system,
             &mut self.rng,
             &mut self.mixer,
             &mut self.high_score,
             self.assets.as_ref().or_fail()?,
         );
-        self.stage.initialize(&mut env).or_fail()?;
+        self.stage.initialize(&env).or_fail()?;
 
         Ok(())
     }
@@ -65,12 +65,9 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         let event = self.logical_window.handle_event(event);
         self.mixer.handle_event(system, &event);
 
-        match event {
-            Event::Window(WindowEvent::RedrawNeeded { .. }) => {
-                self.render(system).or_fail()?;
-                return Ok(true);
-            }
-            _ => {}
+        if let Event::Window(WindowEvent::RedrawNeeded { .. }) = event {
+            self.render(system).or_fail()?;
+            return Ok(true);
         }
 
         let mut env = Env::new(
