@@ -5,7 +5,7 @@ type Event =
   | { timeout: TimeoutTag }
   | { key: KeyEvent }
   | { mouse: MouseEvent }
-  | { window: WindowEvent };
+  | { windowResized: Size };
 
 type TimeoutTag = number;
 
@@ -15,8 +15,6 @@ type MouseEvent =
   | { move: { position: Position } }
   | { down: { position: Position; button: MouseButton } }
   | { up: { position: Position; button: MouseButton } };
-
-type WindowEvent = { redrawNeeded: { size: Size } };
 
 type MouseButton = "left" | "middle" | "right";
 
@@ -86,7 +84,6 @@ export {
   TimeoutTag,
   KeyEvent,
   MouseEvent,
-  WindowEvent,
   MouseButton,
   Key,
   toPagurusKey,

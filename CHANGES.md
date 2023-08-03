@@ -11,6 +11,7 @@ drop
 core
 ----
 
+- [CHANGE] Remove `WindowEvent` enum
 - [CHANGE] Remove `TimeoutEvent` struct
 - [CHANGE] Remove `timeout` module
 - [CHANGE] Remove `TimeoutId`

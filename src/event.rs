@@ -7,10 +7,10 @@ use crate::spatial::{Position, Size};
     serde(rename_all = "camelCase")
 )]
 pub enum Event {
-    Timeout(TimeoutTag),
     Key(KeyEvent),
     Mouse(MouseEvent),
-    Window(WindowEvent),
+    Timeout(TimeoutTag),
+    WindowResized(Size),
 }
 
 impl Event {
@@ -20,16 +20,6 @@ impl Event {
             _ => None,
         }
     }
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
-)]
-pub enum WindowEvent {
-    RedrawNeeded { size: Size },
 }
 
 #[derive(Debug, Clone)]

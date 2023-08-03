@@ -14,7 +14,7 @@
           const resizeCanvas = () => {
               canvas.height = document.body.clientHeight * 0.95;
               canvas.width = document.body.clientWidth * 0.95;
-              system.notifyRedrawNeeded();
+              system.requestRedraw();
           }
           resizeCanvas();
           window.addEventListener('resize', resizeCanvas);

@@ -3,7 +3,6 @@ use crate::audio::AudioMixer;
 use crate::stages::Stage;
 use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
-use pagurus::event::WindowEvent;
 use pagurus::failure::OrFail;
 use pagurus::fixed_window::FixedWindow;
 use pagurus::image::{Canvas, Color};
@@ -65,7 +64,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         let event = self.logical_window.handle_event(event);
         self.mixer.handle_event(system, &event);
 
-        if let Event::Window(WindowEvent::RedrawNeeded { .. }) = event {
+        if let Event::WindowResized(_) = event {
             self.render(system).or_fail()?;
             return Ok(true);
         }

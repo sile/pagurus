@@ -82,7 +82,7 @@ class System {
       }
     }
 
-    const initialEvent = { window: { redrawNeeded: { size: canvasSize } } };
+    const initialEvent = { windowResized: canvasSize } };
     this.eventQueue = [initialEvent];
   }
 
@@ -197,14 +197,14 @@ class System {
     }
   }
 
-  notifyRedrawNeeded() {
+  requestRedraw() {
     if (this.canvas === undefined) {
       return;
     }
     const canvasSize = { width: this.canvas.width, height: this.canvas.height };
     this.canvas.style.width = `${canvasSize.width}px`;
     this.canvas.style.height = `${canvasSize.height}px`;
-    this.enqueueEvent({ window: { redrawNeeded: { size: canvasSize } } });
+    this.enqueueEvent({ windowResized: canvasSize });
   }
 
   videoInit(width: number, _height: number, pixelFormatPtr: number, stridePtr: number) {

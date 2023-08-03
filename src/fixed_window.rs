@@ -1,5 +1,5 @@
 use crate::{
-    event::{Event, MouseEvent, WindowEvent},
+    event::{Event, MouseEvent},
     spatial::{Position, Region, Size},
 };
 
@@ -28,7 +28,10 @@ impl FixedWindow {
     pub fn handle_event(&mut self, event: Event) -> Event {
         match event {
             Event::Mouse(event) => Event::Mouse(self.handle_mouse_event(event)),
-            Event::Window(event) => Event::Window(self.handle_window_event(event)),
+            Event::WindowResized(size) => {
+                self.handle_window_resized_event(size);
+                Event::WindowResized(size)
+            }
             _ => event,
         }
     }
@@ -59,8 +62,7 @@ impl FixedWindow {
         event
     }
 
-    fn handle_window_event(&mut self, event: WindowEvent) -> WindowEvent {
-        let WindowEvent::RedrawNeeded { size } = event;
+    fn handle_window_resized_event(&mut self, size: Size) {
         self.actual_window_size = size;
 
         let canvas = self.canvas_region.size;
@@ -80,7 +82,5 @@ impl FixedWindow {
         } else {
             self.canvas_region.position = Position::ORIGIN;
         }
-
-        event
     }
 }
