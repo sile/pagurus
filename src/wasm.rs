@@ -11,44 +11,6 @@ extern "C" {
     pub fn consoleLog(msg: *const u8, msg_len: i32);
 }
 
-#[macro_export]
-macro_rules! println {
-    ($($arg:tt)*) => ({
-        let s = format!($($arg)*);
-        unsafe {
-            $crate::wasm::consoleLog(s.as_ptr(), s.len() as i32);
-        }
-    })
-}
-
-#[macro_export]
-macro_rules! eprintln {
-    ($($arg:tt)*) => ({
-        let s = format!($($arg)*);
-        unsafe {
-            $crate::wasm::consoleLog(s.as_ptr(), s.len() as i32);
-        }
-    })
-}
-
-#[macro_export]
-macro_rules! dbg {
-    () => {
-        $crate::eprintln!("[{}:{}]", file!(), line!())
-    };
-    ($val:expr $(,)?) => {
-        match $val {
-            tmp => {
-                $crate::eprintln!("[{}:{}] {} = {:#?}", file!(), line!(), stringify!($val), &tmp);
-                tmp
-            }
-        }
-    };
-    ($($val:expr),+ $(,)?) => {
-        ($($crate::dbg!($val)),+,)
-    };
-}
-
 pub fn game_new<G>() -> *mut G
 where
     G: Game<WasmSystem> + Default,

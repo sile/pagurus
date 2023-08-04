@@ -13,9 +13,6 @@ use pagurus::{event::Event, Game, Result, System};
 #[cfg(target_arch = "wasm32")]
 pagurus::export_wasm_functions!(SnakeGame);
 
-#[cfg(target_arch = "wasm32")]
-use pagurus::println;
-
 #[derive(Debug, Default)]
 pub struct SnakeGame {
     rng: StdRng,
@@ -38,7 +35,7 @@ impl<S: System + 'static> Game<S> for SnakeGame {
         // Assets.
         let start = system.clock_game_time();
         self.assets = Some(Assets::load().or_fail()?);
-        println!(
+        pagurus::println!(
             "assets were loaded (took {} seconds)",
             (system.clock_game_time() - start).as_secs_f64()
         );

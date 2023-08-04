@@ -258,7 +258,7 @@ pub struct GameOverStage {
 impl GameOverStage {
     fn new<S: System>(game_state: GameState, env: &mut Env<S>) -> Self {
         if game_state.score() > env.high_score.0 {
-            println!(
+            pagurus::println!(
                 "high score was updated: {} => {}",
                 env.high_score.0,
                 game_state.score()

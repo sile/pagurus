@@ -17,6 +17,7 @@ pub mod event;
 pub mod fixed_window;
 #[cfg(feature = "image")]
 pub mod image;
+pub mod io;
 #[cfg(feature = "random")]
 pub mod random;
 pub mod spatial;
