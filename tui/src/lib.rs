@@ -325,7 +325,7 @@ struct DirtyPixelsKey(Position);
 
 impl PartialOrd for DirtyPixelsKey {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (self.0.y, self.0.x).partial_cmp(&(other.0.y, other.0.x))
+        Some(self.cmp(other))
     }
 }
 
