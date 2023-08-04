@@ -47,6 +47,7 @@ macro_rules! dbg {
     };
 }
 
+#[allow(clippy::type_complexity)]
 pub static PRINTLN_FN: Mutex<Option<Box<dyn 'static + Send + Fn(&str)>>> = Mutex::new(None);
 
 pub fn set_println_fn<F>(f: F) -> crate::Result<()>
