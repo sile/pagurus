@@ -6,11 +6,19 @@ publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "snake_game"
+required-features = ["tui"]
+
 [lib]
 crate-type = ["cdylib", "lib"]
+
+[features]
+tui = ["pagurus_tui"]
 
 [dependencies]
 ffmml = "0.1"
 pagurus = {  path = "../../", features = ["fixed_window", "image", "random", "wasm"] }
+pagurus_tui = { path = "../../tui/", optional = true }
 png = "0.17.7"
 rand = "0.8"

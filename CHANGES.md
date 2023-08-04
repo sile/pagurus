@@ -37,6 +37,11 @@ web
 - [FIX] Fix typo in package.json (`s/pagurus.ts/pagurus.d.ts/`)
 - [CHANGE] Add `SystemOptions` and make it possible to create no canvas system
 
+tui
+---
+
+- [Add] Add TUI support
+
 v0.6.0
 ======
 

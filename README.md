@@ -23,6 +23,11 @@ $ cargo build --release -p snake_game --target wasm32-unknown-unknown
 $ ls target/wasm32-unknown-unknown/release/snake_game.wasm
 ```
 
+Run the game on the terminal:
+```console
+$ cargo run --release -p snake_game --features tui
+```
+
 Run the game on a Web Browser:
 ```console
 $ cd web/
