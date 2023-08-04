@@ -30,7 +30,7 @@ $ npm install
 $ npm run build
 $ npm run example  // A HTTP server listening on 8888 port will start
 
-$ open http://localhost:8888/examples/web_snake/
+$ open http://localhost:8888/examples/snake_game/web/
 ```
 
 Projects that use Pagurus
