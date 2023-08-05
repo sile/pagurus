@@ -23,11 +23,7 @@ class System {
     return new System(wasmMemory, options.canvas, options);
   }
 
-  private constructor(
-    wasmMemory: WebAssembly.Memory,
-    canvas: HTMLCanvasElement | undefined,
-    options: SystemOptions
-  ) {
+  private constructor(wasmMemory: WebAssembly.Memory, canvas: HTMLCanvasElement | undefined, options: SystemOptions) {
     this.wasmMemory = wasmMemory;
     this.propagateControlKey = !(options.propagateControlKey === false);
 
@@ -47,7 +43,6 @@ class System {
         this.preventKeyEventDefaultIfNeed(event);
       });
       document.addEventListener("keydown", (event) => {
-        this.handleKeydown(event);
         this.preventKeyEventDefaultIfNeed(event);
       });
 
@@ -108,12 +103,9 @@ class System {
 
   private handleKeyup(event: KeyboardEvent) {
     const key = toPagurusKey(event.key);
-    this.enqueueEvent({ key: { up: { key } } });
-  }
-
-  private handleKeydown(event: KeyboardEvent) {
-    const key = toPagurusKey(event.key);
-    this.enqueueEvent({ key: { down: { key } } });
+    const ctrl = event.ctrlKey;
+    const alt = event.altKey;
+    this.enqueueEvent({ key: { key, ctrl, alt } });
   }
 
   private touchPosition(touch: Touch): Position {

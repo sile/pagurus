@@ -28,9 +28,20 @@ impl Event {
     derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "camelCase")
 )]
-pub enum KeyEvent {
-    Down { key: Key },
-    Up { key: Key },
+pub struct KeyEvent {
+    pub ctrl: bool,
+    pub alt: bool,
+    pub key: Key,
+}
+
+impl From<Key> for KeyEvent {
+    fn from(key: Key) -> Self {
+        Self {
+            ctrl: false,
+            alt: false,
+            key,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -107,9 +118,6 @@ pub enum Key {
     Return,
     Backspace,
     Delete,
-    Shift,
-    Ctrl,
-    Alt,
     Tab,
     Esc,
     Char(char),

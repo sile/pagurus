@@ -228,7 +228,7 @@ fn listen_input_events(tx: mpsc::Sender<Event>) {
             break;
         };
 
-        for event in to_pagurus_events(&mut mouse_state, event) {
+        if let Some(event) = to_pagurus_event(&mut mouse_state, event) {
             if tx.send(event).is_err() {
                 break;
             }
@@ -236,48 +236,39 @@ fn listen_input_events(tx: mpsc::Sender<Event>) {
     }
 }
 
-fn to_pagurus_events(
-    mouse_state: &mut MouseState,
-    v: termion::event::Event,
-) -> Box<dyn Iterator<Item = Event>> {
+fn to_pagurus_event(mouse_state: &mut MouseState, v: termion::event::Event) -> Option<Event> {
     match v {
-        termion::event::Event::Key(v) => Box::new(to_pagurus_key_events(v).map(Event::Key)),
-        termion::event::Event::Mouse(v) => Box::new(
-            mouse_state
-                .convert_to_pagurus_mouse_event(v)
-                .map(Event::Mouse)
-                .into_iter(),
-        ),
-        termion::event::Event::Unsupported(_) => Box::new(std::iter::empty()),
+        termion::event::Event::Key(v) => to_pagurus_key_event(v).map(Event::Key),
+        termion::event::Event::Mouse(v) => mouse_state
+            .convert_to_pagurus_mouse_event(v)
+            .map(Event::Mouse),
+        termion::event::Event::Unsupported(_) => None,
     }
 }
 
-fn to_pagurus_key_events(v: termion::event::Key) -> Box<dyn Iterator<Item = KeyEvent>> {
-    fn key(key: Key) -> impl Iterator<Item = KeyEvent> {
-        std::iter::once(KeyEvent::Down { key }).chain(std::iter::once(KeyEvent::Up { key }))
-    }
-
-    fn with(modifier: Key, c: char) -> impl Iterator<Item = KeyEvent> {
-        std::iter::once(KeyEvent::Down { key: modifier })
-            .chain(std::iter::once(KeyEvent::Down { key: Key::Char(c) }))
-            .chain(std::iter::once(KeyEvent::Up { key: Key::Char(c) }))
-            .chain(std::iter::once(KeyEvent::Up { key: modifier }))
-    }
-
+fn to_pagurus_key_event(v: termion::event::Key) -> Option<KeyEvent> {
     match v {
-        termion::event::Key::Backspace => Box::new(key(Key::Backspace)),
-        termion::event::Key::Left => Box::new(key(Key::Left)),
-        termion::event::Key::Right => Box::new(key(Key::Right)),
-        termion::event::Key::Up => Box::new(key(Key::Up)),
-        termion::event::Key::Down => Box::new(key(Key::Down)),
-        termion::event::Key::Delete => Box::new(key(Key::Delete)),
-        termion::event::Key::Esc => Box::new(key(Key::Esc)),
-        termion::event::Key::Char('\n') => Box::new(key(Key::Return)),
-        termion::event::Key::Char('\t') => Box::new(key(Key::Tab)),
-        termion::event::Key::Char(c) => Box::new(key(Key::Char(c))),
-        termion::event::Key::Ctrl(c) => Box::new(with(Key::Ctrl, c)),
-        termion::event::Key::Alt(c) => Box::new(with(Key::Alt, c)),
-        _ => Box::new(std::iter::empty()),
+        termion::event::Key::Backspace => Some(Key::Backspace.into()),
+        termion::event::Key::Left => Some(Key::Left.into()),
+        termion::event::Key::Right => Some(Key::Right.into()),
+        termion::event::Key::Up => Some(Key::Up.into()),
+        termion::event::Key::Down => Some(Key::Down.into()),
+        termion::event::Key::Delete => Some(Key::Delete.into()),
+        termion::event::Key::Esc => Some(Key::Esc.into()),
+        termion::event::Key::Char('\n') => Some(Key::Return.into()),
+        termion::event::Key::Char('\t') => Some(Key::Tab.into()),
+        termion::event::Key::Char(c) => Some(Key::Char(c).into()),
+        termion::event::Key::Ctrl(c) => Some(KeyEvent {
+            key: Key::Char(c),
+            ctrl: true,
+            alt: false,
+        }),
+        termion::event::Key::Alt(c) => Some(KeyEvent {
+            key: Key::Char(c),
+            ctrl: false,
+            alt: true,
+        }),
+        _ => None,
     }
 }
 

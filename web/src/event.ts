@@ -1,15 +1,11 @@
 import { Failure } from "./failure";
 import { Size, Position } from "./spatial";
 
-type Event =
-  | { timeout: TimeoutTag }
-  | { key: KeyEvent }
-  | { mouse: MouseEvent }
-  | { windowResized: Size };
+type Event = { timeout: TimeoutTag } | { key: KeyEvent } | { mouse: MouseEvent } | { windowResized: Size };
 
 type TimeoutTag = number;
 
-type KeyEvent = { down: { key: Key } } | { up: { key: Key } };
+type KeyEvent = { key: Key; ctrl: boolean; alt: boolean };
 
 type MouseEvent =
   | { move: { position: Position } }
@@ -63,7 +59,7 @@ function toPagurusKey(key: string): Key {
     case "Escape":
       return "esc";
     default:
-      return {'char': key};
+      return { char: key };
   }
 }
 
@@ -80,13 +76,4 @@ function toPagurusMouseButton(button: number): MouseButton | undefined {
   }
 }
 
-export {
-  Event,
-  TimeoutTag,
-  KeyEvent,
-  MouseEvent,
-  MouseButton,
-  Key,
-  toPagurusKey,
-  toPagurusMouseButton,
-};
+export { Event, TimeoutTag, KeyEvent, MouseEvent, MouseButton, Key, toPagurusKey, toPagurusMouseButton };
