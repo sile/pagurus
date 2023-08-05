@@ -16,8 +16,7 @@
   "scripts": {
     "build": "rollup -c ./rollup.config.mjs --bundleConfigAsCjs && tsc --emitDeclarationOnly",
     "lint": "eslint --ext .ts ./src",
-    "fmt": "prettier --write src",
-    "example": "npx serve -S -l 8888 .."
+    "fmt": "prettier --write src"
   },
   "files": [
     "dist"
@@ -31,7 +30,6 @@
     "eslint-plugin-prettier": "^4.0.0",
     "prettier": "^2.7.0",
     "rollup": "^3.0.0",
-    "serve": "^14.0.1",
     "typescript": "^5.1.0"
   }
 }

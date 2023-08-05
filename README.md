@@ -33,9 +33,11 @@ Run the game on a Web Browser:
 $ cd web/
 $ npm install
 $ npm run build
-$ npm run example  // A HTTP server listening on 8888 port will start
 
-$ open http://localhost:8888/examples/snake_game/web/
+// A HTTP server listening on 8000 port will start
+$ cd ../
+$ python3 -m http.server
+$ open http://localhost:8000/examples/snake_game/web/
 ```
 
 Projects that use Pagurus
