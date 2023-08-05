@@ -1,7 +1,7 @@
 use crate::assets::Button;
 use crate::state::Direction;
 use crate::{assets, Env};
-use pagurus::event::{Event, Key, KeyEvent, MouseButton, MouseEvent};
+use pagurus::event::{Event, Key, KeyEvent, MouseEvent};
 use pagurus::failure::OrFail;
 use pagurus::image::Canvas;
 use pagurus::spatial::{Contains, Position, Region};
@@ -123,21 +123,14 @@ impl ButtonWidget {
                     env.change_state(&mut self.state, ButtonState::Focused);
                 }
             }
-            MouseEvent::Down {
-                button: MouseButton::Left,
-                ..
-            } => {
+            MouseEvent::Down { .. } => {
                 env.change_state(&mut self.state, ButtonState::Pressed);
             }
-            MouseEvent::Up {
-                button: MouseButton::Left,
-                ..
-            } => {
+            MouseEvent::Up { .. } => {
                 if self.state == ButtonState::Pressed {
                     env.change_state(&mut self.state, ButtonState::Clicked);
                 }
             }
-            _ => {}
         }
 
         Ok(true)
@@ -208,17 +201,11 @@ impl CursorWidget {
                     return Ok(());
                 }
             }
-            MouseEvent::Down {
-                button: MouseButton::Left,
-                ..
-            } if matches!(self.state, CursorState::Normal) => {
+            MouseEvent::Down { .. } if matches!(self.state, CursorState::Normal) => {
                 env.change_state(&mut self.state, CursorState::Pressing);
                 self.direction = None;
             }
-            MouseEvent::Up {
-                button: MouseButton::Left,
-                ..
-            } => {
+            MouseEvent::Up { .. } => {
                 self.direction = match self.state {
                     CursorState::Up => Some(Direction::Up),
                     CursorState::Down => Some(Direction::Down),
