@@ -194,10 +194,12 @@ impl PlayStage {
 
         let prev = self.prev_direction;
         self.curr_direction = match event {
-            KeyEvent::Up { key: Key::Up } if prev != Direction::Down => Direction::Up,
-            KeyEvent::Up { key: Key::Down } if prev != Direction::Up => Direction::Down,
-            KeyEvent::Up { key: Key::Left } if prev != Direction::Right => Direction::Left,
-            KeyEvent::Up { key: Key::Right } if prev != Direction::Left => Direction::Right,
+            KeyEvent { key: Key::Up, .. } if prev != Direction::Down => Direction::Up,
+            KeyEvent { key: Key::Down, .. } if prev != Direction::Up => Direction::Down,
+            KeyEvent { key: Key::Left, .. } if prev != Direction::Right => Direction::Left,
+            KeyEvent {
+                key: Key::Right, ..
+            } if prev != Direction::Left => Direction::Right,
             _ => self.curr_direction,
         };
         Ok(())

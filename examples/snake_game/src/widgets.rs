@@ -38,34 +38,31 @@ impl<'a, const N: usize> ButtonGroup<'a, N> {
         {
             i
         } else {
-            if matches!(event, KeyEvent::Up { .. }) {
+            if matches!(event, KeyEvent { .. }) {
                 env.change_state(&mut self.buttons[0].state, ButtonState::Focused);
             }
             return Ok(());
         };
 
         match event {
-            KeyEvent::Up { key: Key::Up } => {
+            KeyEvent { key: Key::Up, .. } => {
                 env.change_state(&mut self.buttons[focus].state, ButtonState::Normal);
                 env.change_state(
                     &mut self.buttons[focus.saturating_sub(1)].state,
                     ButtonState::Focused,
                 );
             }
-            KeyEvent::Up { key: Key::Down } => {
+            KeyEvent { key: Key::Down, .. } => {
                 env.change_state(&mut self.buttons[focus].state, ButtonState::Normal);
                 env.change_state(
                     &mut self.buttons[std::cmp::min(focus + 1, self.buttons.len() - 1)].state,
                     ButtonState::Focused,
                 );
             }
-            KeyEvent::Down { key: Key::Return } => {
-                env.change_state(&mut self.buttons[focus].state, ButtonState::Pressed);
-            }
-            KeyEvent::Up { key: Key::Return } => {
-                if self.buttons[focus].state == ButtonState::Pressed {
-                    env.change_state(&mut self.buttons[focus].state, ButtonState::Clicked);
-                }
+            KeyEvent {
+                key: Key::Return, ..
+            } => {
+                env.change_state(&mut self.buttons[focus].state, ButtonState::Clicked);
             }
             _ => {}
         }
