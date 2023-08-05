@@ -247,6 +247,14 @@ fn to_pagurus_event(mouse_state: &mut MouseState, v: termion::event::Event) -> O
 }
 
 fn to_pagurus_key_event(v: termion::event::Key) -> Option<KeyEvent> {
+    fn char_to_key(c: char) -> Key {
+        match c {
+            '\n' => Key::Return,
+            '\t' => Key::Tab,
+            c => Key::Char(c),
+        }
+    }
+
     match v {
         termion::event::Key::Backspace => Some(Key::Backspace.into()),
         termion::event::Key::Left => Some(Key::Left.into()),
@@ -255,16 +263,15 @@ fn to_pagurus_key_event(v: termion::event::Key) -> Option<KeyEvent> {
         termion::event::Key::Down => Some(Key::Down.into()),
         termion::event::Key::Delete => Some(Key::Delete.into()),
         termion::event::Key::Esc => Some(Key::Esc.into()),
-        termion::event::Key::Char('\n') => Some(Key::Return.into()),
-        termion::event::Key::Char('\t') => Some(Key::Tab.into()),
-        termion::event::Key::Char(c) => Some(Key::Char(c).into()),
+        termion::event::Key::BackTab => Some(Key::BackTab.into()),
+        termion::event::Key::Char(c) => Some(char_to_key(c).into()),
         termion::event::Key::Ctrl(c) => Some(KeyEvent {
-            key: Key::Char(c),
+            key: char_to_key(c),
             ctrl: true,
             alt: false,
         }),
         termion::event::Key::Alt(c) => Some(KeyEvent {
-            key: Key::Char(c),
+            key: char_to_key(c),
             ctrl: false,
             alt: true,
         }),

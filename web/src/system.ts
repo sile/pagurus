@@ -103,9 +103,15 @@ class System {
 
   private handleKeyup(event: KeyboardEvent) {
     const key = toPagurusKey(event.key);
-    const ctrl = event.ctrlKey;
-    const alt = event.altKey;
-    this.enqueueEvent({ key: { key, ctrl, alt } });
+    if (key !== undefined) {
+      const ctrl = event.ctrlKey;
+      const alt = event.altKey;
+      if (key == "tab" && event.shiftKey) {
+        this.enqueueEvent({ key: { key: "backTab", ctrl, alt } });
+      } else {
+        this.enqueueEvent({ key: { key, ctrl, alt } });
+      }
+    }
   }
 
   private touchPosition(touch: Touch): Position {

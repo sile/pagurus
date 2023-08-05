@@ -1,4 +1,3 @@
-import { Failure } from "./failure";
 import { Size, Position } from "./spatial";
 
 type Event = { timeout: TimeoutTag } | { key: KeyEvent } | { mouse: MouseEvent } | { windowResized: Size };
@@ -20,7 +19,6 @@ type Key =
   | "right"
   | "down"
   | "up"
-  | "space"
   | "return"
   | "backspace"
   | "delete"
@@ -28,9 +26,10 @@ type Key =
   | "ctrl"
   | "alt"
   | "tab"
+  | "backTab"
   | "esc";
 
-function toPagurusKey(key: string): Key {
+function toPagurusKey(key: string): Key | undefined {
   switch (key) {
     case "ArrowUp":
       return "up";
@@ -40,26 +39,23 @@ function toPagurusKey(key: string): Key {
       return "left";
     case "ArrowRight":
       return "right";
-    case " ":
-      return "space";
     case "Enter":
       return "return";
     case "Backspace":
       return "backspace";
     case "Delete":
       return "delete";
-    case "Shift":
-      return "shift";
-    case "Control":
-      return "ctrl";
-    case "Alt":
-      return "alt";
     case "Tab":
       return "tab";
     case "Escape":
       return "esc";
     default:
-      return { char: key };
+      // TODO: Consider surrogate pairs
+      if (key.length === 1) {
+        return { char: key };
+      } else {
+        return;
+      }
   }
 }
 

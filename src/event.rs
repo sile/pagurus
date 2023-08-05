@@ -119,6 +119,7 @@ pub enum Key {
     Backspace,
     Delete,
     Tab,
+    BackTab,
     Esc,
     Char(char),
     #[cfg_attr(feature = "serde", serde(other))]
