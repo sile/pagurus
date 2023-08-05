@@ -1,5 +1,5 @@
 import { AUDIO_WORKLET_PROCESSOR_CODE, AUDIO_WORKLET_PROCESSOR_NAME } from "./audio_worklet_processor";
-import { Event, TimeoutTag, toPagurusKey, toPagurusMouseButton } from "./event";
+import { Event, TimeoutTag, toPagurusKey } from "./event";
 import { Position } from "./spatial";
 
 interface SystemOptions {
@@ -136,9 +136,8 @@ class System {
     const touches = event.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      const button = "left";
       const position = this.touchPosition(touch);
-      this.enqueueEvent({ mouse: { down: { position, button } } });
+      this.enqueueEvent({ mouse: { down: { position } } });
       break;
     }
   }
@@ -147,9 +146,8 @@ class System {
     const touches = event.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      const button = "left";
       const position = this.touchPosition(touch);
-      this.enqueueEvent({ mouse: { up: { position, button } } });
+      this.enqueueEvent({ mouse: { up: { position } } });
       break;
     }
   }
@@ -163,18 +161,16 @@ class System {
   private handleMousedown(event: MouseEvent) {
     const x = event.offsetX;
     const y = event.offsetY;
-    const button = toPagurusMouseButton(event.button);
-    if (button !== undefined) {
-      this.enqueueEvent({ mouse: { down: { position: { x, y }, button } } });
+    if (event.button === 0) {
+      this.enqueueEvent({ mouse: { down: { position: { x, y } } } });
     }
   }
 
   private handleMouseup(event: MouseEvent) {
     const x = event.offsetX;
     const y = event.offsetY;
-    const button = toPagurusMouseButton(event.button);
-    if (button !== undefined) {
-      this.enqueueEvent({ mouse: { up: { position: { x, y }, button } } });
+    if (event.button === 0) {
+      this.enqueueEvent({ mouse: { up: { position: { x, y } } } });
     }
   }
 

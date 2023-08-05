@@ -6,12 +6,7 @@ type TimeoutTag = number;
 
 type KeyEvent = { key: Key; ctrl: boolean; alt: boolean };
 
-type MouseEvent =
-  | { move: { position: Position } }
-  | { down: { position: Position; button: MouseButton } }
-  | { up: { position: Position; button: MouseButton } };
-
-type MouseButton = "left" | "middle" | "right";
+type MouseEvent = { move: { position: Position } } | { down: { position: Position } } | { up: { position: Position } };
 
 type Key =
   | { char: string }
@@ -59,17 +54,4 @@ function toPagurusKey(key: string): Key | undefined {
   }
 }
 
-function toPagurusMouseButton(button: number): MouseButton | undefined {
-  switch (button) {
-    case 0:
-      return "left";
-    case 1:
-      return "middle";
-    case 2:
-      return "right";
-    default:
-      return;
-  }
-}
-
-export { Event, TimeoutTag, KeyEvent, MouseEvent, MouseButton, Key, toPagurusKey, toPagurusMouseButton };
+export { Event, TimeoutTag, KeyEvent, MouseEvent, Key, toPagurusKey };

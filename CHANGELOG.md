@@ -10,4 +10,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- Simplify `MouseEvent` layout
 - Simplify `KeyEvent` layout

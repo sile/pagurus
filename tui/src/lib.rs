@@ -1,6 +1,6 @@
 use pagurus::{
     audio::{AudioData, AudioSpec, SampleFormat},
-    event::{Event, Key, KeyEvent, MouseButton, MouseEvent, TimeoutTag},
+    event::{Event, Key, KeyEvent, MouseEvent, TimeoutTag},
     failure::{Failure, OrFail},
     spatial::{Position, Size},
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
@@ -281,7 +281,7 @@ fn to_pagurus_key_event(v: termion::event::Key) -> Option<KeyEvent> {
 
 #[derive(Debug, Default)]
 struct MouseState {
-    pressed_button: Option<MouseButton>,
+    pressed: bool,
 }
 
 impl MouseState {
@@ -295,25 +295,22 @@ impl MouseState {
 
         match v {
             termion::event::MouseEvent::Press(button, x, y) => {
-                let button = match button {
-                    termion::event::MouseButton::Left => Some(MouseButton::Left),
-                    termion::event::MouseButton::Right => Some(MouseButton::Right),
-                    termion::event::MouseButton::Middle => Some(MouseButton::Middle),
-                    _ => None,
-                }?;
-                self.pressed_button = Some(button);
+                self.pressed = false;
+                if button != termion::event::MouseButton::Left {
+                    return None;
+                }
+                self.pressed = true;
                 Some(MouseEvent::Down {
-                    button,
                     position: position(x, y),
                 })
             }
-            termion::event::MouseEvent::Release(x, y) => {
-                self.pressed_button.take().map(|button| MouseEvent::Up {
-                    button,
+            termion::event::MouseEvent::Release(x, y) => self.pressed.then(|| {
+                self.pressed = false;
+                MouseEvent::Up {
                     position: position(x, y),
-                })
-            }
-            termion::event::MouseEvent::Hold(x, y) => Some(MouseEvent::Move {
+                }
+            }),
+            termion::event::MouseEvent::Hold(x, y) => self.pressed.then(|| MouseEvent::Move {
                 position: position(x, y),
             }),
         }

@@ -51,17 +51,9 @@ impl From<Key> for KeyEvent {
     serde(rename_all = "camelCase")
 )]
 pub enum MouseEvent {
-    Move {
-        position: Position,
-    },
-    Down {
-        position: Position,
-        button: MouseButton,
-    },
-    Up {
-        position: Position,
-        button: MouseButton,
-    },
+    Move { position: Position },
+    Down { position: Position },
+    Up { position: Position },
 }
 
 impl MouseEvent {
@@ -88,19 +80,6 @@ impl MouseEvent {
             }
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
-)]
-pub enum MouseButton {
-    Right,
-    Middle,
-    Left,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
