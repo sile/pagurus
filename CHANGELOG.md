@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Changed
+
+- Remove UMD support (web)
+
 ## [0.7.1] - 2023-08-05
 
 ### Changed
