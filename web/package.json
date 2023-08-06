@@ -9,27 +9,18 @@
     "url": "git+https://github.com/sile/pagurus.git"
   },
   "homepage": "https://github.com/sile/pagurus",
-  "main": "dist/pagurus.js",
-  "module": "dist/pagurus.mjs",
+  "module": "dist/pagurus.js",
   "types": "dist/pagurus.d.ts",
   "type": "module",
   "scripts": {
-    "build": "rollup -c ./rollup.config.mjs --bundleConfigAsCjs && tsc --emitDeclarationOnly",
-    "lint": "eslint --ext .ts ./src",
+    "build": "tsc",
     "fmt": "prettier --write src"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
-    "@rollup/plugin-typescript": "^9.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.28.0",
-    "@typescript-eslint/parser": "^5.28.0",
-    "eslint": "^8.17.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "prettier": "^2.7.0",
-    "rollup": "^3.0.0",
     "typescript": "^5.1.0"
   }
 }

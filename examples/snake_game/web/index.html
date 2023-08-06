@@ -5,8 +5,9 @@
   </head>
   <body style="background-color:black">
     <canvas id="canvas" style="background-color:black; padding:0; margin:auto; display:block"></canvas>
-    <script src="../../../web/dist/pagurus.js"></script>
-    <script>
+    <script type="module">
+      import * as Pagurus from "../../../web/dist/pagurus.js";
+
       Pagurus.Game.load("../../../target/wasm32-unknown-unknown/release/snake_game.wasm").then(async game => {
           const canvas = document.getElementById("canvas");
           const system = Pagurus.System.create(game.memory, { canvas });
