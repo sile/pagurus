@@ -9,7 +9,7 @@ use pagurus::{
 use std::{
     cmp::Reverse,
     collections::{BTreeMap, BinaryHeap},
-    io::{Stdout, Write},
+    io::Write,
     sync::mpsc,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -17,7 +17,8 @@ use termion::{
     color::{Bg, Fg, Rgb},
     cursor::HideCursor,
     input::{MouseTerminal, TermRead},
-    raw::{IntoRawMode, RawTerminal},
+    raw::IntoRawMode,
+    screen::IntoAlternateScreen,
 };
 
 pub struct TuiSystem {
@@ -25,7 +26,7 @@ pub struct TuiSystem {
     event_queue: mpsc::Receiver<Event>,
     event_sender: mpsc::Sender<Event>,
     timeout_queue: BinaryHeap<Reverse<(Duration, TimeoutTag)>>,
-    stdout: HideCursor<MouseTerminal<RawTerminal<Stdout>>>,
+    stdout: Box<dyn 'static + Write>,
     dirty_pixels: BTreeMap<DirtyPixelsKey, UpperLowerPixels>,
     frame_buffer: FrameBuffer,
     failed: Option<Failure>,
@@ -39,7 +40,9 @@ impl TuiSystem {
 
         let mut stdout = HideCursor::from(MouseTerminal::from(
             std::io::stdout().into_raw_mode().or_fail()?,
-        ));
+        ))
+        .into_alternate_screen()
+        .or_fail()?;
         write!(stdout, "{}", termion::clear::All).or_fail()?;
         stdout.flush().or_fail()?;
 
@@ -55,7 +58,7 @@ impl TuiSystem {
             event_queue: rx,
             event_sender,
             timeout_queue: BinaryHeap::new(),
-            stdout,
+            stdout: Box::new(stdout),
             dirty_pixels: BTreeMap::new(),
             frame_buffer: FrameBuffer::default(),
             failed: None,

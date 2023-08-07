@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- Use alternate screen (tui)
 - Remove UMD support (web)
 
 ## [0.7.1] - 2023-08-05
