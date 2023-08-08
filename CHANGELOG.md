@@ -6,6 +6,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- Implement `Copy` trait for event types
+- Add `Color::rgba()`
+
 ### Changed
 
 - Use alternate screen (tui)

@@ -18,6 +18,10 @@ impl Color {
         Self::Rgb(Rgb::new(r, g, b))
     }
 
+    pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self::Rgba(Rgba::new(r, g, b, a))
+    }
+
     pub fn alpha(self, a: u8) -> Self {
         match self {
             Color::Rgb(x) => Self::Rgba(x.alpha(a)),
