@@ -90,6 +90,14 @@ impl TuiSystem {
         }
     }
 
+    pub fn request_redraw(&mut self) -> pagurus::Result<()> {
+        let size = Self::terminal_size().or_fail()?;
+        self.event_sender
+            .send(Event::WindowResized(size))
+            .or_fail()?;
+        Ok(())
+    }
+
     fn resize_frame_buffer(&mut self, size: Size) -> pagurus::Result<()> {
         self.frame_buffer.resize(size);
         self.event_sender
