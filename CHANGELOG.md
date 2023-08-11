@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 
+- Add conversion functions / methods between tuples and `Rgb` / `Rgba`
 - Implement `PartialEq`, `Eq` and `Hash` for event types
 - Add `TuiSystem::request_redraw()`
 - Implement `Copy` trait for event types

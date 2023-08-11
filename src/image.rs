@@ -4,6 +4,8 @@ use crate::{video::VideoFrame, Result};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Color {
     Rgb(Rgb),
     Rgba(Rgba),
@@ -53,6 +55,8 @@ impl From<Rgba> for Color {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(from = "(u8, u8, u8)", into = "(u8, u8, u8)"))]
 pub struct Rgb {
     pub r: u8,
     pub g: u8,
@@ -78,7 +82,24 @@ impl Rgb {
     }
 }
 
+impl From<(u8, u8, u8)> for Rgb {
+    fn from((r, g, b): (u8, u8, u8)) -> Self {
+        Self::new(r, g, b)
+    }
+}
+
+impl From<Rgb> for (u8, u8, u8) {
+    fn from(x: Rgb) -> Self {
+        (x.r, x.g, x.b)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(from = "(u8, u8, u8, u8)", into = "(u8, u8, u8, u8)")
+)]
 pub struct Rgba {
     pub r: u8,
     pub g: u8,
@@ -143,6 +164,18 @@ impl Rgba {
             b: (b * 0xFF * 0xFF / a / 0xFF) as u8,
             a: (a / 0xFF) as u8,
         }
+    }
+}
+
+impl From<Rgba> for (u8, u8, u8, u8) {
+    fn from(x: Rgba) -> Self {
+        (x.r, x.g, x.b, x.a)
+    }
+}
+
+impl From<(u8, u8, u8, u8)> for Rgba {
+    fn from((r, g, b, a): (u8, u8, u8, u8)) -> Self {
+        Self::new(r, g, b, a)
     }
 }
 
