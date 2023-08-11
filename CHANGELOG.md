@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 
+- Implement `PartialEq`, `Eq` and `Hash` for event types
 - Add `TuiSystem::request_redraw()`
 - Implement `Copy` trait for event types
 - Add `Color::rgba()`
