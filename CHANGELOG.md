@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 
+- Add `SystemOptions.disableKeyEvents` (web)
 - Add conversion functions / methods between tuples and `Rgb` / `Rgba`
 - Implement `PartialEq`, `Eq` and `Hash` for event types
 - Add `TuiSystem::request_redraw()`

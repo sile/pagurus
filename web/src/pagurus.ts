@@ -101,6 +101,7 @@ interface SystemOptions {
   canvas?: HTMLCanvasElement;
   propagateControlKey?: boolean;
   disableTouchEvents?: boolean;
+  disableKeyEvents?: boolean;
 }
 
 class System {
@@ -133,13 +134,15 @@ class System {
     this.startTime = performance.now();
 
     if (this.canvas !== undefined) {
-      document.addEventListener("keyup", (event) => {
-        this.handleKeyup(event);
-        this.preventKeyEventDefaultIfNeed(event);
-      });
-      document.addEventListener("keydown", (event) => {
-        this.preventKeyEventDefaultIfNeed(event);
-      });
+      if (!(options.disableKeyEvents === true)) {
+        document.addEventListener("keyup", (event) => {
+          this.handleKeyup(event);
+          this.preventKeyEventDefaultIfNeed(event);
+        });
+        document.addEventListener("keydown", (event) => {
+          this.preventKeyEventDefaultIfNeed(event);
+        });
+      }
 
       this.canvas.addEventListener("mousemove", (event) => {
         this.handleMousemove(event);
@@ -151,7 +154,7 @@ class System {
         this.handleMouseup(event);
       });
 
-      if (options.disableTouchEvents !== false) {
+      if (!(options.disableTouchEvents === true)) {
         this.canvas.addEventListener("touchmove", (event) => {
           this.handleTouchmove(event);
           event.stopPropagation();
