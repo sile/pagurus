@@ -8,6 +8,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.7.2] - 2023-08-18
 
+### Added 
+
+- Add `TuiSystemOptions` struct
+
 ### Changed
 
 - Update `orfail` to v1.1.0

@@ -21,6 +21,11 @@ use termion::{
     screen::IntoAlternateScreen,
 };
 
+#[derive(Debug, Default, Clone)]
+pub struct TuiSystemOptions {
+    pub disable_mouse: bool,
+}
+
 pub struct TuiSystem {
     start_time: Instant,
     event_queue: mpsc::Receiver<Event>,
@@ -33,16 +38,26 @@ pub struct TuiSystem {
 }
 
 impl TuiSystem {
-    pub fn new() -> pagurus::Result<Self> {
+    pub fn with_options(options: TuiSystemOptions) -> pagurus::Result<Self> {
         if !termion::is_tty(&std::io::stdout()) {
             return Err(Failure::new("Not a TTY"));
         }
 
-        let mut stdout = HideCursor::from(MouseTerminal::from(
-            std::io::stdout().into_raw_mode().or_fail()?,
-        ))
-        .into_alternate_screen()
-        .or_fail()?;
+        let mut stdout: Box<dyn 'static + Write> = if options.disable_mouse {
+            Box::new(
+                HideCursor::from(std::io::stdout().into_raw_mode().or_fail()?)
+                    .into_alternate_screen()
+                    .or_fail()?,
+            )
+        } else {
+            Box::new(
+                HideCursor::from(MouseTerminal::from(
+                    std::io::stdout().into_raw_mode().or_fail()?,
+                ))
+                .into_alternate_screen()
+                .or_fail()?,
+            )
+        };
         write!(stdout, "{}", termion::clear::All).or_fail()?;
         stdout.flush().or_fail()?;
 
@@ -58,11 +73,15 @@ impl TuiSystem {
             event_queue: rx,
             event_sender,
             timeout_queue: BinaryHeap::new(),
-            stdout: Box::new(stdout),
+            stdout,
             dirty_pixels: BTreeMap::new(),
             frame_buffer: FrameBuffer::default(),
             failed: None,
         })
+    }
+
+    pub fn new() -> pagurus::Result<Self> {
+        Self::with_options(TuiSystemOptions::default())
     }
 
     fn terminal_size() -> pagurus::Result<Size> {
