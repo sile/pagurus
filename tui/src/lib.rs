@@ -35,7 +35,7 @@ pub struct TuiSystem {
 impl TuiSystem {
     pub fn new() -> pagurus::Result<Self> {
         if !termion::is_tty(&std::io::stdout()) {
-            return Err(Failure::new().message("Not a TTY"));
+            return Err(Failure::new("Not a TTY"));
         }
 
         let mut stdout = HideCursor::from(MouseTerminal::from(

@@ -9,7 +9,6 @@ use std::time::Duration;
 pub mod failure {
     pub use orfail::{Failure, OrFail};
 }
-pub use orfail::{todo, unreachable};
 
 pub mod audio;
 pub mod event;
@@ -43,11 +42,15 @@ pub trait Game<S: System> {
 
     #[allow(unused_variables)]
     fn query(&mut self, system: &mut S, name: &str) -> Result<Vec<u8>> {
-        Err(crate::failure::Failure::new().message(format!("unknown query: {name:?}")))
+        Err(crate::failure::Failure::new(format!(
+            "unknown query: {name:?}"
+        )))
     }
 
     #[allow(unused_variables)]
     fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
-        Err(crate::failure::Failure::new().message(format!("unknown command: {name:?}")))
+        Err(crate::failure::Failure::new(format!(
+            "unknown command: {name:?}"
+        )))
     }
 }

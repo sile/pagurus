@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.7.2] - 2023-08-18
+
+### Changed
+
+- Update `orfail` to v1.1.0
+
 ## [0.7.2] - 2023-08-13
 
 ### Added

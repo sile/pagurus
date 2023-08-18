@@ -355,13 +355,12 @@ impl Sprite {
     pub fn clip(&self, region: Region) -> Result<Self> {
         Region::from(self.size())
             .contains(&region)
-            .or_fail()
-            .map_err(|e| {
-                e.message(format!(
+            .or_fail_with(|()| {
+                format!(
                     "failed to clip a sprite: clip_region={:?}, sprite_size={:?}",
                     region,
                     self.size()
-                ))
+                )
             })?;
         Ok(Self {
             image_data: Arc::clone(&self.image_data),

@@ -18,7 +18,7 @@ wasm = ["serde", "serde_json"]
 
 [dependencies]
 getrandom = { version = "0.2", features = ["custom"], optional = true }
-orfail = "0.1"
+orfail = "1"
 rand_chacha = { version = "0.3", optional = true }
 rand_core = { version = "0.6", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }

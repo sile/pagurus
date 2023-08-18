@@ -164,7 +164,7 @@ impl SampleFormat {
             1 => Ok(Self::I16Le),
             2 => Ok(Self::F32Be),
             3 => Ok(Self::F32Le),
-            _ => Err(Failure::new().message(format!("unknown audio sample format: {x}"))),
+            _ => Err(Failure::new(format!("unknown audio sample format: {x}"))),
         }
     }
 }

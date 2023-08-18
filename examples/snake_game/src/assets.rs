@@ -10,10 +10,6 @@ const PNG_BACKGROUND: &[u8] = include_bytes!("../assets/background.png");
 const PNG_CHARS_SMALL: &[u8] = include_bytes!("../assets/chars-small.png");
 const PNG_CHARS_LARGE: &[u8] = include_bytes!("../assets/chars-large.png");
 
-// const OGG_CLICK: &[u8] = include_bytes!("../assets/click.ogg");
-// const OGG_EAT: &[u8] = include_bytes!("../assets/eat.ogg");
-// const OGG_CRASH: &[u8] = include_bytes!("../assets/crash.ogg");
-
 fn decode_sprite(png: &[u8]) -> Result<Sprite> {
     let decoder = png::Decoder::new(png);
     let mut reader = decoder.read_info().or_fail()?;
@@ -22,8 +18,7 @@ fn decode_sprite(png: &[u8]) -> Result<Sprite> {
     let bytes = &buf[..info.buffer_size()];
     let size = Size::from_wh(info.width, info.height);
     (info.bit_depth == png::BitDepth::Eight)
-        .or_fail()
-        .map_err(|e| e.message(format!("unsupported PNG bit depth: {:?}", info.bit_depth)))?;
+        .or_fail_with(|()| format!("unsupported PNG bit depth: {:?}", info.bit_depth))?;
 
     match info.color_type {
         png::ColorType::Rgb => Sprite::from_rgb24_bytes(bytes, size).or_fail(),
@@ -32,10 +27,10 @@ fn decode_sprite(png: &[u8]) -> Result<Sprite> {
         png::ColorType::GrayscaleAlpha => {
             Sprite::from_grayscale_alpha16_bytes(bytes, size).or_fail()
         }
-        _ => {
-            Err(Failure::new()
-                .message(format!("unsupported PNG color type: {:?}", info.color_type)))
-        }
+        _ => Err(Failure::new(format!(
+            "unsupported PNG color type: {:?}",
+            info.color_type
+        ))),
     }
 }
 
