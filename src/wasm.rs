@@ -1,10 +1,10 @@
 #![allow(clippy::missing_safety_doc)] // FIXME
 use crate::audio::{AudioSpec, SampleFormat};
 use crate::event::{Event, TimeoutTag};
-use crate::failure::{Failure, OrFail};
 use crate::spatial::Size;
 use crate::video::{PixelFormat, VideoFrameSpec};
 use crate::{audio::AudioData, video::VideoFrame, Game, System};
+use orfail::{Failure, OrFail};
 use std::time::Duration;
 
 extern "C" {

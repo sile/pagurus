@@ -1,6 +1,6 @@
-use crate::failure::OrFail;
 use crate::spatial::{Contains, Position, Region, Size};
 use crate::{video::VideoFrame, Result};
+use orfail::OrFail;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -6,9 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Changed
+
+- Don't re-export `orfail::{Failure, OrFail}`
+
 ## [0.7.3] - 2023-08-18
 
-### Added 
+### Added
 
 - Add `TuiSystemOptions` struct
 

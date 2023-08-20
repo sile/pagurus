@@ -1,4 +1,4 @@
-use pagurus::failure::{Failure, OrFail};
+use orfail::{Failure, OrFail};
 use pagurus::image::Sprite;
 use pagurus::spatial::{Position, Region, Size};
 use pagurus::Result;

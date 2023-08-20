@@ -6,10 +6,6 @@ use crate::spatial::Size;
 use crate::video::{VideoFrame, VideoFrameSpec};
 use std::time::Duration;
 
-pub mod failure {
-    pub use orfail::{Failure, OrFail};
-}
-
 pub mod audio;
 pub mod event;
 #[cfg(feature = "fixed_window")]
@@ -24,7 +20,7 @@ pub mod video;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-pub type Result<T, E = crate::failure::Failure> = std::result::Result<T, E>;
+pub type Result<T, E = orfail::Failure> = std::result::Result<T, E>;
 
 pub trait System {
     fn video_init(&mut self, resolution: Size) -> VideoFrameSpec;
@@ -42,15 +38,11 @@ pub trait Game<S: System> {
 
     #[allow(unused_variables)]
     fn query(&mut self, system: &mut S, name: &str) -> Result<Vec<u8>> {
-        Err(crate::failure::Failure::new(format!(
-            "unknown query: {name:?}"
-        )))
+        Err(orfail::Failure::new(format!("unknown query: {name:?}")))
     }
 
     #[allow(unused_variables)]
     fn command(&mut self, system: &mut S, name: &str, data: &[u8]) -> Result<()> {
-        Err(crate::failure::Failure::new(format!(
-            "unknown command: {name:?}"
-        )))
+        Err(orfail::Failure::new(format!("unknown command: {name:?}")))
     }
 }

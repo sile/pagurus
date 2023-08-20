@@ -1,7 +1,7 @@
+use orfail::{Failure, OrFail};
 use pagurus::{
     audio::{AudioData, AudioSpec, SampleFormat},
     event::{Event, Key, KeyEvent, MouseEvent, TimeoutTag},
-    failure::{Failure, OrFail},
     spatial::{Position, Size},
     video::{PixelFormat, VideoFrame, VideoFrameSpec},
     System,

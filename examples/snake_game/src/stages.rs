@@ -1,15 +1,14 @@
-use std::time::Duration;
-
 use crate::assets::Button;
 use crate::state::{Direction, MoveResult};
 use crate::widgets::{ButtonGroup, ButtonWidget, CursorWidget};
 use crate::{state::GameState, Env};
 use crate::{CELL_SIZE, WINDOW_SIZE};
+use orfail::OrFail;
 use pagurus::event::{Event, Key, KeyEvent, MouseEvent, TimeoutTag};
-use pagurus::failure::OrFail;
 use pagurus::image::{Canvas, Color};
 use pagurus::spatial::Position;
 use pagurus::{Result, System};
+use std::time::Duration;
 
 #[derive(Debug, Default)]
 pub enum Stage {

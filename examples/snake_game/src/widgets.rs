@@ -1,8 +1,8 @@
 use crate::assets::Button;
 use crate::state::Direction;
 use crate::{assets, Env};
+use orfail::OrFail;
 use pagurus::event::{Event, Key, KeyEvent, MouseEvent};
-use pagurus::failure::OrFail;
 use pagurus::image::Canvas;
 use pagurus::spatial::{Contains, Position, Region};
 use pagurus::{Result, System};

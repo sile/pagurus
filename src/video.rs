@@ -1,6 +1,6 @@
-use crate::failure::{Failure, OrFail};
 use crate::spatial::{Position, Size};
 use crate::Result;
+use orfail::{Failure, OrFail};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(

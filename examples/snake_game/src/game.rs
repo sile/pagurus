@@ -3,7 +3,7 @@ use crate::audio::AudioMixer;
 use crate::stages::Stage;
 use crate::state::HighScore;
 use crate::{Env, WINDOW_SIZE};
-use pagurus::failure::OrFail;
+use orfail::OrFail;
 use pagurus::fixed_window::FixedWindow;
 use pagurus::image::{Canvas, Color};
 use pagurus::random::StdRng;

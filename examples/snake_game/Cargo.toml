@@ -18,6 +18,7 @@ tui = ["pagurus_tui"]
 
 [dependencies]
 ffmml = "0.1"
+orfail = "1"
 pagurus = {  path = "../../", features = ["fixed_window", "image", "random", "wasm"] }
 pagurus_tui = { path = "../../tui/", optional = true }
 png = "0.17.7"
