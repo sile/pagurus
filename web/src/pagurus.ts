@@ -88,13 +88,15 @@ function toPagurusKey(key: string): Key | undefined {
     case "Escape":
       return "esc";
     default:
-      // TODO: Consider surrogate pairs
-      if (key.length === 1) {
-        return { char: key };
-      } else {
+      if (isSpecialKey(key)) {
         return;
       }
+      return { char: key };
   }
+}
+
+function isSpecialKey(key: string): boolean {
+  return /^[a-zA-Z][a-zA-Z]+$/.test(key);
 }
 
 interface SystemOptions {
