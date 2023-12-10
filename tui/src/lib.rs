@@ -24,6 +24,7 @@ use termion::{
 #[derive(Debug, Default, Clone)]
 pub struct TuiSystemOptions {
     pub disable_mouse: bool,
+    pub disable_alternate_screen: bool,
 }
 
 pub struct TuiSystem {
@@ -43,21 +44,15 @@ impl TuiSystem {
             return Err(Failure::new("Not a TTY"));
         }
 
-        let mut stdout: Box<dyn 'static + Write> = if options.disable_mouse {
-            Box::new(
-                HideCursor::from(std::io::stdout().into_raw_mode().or_fail()?)
-                    .into_alternate_screen()
-                    .or_fail()?,
-            )
-        } else {
-            Box::new(
-                HideCursor::from(MouseTerminal::from(
-                    std::io::stdout().into_raw_mode().or_fail()?,
-                ))
-                .into_alternate_screen()
-                .or_fail()?,
-            )
-        };
+        let mut stdout: Box<dyn 'static + Write> =
+            Box::new(std::io::stdout().into_raw_mode().or_fail()?);
+        if !options.disable_mouse {
+            stdout = Box::new(MouseTerminal::from(stdout));
+        }
+        stdout = Box::new(HideCursor::from(stdout));
+        if !options.disable_alternate_screen {
+            stdout = Box::new(stdout.into_alternate_screen().or_fail()?);
+        }
         write!(stdout, "{}", termion::clear::All).or_fail()?;
         stdout.flush().or_fail()?;
 
@@ -68,6 +63,9 @@ impl TuiSystem {
         let event_sender = tx.clone();
         std::thread::spawn(move || listen_input_events(tx));
 
+        let mut frame_buffer = FrameBuffer::default();
+        frame_buffer.resize(terminal_size);
+
         Ok(Self {
             start_time: Instant::now(),
             event_queue: rx,
@@ -75,7 +73,7 @@ impl TuiSystem {
             timeout_queue: BinaryHeap::new(),
             stdout,
             dirty_pixels: BTreeMap::new(),
-            frame_buffer: FrameBuffer::default(),
+            frame_buffer,
             failed: None,
         })
     }

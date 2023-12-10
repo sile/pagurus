@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- Add `TuiSystemOptions::disable_alternate_screen` flag
+
 ### Changed
 
 - Don't re-export `orfail::{Failure, OrFail}`
