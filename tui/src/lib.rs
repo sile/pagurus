@@ -1,3 +1,5 @@
+use libpulse_binding as pulseaudio;
+use libpulse_simple_binding as pulseaudio_simple;
 use orfail::{Failure, OrFail};
 use pagurus::{
     audio::{AudioData, AudioSpec, SampleFormat},
@@ -35,6 +37,7 @@ pub struct TuiSystem {
     stdout: Box<dyn 'static + Write>,
     dirty_pixels: BTreeMap<DirtyPixelsKey, UpperLowerPixels>,
     frame_buffer: FrameBuffer,
+    audio: Option<pulseaudio_simple::Simple>,
     failed: Option<Failure>,
 }
 
@@ -74,6 +77,7 @@ impl TuiSystem {
             stdout,
             dirty_pixels: BTreeMap::new(),
             frame_buffer,
+            audio: None,
             failed: None,
         })
     }
@@ -223,7 +227,32 @@ impl System for TuiSystem {
     }
 
     fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec {
-        // Returns dummy spec.
+        let pulseaudio_spec = pulseaudio::sample::Spec {
+            format: pulseaudio::sample::Format::S16be,
+            rate: sample_rate as u32,
+            channels: AudioSpec::CHANNELS,
+        };
+
+        match pulseaudio_simple::Simple::new(
+            None,
+            "Pagurus",
+            pulseaudio::stream::Direction::Playback,
+            None,
+            "Music",
+            &pulseaudio_spec,
+            None,
+            None,
+        )
+        .or_fail()
+        {
+            Err(e) => {
+                self.failed = Some(e);
+            }
+            Ok(audio) => {
+                self.audio = Some(audio);
+            }
+        }
+
         AudioSpec {
             sample_format: SampleFormat::I16Be,
             sample_rate,

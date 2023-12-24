@@ -12,6 +12,8 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libpulse-binding = "2.28.1"
+libpulse-simple-binding = "2.28.1"
 orfail = "1"
 pagurus = { version = "0.7.0", path = "../" }
 termion = "2.0.1"
