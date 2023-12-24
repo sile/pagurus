@@ -233,7 +233,7 @@ impl System for TuiSystem {
             channels: AudioSpec::CHANNELS,
         };
 
-        match pulseaudio_simple::Simple::new(
+        let audio = pulseaudio_simple::Simple::new(
             None,
             "Pagurus",
             pulseaudio::stream::Direction::Playback,
@@ -243,8 +243,8 @@ impl System for TuiSystem {
             None,
             None,
         )
-        .or_fail()
-        {
+        .or_fail();
+        match audio {
             Err(e) => {
                 self.failed = Some(e);
             }
@@ -260,8 +260,11 @@ impl System for TuiSystem {
         }
     }
 
-    fn audio_enqueue(&mut self, _data: AudioData<&[u8]>) {
-        // Discards audio data as TUI does not support audio.
+    fn audio_enqueue(&mut self, data: AudioData<&[u8]>) {
+        let Some(audio) = &mut self.audio else {
+            return;
+        };
+        self.failed = audio.write(data.bytes()).or_fail().err();
     }
 
     fn clock_game_time(&self) -> Duration {
