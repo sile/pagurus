@@ -15,8 +15,7 @@ readme = "README.md"
 all-features = true
 
 [features]
-#default = ["video", "audio"]
-default = ["video"]
+default = ["video", "audio"]
 video = ["termion"]
 audio = ["libpulse-binding", "libpulse-simple-binding"]
 
