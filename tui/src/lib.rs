@@ -1,5 +1,9 @@
-use libpulse_binding as pulseaudio;
-use libpulse_simple_binding as pulseaudio_simple;
+#[cfg(feature = "audio")]
+mod audio;
+
+#[cfg(feature = "video")]
+mod video;
+
 use orfail::{Failure, OrFail};
 use pagurus::{
     audio::{AudioData, AudioSpec, SampleFormat},
@@ -15,17 +19,12 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant, UNIX_EPOCH},
 };
-use termion::{
-    color::{Bg, Fg, Rgb},
-    cursor::HideCursor,
-    input::{MouseTerminal, TermRead},
-    raw::IntoRawMode,
-    screen::IntoAlternateScreen,
-};
 
 #[derive(Debug, Default, Clone)]
 pub struct TuiSystemOptions {
+    #[cfg(feature = "video")]
     pub disable_mouse: bool,
+    #[cfg(feature = "video")]
     pub disable_alternate_screen: bool,
 }
 
@@ -37,8 +36,10 @@ pub struct TuiSystem {
     stdout: Box<dyn 'static + Write>,
     dirty_pixels: BTreeMap<DirtyPixelsKey, UpperLowerPixels>,
     frame_buffer: FrameBuffer,
-    audio: Option<pulseaudio_simple::Simple>,
     failed: Option<Failure>,
+
+    #[cfg(feature = "audio")]
+    audio: Option<self::audio::AudioSystem>,
 }
 
 impl TuiSystem {
@@ -77,8 +78,10 @@ impl TuiSystem {
             stdout,
             dirty_pixels: BTreeMap::new(),
             frame_buffer,
-            audio: None,
             failed: None,
+
+            #[cfg(feature = "audio")]
+            audio: None,
         })
     }
 
@@ -227,24 +230,8 @@ impl System for TuiSystem {
     }
 
     fn audio_init(&mut self, sample_rate: u16, data_samples: usize) -> AudioSpec {
-        let pulseaudio_spec = pulseaudio::sample::Spec {
-            format: pulseaudio::sample::Format::S16be,
-            rate: sample_rate as u32,
-            channels: AudioSpec::CHANNELS,
-        };
-
-        let audio = pulseaudio_simple::Simple::new(
-            None,
-            "Pagurus",
-            pulseaudio::stream::Direction::Playback,
-            None,
-            "Music",
-            &pulseaudio_spec,
-            None,
-            None,
-        )
-        .or_fail();
-        match audio {
+        #[cfg(feature = "audio")]
+        match self::audio::AudioSystem::new(sample_rate) {
             Err(e) => {
                 self.failed = Some(e);
             }
@@ -260,11 +247,19 @@ impl System for TuiSystem {
         }
     }
 
+    #[cfg_attr(not(feature = "audio"), allow(unused_variables))]
     fn audio_enqueue(&mut self, data: AudioData<&[u8]>) {
-        let Some(audio) = &mut self.audio else {
+        if self.failed.is_some() {
             return;
-        };
-        self.failed = audio.write(data.bytes()).or_fail().err();
+        }
+
+        #[cfg(feature = "audio")]
+        {
+            self.failed = self
+                .audio
+                .as_mut()
+                .and_then(|a| a.enqueue(data).or_fail().err());
+        }
     }
 
     fn clock_game_time(&self) -> Duration {

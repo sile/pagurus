@@ -11,9 +11,18 @@ readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+#default = ["video", "audio"]
+default = ["video"]
+video = ["termion"]
+audio = ["libpulse-binding", "libpulse-simple-binding"]
+
 [dependencies]
-libpulse-binding = "2.28.1"
-libpulse-simple-binding = "2.28.1"
+libpulse-binding = { version = "2.28.1", optional = true }
+libpulse-simple-binding = { version = "2.28.1", optional = true }
 orfail = "1"
 pagurus = { version = "0.7.0", path = "../" }
-termion = "2.0.1"
+termion = { version = "2.0.1", optional = true }
