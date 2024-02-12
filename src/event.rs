@@ -8,6 +8,7 @@ use crate::spatial::{Position, Size};
 )]
 pub enum Event {
     Key(KeyEvent),
+    // TOOD: s/Mouse/Pointer/
     Mouse(MouseEvent),
     Timeout(TimeoutTag),
     WindowResized(Size),
