@@ -103,6 +103,7 @@ interface SystemOptions {
   canvas?: HTMLCanvasElement;
   propagateControlKey?: boolean;
   disableTouchEvents?: boolean;
+  disableMouseEvents?: boolean;
   disableKeyEvents?: boolean;
 }
 
@@ -146,15 +147,17 @@ class System {
         });
       }
 
-      this.canvas.addEventListener("mousemove", (event) => {
-        this.handleMousemove(event);
-      });
-      this.canvas.addEventListener("mousedown", (event) => {
-        this.handleMousedown(event);
-      });
-      this.canvas.addEventListener("mouseup", (event) => {
-        this.handleMouseup(event);
-      });
+      if (!(options.disableMouseEvents === true)) {
+        this.canvas.addEventListener("mousemove", (event) => {
+          this.handleMousemove(event);
+        });
+        this.canvas.addEventListener("mousedown", (event) => {
+          this.handleMousedown(event);
+        });
+        this.canvas.addEventListener("mouseup", (event) => {
+          this.handleMouseup(event);
+        });
+      }
 
       if (!(options.disableTouchEvents === true)) {
         this.canvas.addEventListener("touchmove", (event) => {

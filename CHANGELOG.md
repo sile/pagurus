@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 
+- [web] Add `disableMouseEvents` option
 - Add `TuiSystemOptions::disable_alternate_screen` flag
 - Add pulseaudio support to `pagurus_tui`
 - Add `audio` feature to `pagurus_tui`
