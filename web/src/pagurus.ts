@@ -324,11 +324,8 @@ class System {
     const height = videoFrameLen / 4 / width;
     const videoFrame = new Uint8ClampedArray(this.wasmMemory.buffer, videoFrameOffset, videoFrameLen);
     if (width != this.canvas.width || height != this.canvas.height) {
-      const xScale = width / this.canvas.width;
-      const yScale = height / this.canvas.height;
       this.canvas.width = width;
       this.canvas.height = height;
-      canvasCtx.scale(xScale, yScale);
     }
 
     const image = new ImageData(videoFrame, width, height);
