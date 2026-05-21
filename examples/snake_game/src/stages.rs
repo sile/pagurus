@@ -140,13 +140,12 @@ impl PlayStage {
         match event {
             Event::Key(event) => self.handle_key_event(env, event).or_fail()?,
             Event::Mouse(event) => self.handle_mouse_event(env, event).or_fail()?,
-            Event::Timeout(event)
-                if !self.handle_timeout_event(env, event).or_fail()? => {
-                    env.mixer.play_crash_sound();
+            Event::Timeout(event) if !self.handle_timeout_event(env, event).or_fail()? => {
+                env.mixer.play_crash_sound();
 
-                    let stage = GameOverStage::new(self.game_state.clone(), env);
-                    return Ok(HandleEventResult::NextStage(Stage::GameOver(stage)));
-                }
+                let stage = GameOverStage::new(self.game_state.clone(), env);
+                return Ok(HandleEventResult::NextStage(Stage::GameOver(stage)));
+            }
             _ => {}
         }
         Ok(HandleEventResult::Ok)
