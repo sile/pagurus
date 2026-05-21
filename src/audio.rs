@@ -51,7 +51,7 @@ impl<B: AsRef<[u8]>> AudioData<B> {
         self.spec
     }
 
-    pub fn samples(&self) -> Samples {
+    pub fn samples(&self) -> Samples<'_> {
         Samples {
             spec: self.spec,
             data: self.data.as_ref(),

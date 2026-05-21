@@ -209,7 +209,7 @@ impl<'a> Canvas<'a> {
     }
 
     // TODO: rename
-    pub fn mask_region(&mut self, region: Region) -> Canvas {
+    pub fn mask_region(&mut self, region: Region) -> Canvas<'_> {
         let drawing_region = self.drawing_region.intersection(region + self.origin);
         Canvas {
             frame: self.frame,
@@ -218,7 +218,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    pub fn subregion(&mut self, region: Region) -> Canvas {
+    pub fn subregion(&mut self, region: Region) -> Canvas<'_> {
         let drawing_region = self.drawing_region.intersection(region + self.origin);
         Canvas {
             frame: self.frame,
@@ -227,7 +227,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    pub fn offset(&mut self, offset: Position) -> Canvas {
+    pub fn offset(&mut self, offset: Position) -> Canvas<'_> {
         Canvas {
             frame: self.frame,
             origin: self.origin + offset,
@@ -277,7 +277,7 @@ pub struct Sprite {
 
 impl Sprite {
     pub fn from_rgb24_bytes(bytes: &[u8], size: Size) -> Result<Self> {
-        (bytes.len() % 3 == 0).or_fail()?;
+        bytes.len().is_multiple_of(3).or_fail()?;
         (bytes.len() / 3 == size.len()).or_fail()?;
 
         Ok(Self {
@@ -293,7 +293,7 @@ impl Sprite {
     }
 
     pub fn from_rgba32_bytes(bytes: &[u8], size: Size) -> Result<Self> {
-        (bytes.len() % 4 == 0).or_fail()?;
+        bytes.len().is_multiple_of(4).or_fail()?;
         (bytes.len() / 4 == size.len()).or_fail()?;
 
         Ok(Self {
@@ -325,7 +325,7 @@ impl Sprite {
     }
 
     pub fn from_grayscale_alpha16_bytes(bytes: &[u8], size: Size) -> Result<Self> {
-        (bytes.len() % 2 == 0).or_fail()?;
+        bytes.len().is_multiple_of(2).or_fail()?;
         (bytes.len() / 2 == size.len()).or_fail()?;
 
         Ok(Self {

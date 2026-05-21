@@ -111,7 +111,7 @@ impl ButtonWidget {
                 .sprite
                 .normal
                 .get_pixel(pos - self.position)
-                .map_or(false, |p| p.a != 0))
+                .is_some_and(|p| p.a != 0))
         {
             env.change_state(&mut self.state, ButtonState::Normal);
             return Ok(false);
@@ -182,8 +182,8 @@ impl CursorWidget {
 
     pub fn handle_event<S: System>(&mut self, env: &mut Env<S>, event: MouseEvent) -> Result<()> {
         match event {
-            MouseEvent::Move { .. } => {
-                if !matches!(self.state, CursorState::Normal) {
+            MouseEvent::Move { .. }
+                if !matches!(self.state, CursorState::Normal) => {
                     let delta = event.position() - self.position;
                     if delta.x.abs() < 16 && delta.y.abs() < 16 {
                         env.change_state(&mut self.state, CursorState::Pressing);
@@ -200,7 +200,6 @@ impl CursorWidget {
                     }
                     return Ok(());
                 }
-            }
             MouseEvent::Down { .. } if matches!(self.state, CursorState::Normal) => {
                 env.change_state(&mut self.state, CursorState::Pressing);
                 self.direction = None;
